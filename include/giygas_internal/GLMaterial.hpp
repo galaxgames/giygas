@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <giygas/Material.hpp>
 #include <giygas/Texture.hpp>
+#include <giygas/GL.hpp>
 #include "GLShader.hpp"
 
 namespace giygas {
@@ -13,6 +14,7 @@ namespace giygas {
     class UniformValue;
 
     class GLMaterial : public Material {
+        GL *_gl;
         GLuint _program;
         std::weak_ptr<Shader> _shader;
         std::unordered_map<std::string, std::unique_ptr<UniformValue>> _values;
@@ -31,10 +33,10 @@ namespace giygas {
         void set_uniform(const std::string &name, T value);
 
     public:
-        GLMaterial();
+        GLMaterial(GL *gl);
         GLMaterial(const GLMaterial &) = delete;
-        GLMaterial& operator=(const GLMaterial &) = delete;
         GLMaterial(GLMaterial &&) noexcept;
+        GLMaterial& operator=(const GLMaterial &) = delete;
         GLMaterial& operator=(GLMaterial &&) noexcept ;
         virtual ~GLMaterial();
 
@@ -61,14 +63,14 @@ namespace giygas {
 
     class UniformValue {
     public:
-        virtual void do_gl_call(GLint location) = 0;
+        virtual void do_gl_call(GL *gl, GLint location) = 0;
     };
 
     class FloatUniformValue : public UniformValue {
         float _value;
     public:
         FloatUniformValue(float value);
-        void do_gl_call(GLint location) override;
+        void do_gl_call(GL *gl, GLint location) override;
     };
 
     class TextureUniformValue : public UniformValue {
@@ -76,7 +78,7 @@ namespace giygas {
         int _index;
     public:
         TextureUniformValue(std::weak_ptr<Texture> value, int index);
-        void do_gl_call(GLint location) override;
+        void do_gl_call(GL *gl, GLint location) override;
     };
         
 }

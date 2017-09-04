@@ -1,9 +1,13 @@
 #pragma once
 #include <glad/glad.h>
+#include <giygas/GL.hpp>
 #include <giygas/VertexBuffer.hpp>
 
 namespace giygas {
     class GLVertexBuffer : public VertexBuffer {
+
+        GL *_gl;
+
         // handle to the GL buffer
         GLuint _handle;
 
@@ -21,10 +25,11 @@ namespace giygas {
         void set_data(int offset, const float *data, int count);
 
     public:
-        GLVertexBuffer();
-        GLVertexBuffer(const GLVertexBuffer&) = delete;
-        GLVertexBuffer& operator=(const GLVertexBuffer&) = delete;
-        GLVertexBuffer(GLVertexBuffer&&) noexcept;
+        GLVertexBuffer(GL *gl);
+        GLVertexBuffer(const GLVertexBuffer &) = delete;
+        GLVertexBuffer(GLVertexBuffer &&) noexcept;
+        GLVertexBuffer& operator=(const GLVertexBuffer &) = delete;
+        GLVertexBuffer& operator=(GLVertexBuffer &&) noexcept;
         virtual ~GLVertexBuffer();
 
         void set_layout(const VertexBufferLayout &layout) override;

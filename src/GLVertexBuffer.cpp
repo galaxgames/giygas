@@ -1,17 +1,23 @@
 #include <algorithm>
-#include "GLVertexBuffer.hpp"
+#include "giygas_internal/GLVertexBuffer.hpp"
 
 using namespace giygas;
 
-GLVertexBuffer::GLVertexBuffer() {
+GLVertexBuffer::GLVertexBuffer(GL *gl) {
+    _gl = gl;
     _data = nullptr;
     _length = 0;
     _channel_count = 0;
-    glGenBuffers(1, &_handle);
-    glGenVertexArrays(1, &_vertex_array);
+    gl->gen_buffers(1, &_handle);
+    gl->gen_vertex_arrays(1, &_vertex_array);
 }
 
 GLVertexBuffer::GLVertexBuffer(GLVertexBuffer &&other) noexcept {
+    *this = std::move(other);
+}
+
+GLVertexBuffer &GLVertexBuffer::operator=(GLVertexBuffer &&other) noexcept {
+    _gl = other._gl;
     _data = other._data;
     _length = other._length;
     _handle = other._handle;
@@ -20,12 +26,14 @@ GLVertexBuffer::GLVertexBuffer(GLVertexBuffer &&other) noexcept {
     other._data = nullptr;
     other._handle = 0;
     other._vertex_array = 0;
+
+    return *this;
 }
 
 GLVertexBuffer::~GLVertexBuffer() {
     delete[] _data;
-    glDeleteBuffers(1, &_handle);
-    glDeleteVertexArrays(1, &_vertex_array);
+    _gl->delete_buffers(1, &_handle);
+    _gl->delete_vertex_arrays(1, &_vertex_array);
 }
 
 void GLVertexBuffer::set_layout(const VertexBufferLayout &layout) {
@@ -39,11 +47,11 @@ void GLVertexBuffer::set_layout(const VertexBufferLayout &layout) {
     int offset = 0;
     GLuint index = 0;
 
-    glBindVertexArray(_vertex_array);
-    glBindBuffer(GL_ARRAY_BUFFER, _handle);
+    _gl->bind_vertex_array(_vertex_array);
+    _gl->bind_buffer(GL_ARRAY_BUFFER, _handle);
 
     for (int size : channels) {
-        glVertexAttribPointer(
+        _gl->vertex_attrib_pointer(
             index,                             // index
             size,                              // size
             GL_FLOAT,                          // type
@@ -52,7 +60,7 @@ void GLVertexBuffer::set_layout(const VertexBufferLayout &layout) {
             reinterpret_cast<GLvoid *>(offset) // pointer
         );
 
-        glEnableVertexAttribArray(index);
+        _gl->enable_vertex_attrib_array(index);
 
         offset += size;
         ++index;
@@ -110,10 +118,10 @@ void GLVertexBuffer::set_data(int offset, const float *data, int count) {
     }
 
     std::copy_n(data, count, _data + offset);
-    glBindBuffer(GL_ARRAY_BUFFER, _handle);
+    _gl->bind_buffer(GL_ARRAY_BUFFER, _handle);
 
     if (need_new_buffer) {
-        glBufferData(
+        _gl->buffer_data(
             GL_ARRAY_BUFFER,
             _length * sizeof(GLfloat),
             _data,
@@ -121,7 +129,7 @@ void GLVertexBuffer::set_data(int offset, const float *data, int count) {
         );
     }
     else {
-        glBufferSubData(
+        _gl->buffer_sub_data(
             GL_ARRAY_BUFFER,
             offset * sizeof(GLfloat),
             count * sizeof(GLfloat),

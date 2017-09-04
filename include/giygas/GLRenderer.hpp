@@ -2,9 +2,11 @@
 #include <giygas/Renderer.hpp>
 #include <giygas/Primitive.hpp>
 #include "Window.hpp"
+#include "GLImpl.hpp"
 
 namespace giygas {
     class GIYGAS_EXPORT GLRenderer : public Renderer {
+        GLImpl _gl;
         std::shared_ptr<Window> _window;
 
         static GLenum get_gl_primitive(Primitive primitive);

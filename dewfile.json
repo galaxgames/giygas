@@ -12,7 +12,7 @@
             "type": "git",
             "url": "git@github.com:sfuller/glad.git",
             "ref": "cmake-config",
-            "build_arguments": ["-DGLAD_INSTALL=\"true\"", "-DBUILD_SHARED_LIBS=\"true\""]
+            "build_arguments": ["-DGLAD_INSTALL=\"true\""]
         },
         {
             "name": "glfw",

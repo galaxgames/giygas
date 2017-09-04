@@ -4,6 +4,8 @@
 namespace giygas {
     class GIYGAS_EXPORT Shader {
     public:
+        virtual ~Shader() = default;
+
         virtual void set_from_source(
             const char* vertex, const char* fragment
         ) = 0;

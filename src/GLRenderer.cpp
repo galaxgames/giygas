@@ -1,9 +1,9 @@
 #include <glad/glad.h>
 #include "giygas/GLRenderer.hpp"
-#include "GLVertexBuffer.hpp"
-#include "GLElementBuffer.hpp"
-#include "GLMaterial.hpp"
-#include "GLTexture.hpp"
+#include "giygas_internal/GLVertexBuffer.hpp"
+#include "giygas_internal/GLElementBuffer.hpp"
+#include "giygas_internal/GLMaterial.hpp"
+#include "giygas_internal/GLTexture.hpp"
 
 using namespace std;
 using namespace giygas;
@@ -15,33 +15,33 @@ GLRenderer::GLRenderer(shared_ptr<Window> window) :
 }
 
 GLRenderer::GLRenderer(GLRenderer &&other) noexcept :
+    _gl(move(other._gl)),
     _window(move(other._window))
 {
 }
 
 GLRenderer& GLRenderer::operator=(GLRenderer &&other) noexcept {
+    _gl = move(other._gl);
     _window = move(other._window);
     return *this;
 }
 
-GLRenderer::~GLRenderer() {
-}
+GLRenderer::~GLRenderer() = default;
 
 VertexBuffer* GLRenderer::make_vbo() {
-    // TODO: Make these checks optional at compile time
-    return new GLVertexBuffer;
+    return new GLVertexBuffer(&_gl);
 }
 
 ElementBuffer* GLRenderer::make_ebo() {
-    return new GLElementBuffer;
+    return new GLElementBuffer(&_gl);
 }
 
 Material* GLRenderer::make_material() {
-    return new GLMaterial;
+    return new GLMaterial(&_gl);
 }
 
 Shader* GLRenderer::make_shader() {
-    return new GLShader;
+    return new GLShader(&_gl);
 }
 
 void GLRenderer::clear() {

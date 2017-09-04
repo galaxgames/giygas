@@ -7,6 +7,8 @@
 namespace giygas {
     class GIYGAS_EXPORT Material {
     public:
+        virtual ~Material() = default;
+
         virtual void set_shader(std::weak_ptr<Shader> shader) = 0;
 
         virtual void set_uniform_float(

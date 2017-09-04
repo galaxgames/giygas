@@ -1,26 +1,34 @@
 #include <algorithm>
 #include <glad/glad.h>
-#include "GLElementBuffer.hpp"
+#include "giygas_internal/GLElementBuffer.hpp"
 
 using namespace giygas;
 
-GLElementBuffer::GLElementBuffer() {
+GLElementBuffer::GLElementBuffer(GL *gl) {
+    _gl = gl;
     _data = nullptr;
     _length = 0;
-    glGenBuffers(1, &_handle);
+    gl->gen_buffers(1, &_handle);
 }
 
 GLElementBuffer::GLElementBuffer(GLElementBuffer &&other) noexcept {
+    *this = std::move(other);
+}
+
+GLElementBuffer& GLElementBuffer::operator=(GLElementBuffer &&other) noexcept {
+    _gl = other._gl;
     _handle = other._handle;
     _data = other._data;
     _length = other._length;
     other._handle = 0;
     other._data = nullptr;
+
+    return *this;
 }
 
 GLElementBuffer::~GLElementBuffer() {
     delete[] _data;
-    glDeleteBuffers(1, &_handle);
+    _gl->delete_buffers(1, &_handle);
 }
 
 void GLElementBuffer::set(int index, const unsigned int *elements, int count) {
@@ -34,10 +42,10 @@ void GLElementBuffer::set(int index, const unsigned int *elements, int count) {
     }
 
     std::copy_n(elements, count, _data + index);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _handle);
+    _gl->bind_buffer(GL_ELEMENT_ARRAY_BUFFER, _handle);
     
     if (need_new_buffer) {
-        glBufferData(
+        _gl->buffer_data(
             GL_ELEMENT_ARRAY_BUFFER,
             _length * sizeof(GLuint),
             _data,
@@ -45,7 +53,7 @@ void GLElementBuffer::set(int index, const unsigned int *elements, int count) {
         );
     }
     else {
-        glBufferSubData(
+        _gl->buffer_sub_data(
             GL_ELEMENT_ARRAY_BUFFER,
             _length * sizeof(GLuint),
             count * sizeof(GLuint),

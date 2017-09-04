@@ -1,4 +1,4 @@
-#include "GLTexture.hpp"
+#include "giygas_internal/GLTexture.hpp"
 
 using namespace giygas;
 

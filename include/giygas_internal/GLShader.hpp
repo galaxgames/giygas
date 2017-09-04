@@ -1,25 +1,25 @@
 #pragma once
 #include <glad/glad.h>
 #include <giygas/Shader.hpp>
+#include <giygas/GL.hpp>
 
 namespace giygas {
     class GLShader : public Shader {
+        GL *_gl;
         GLuint _vertex_shader;
         GLuint _fragment_shader;
         bool _is_valid;
         char *_vertex_message;
         char *_fragment_message;
 
-        static bool compile_shader(
-            GLuint shader, const char *source, char **message
-        );
+        bool compile_shader(GLuint shader, const char *source, char **message);
 
     public:
-        GLShader();
+        GLShader(GL *gl);
         GLShader(const GLShader &) = delete;
         GLShader(GLShader &&) noexcept;
         GLShader& operator=(const GLShader &) = delete;
-        GLShader& operator=(const GLShader &&) noexcept;
+        GLShader& operator=(GLShader &&) noexcept;
         virtual ~GLShader();
 
         void set_from_source(

@@ -1,12 +1,13 @@
-#include "GLMaterial.hpp"
-#include "GLShader.hpp"
+#include "giygas_internal/GLMaterial.hpp"
+#include "giygas_internal/GLShader.hpp"
 #include <memory>
 
 using namespace giygas;
 using namespace std;
 
-GLMaterial::GLMaterial() {
-    _program = glCreateProgram();
+GLMaterial::GLMaterial(GL *gl) {
+    _gl = gl;
+    _program = gl->create_program();
     _is_valid = false;
     _message = nullptr;
     _next_texture_index = 0;
@@ -18,6 +19,7 @@ GLMaterial::GLMaterial(GLMaterial &&other) noexcept :
     _locations(move(other._locations)),
     _textures(move(other._textures))
 {
+    _gl = other._gl;
     _program = other._program;
     _is_valid = other._is_valid;
     _message = other._message;
@@ -33,6 +35,7 @@ GLMaterial& GLMaterial::operator=(GLMaterial &&other) noexcept {
     _locations = move(other._locations);
     _textures = move(other._textures);
 
+    _gl = other._gl;
     _program = other._program;
     _is_valid = other._is_valid;
     _message = other._message;
@@ -46,7 +49,7 @@ GLMaterial& GLMaterial::operator=(GLMaterial &&other) noexcept {
 
 GLMaterial::~GLMaterial() {
     delete[] _message;
-    glDeleteProgram(_program);
+    _gl->delete_program(_program);
 }
 
 void GLMaterial::set_shader(weak_ptr<Shader> shader) {
@@ -60,20 +63,25 @@ void GLMaterial::set_shader(weak_ptr<Shader> shader) {
     if (auto shared_shader = shader.lock()) {
         // TODO: Typecheck
         auto *gl_shader = reinterpret_cast<GLShader *>(shared_shader.get());
-        glAttachShader(_program, gl_shader->get_vertex_shader());
-        glAttachShader(_program, gl_shader->get_fragment_shader());
-        glLinkProgram(_program);
+        _gl->attach_shader(_program, gl_shader->get_vertex_shader());
+        _gl->attach_shader(_program, gl_shader->get_fragment_shader());
+        _gl->link_program(_program);
 
         GLint status;
-        glGetProgramiv(_program, GL_LINK_STATUS, &status);
+        _gl->get_program_iv(_program, GL_LINK_STATUS, &status);
         if (status == GL_FALSE) {
             GLint log_length;
             GLint log_offset;
             GLsizei retrieved;
-            glGetProgramiv(_program, GL_INFO_LOG_LENGTH, &log_length);
+            _gl->get_program_iv(_program, GL_INFO_LOG_LENGTH, &log_length);
             _message = new char[log_length];
             while (log_offset < log_length - 1) {
-                glGetProgramInfoLog(_program, log_length - log_offset, &retrieved, _message + log_offset);
+                _gl->get_program_info_log(
+                    _program,
+                    log_length - log_offset,
+                    &retrieved,
+                    _message + log_offset
+                );
                 log_offset += retrieved;
             }
             _message[log_length - 1] = '\0';
@@ -88,11 +96,11 @@ void GLMaterial::set_shader(weak_ptr<Shader> shader) {
     }
 
     if (_is_valid) {
-        glUseProgram(_program);
+        _gl->use_program(_program);
         for (auto& pair : _values) {
             GLint location = get_location(pair.first);
             _locations.insert(make_pair(pair.first, location));
-            pair.second->do_gl_call(location);
+            pair.second->do_gl_call(_gl, location);
         }
     }
 
@@ -170,7 +178,7 @@ GLint GLMaterial::get_location(const string &name) const {
     if (auto shader = _shader.lock()) {
         // TODO: Ensure given shader is actually a GLShader
         GLShader *gl_shader = reinterpret_cast<GLShader*>(shader.get());
-        return glGetUniformLocation(_program, name.c_str());
+        return _gl->get_uniform_location(_program, name.c_str());
     }
     else {
         return -1;
@@ -197,8 +205,8 @@ FloatUniformValue::FloatUniformValue(float value) {
     _value = value;
 }
 
-void FloatUniformValue::do_gl_call(GLint location) {
-    glUniform1f(location, _value);
+void FloatUniformValue::do_gl_call(GL *gl, GLint location) {
+    gl->uniform_1f(location, _value);
 }
 
 TextureUniformValue::TextureUniformValue(weak_ptr<Texture> value, int index) {
@@ -206,7 +214,7 @@ TextureUniformValue::TextureUniformValue(weak_ptr<Texture> value, int index) {
     _index = index;
 }
 
-void TextureUniformValue::do_gl_call(GLint location) {
-    glUniform1i(location, _index);
+void TextureUniformValue::do_gl_call(GL *gl, GLint location) {
+    gl->uniform_1i(location, _index);
 }
 
