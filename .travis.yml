@@ -14,7 +14,7 @@ before_install:
   - sudo make install
   - cd ../..
   - sudo apt-get update -qq
-  - sudo apt-get install -qq python3 python3-pip libxrandr-dev libxinerama-dev
+  - sudo apt-get install -qq python3 python3-pip xorg-dev
   - pip3 install --user dew-pacman
 script:
   - python3 -m dew --cmake-generator "Unix Makefiles"
