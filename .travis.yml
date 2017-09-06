@@ -15,7 +15,7 @@ before_install:
   - cd ../..
   - sudo apt-get update -qq
   - sudo apt-get install -qq python3 python3-pip
-  - sudo pip3 install dew-pacman
+  - pip3 install --user dew-pacman
 script:
   - python3 -m dew --cmake-generator "Unix Makefiles"
   - mkdir build && cd build && cmake -G "Unix Makefiles" ..
