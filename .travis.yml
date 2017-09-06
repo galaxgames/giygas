@@ -1,10 +1,23 @@
+services:
+  - docker
 language: cpp
 compiler:
   - clang
   - gcc
+before_install:
+  - mkdir deps
+  - cd deps
+  - wget http://www.cmake.org/files/v3.5/cmake-3.5.2.tar.gz
+  - tar xf cmake-3.5.2.tar.gz
+  - cd cmake-3.5.2
+  - ./configure
+  - sudo make install
+  - cd ../..
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq python3 python3-pip
+  - sudo pip3 install dew-pacman
 script:
-  - mkdir build
-  - cd build
-  - cmake -G "Unix Makefiles" ..
+  - python3 -m dew --cmake-generator "Unix Makefiles"
+  - mkdir build && cd build && cmake -G "Unix Makefiles" ..
   - cmake --build .
   - cmake --build . --target test
