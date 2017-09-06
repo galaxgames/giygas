@@ -7,6 +7,10 @@ namespace giygas  {
     public:
         virtual ~GL() = default;
 
+        //
+        // Buffer Functions
+        //
+
         virtual void gen_buffers(GLsizei n, GLuint *buffers) = 0;
         virtual void gen_vertex_arrays(GLsizei n, GLuint *arrays) = 0;
 
@@ -28,6 +32,11 @@ namespace giygas  {
         virtual void buffer_sub_data(
             GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data
         ) = 0;
+
+
+        //
+        // Program Functions
+        //
 
         virtual GLuint create_program() = 0;
         virtual GLuint create_shader(GLenum type) = 0;
@@ -51,6 +60,11 @@ namespace giygas  {
         virtual void uniform_1f(GLint location, GLfloat v0) = 0;
         virtual void uniform_1i(GLint location, GLint v0) = 0;
 
+
+        //
+        // Shader Functions
+        //
+
         virtual void shader_source(
             GLuint shader, GLsizei count, const GLchar *const *string,
             const GLint *length
@@ -61,6 +75,19 @@ namespace giygas  {
         ) = 0;
         virtual void get_shader_info_log(
             GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog
+        ) = 0;
+
+
+        //
+        // Texture Functions
+        //
+
+        virtual void gen_textures(GLsizei n, GLuint *textures) = 0;
+        virtual void delete_textures(GLsizei n, GLuint *textures) = 0;
+        virtual void bind_texture(GLenum target, GLuint texture) = 0;
+        virtual void compressed_tex_image_2d(
+            GLenum target, GLint level, GLenum internalformat, GLsizei width,
+            GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data
         ) = 0;
     };
 }

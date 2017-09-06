@@ -130,3 +130,24 @@ void GLImpl::get_shader_info_log(
 ) {
     glGetShaderInfoLog(shader, bufSize, length, infoLog);
 }
+
+void GLImpl::gen_textures(GLsizei n, GLuint *textures) {
+    glGenTextures(n, textures);
+}
+
+void GLImpl::delete_textures(GLsizei n, GLuint *textures) {
+    glDeleteTextures(n, textures);
+}
+
+void GLImpl::bind_texture(GLenum target, GLuint texture) {
+    glBindTexture(target, texture);
+}
+
+void GLImpl::compressed_tex_image_2d(
+    GLenum target, GLint level, GLenum internalformat, GLsizei width,
+    GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data
+) {
+    glCompressedTexImage2D(
+        target, level, internalformat, width, height, border, imageSize, data
+    );
+}

@@ -61,5 +61,13 @@ namespace giygas {
             GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog
         ));
 
+        MOCK_METHOD2(gen_textures, void(GLsizei n, GLuint *textures));
+        MOCK_METHOD2(delete_textures, void(GLsizei n, GLuint *textures));
+        MOCK_METHOD2(bind_texture, void(GLenum target, GLuint texture));
+        MOCK_METHOD8(compressed_tex_image_2d, void(
+            GLenum target, GLint level, GLenum internalformat, GLsizei width,
+            GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data
+        ));
+
     };
 }

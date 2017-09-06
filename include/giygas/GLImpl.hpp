@@ -13,6 +13,11 @@ namespace giygas {
         GLImpl &operator=(GLImpl &&) noexcept;
         virtual ~GLImpl();
 
+
+        //
+        // Buffer Functions
+        //
+
         void gen_buffers(GLsizei n, GLuint *buffers) override ;
         void gen_vertex_arrays(GLsizei n, GLuint *arrays) override;
 
@@ -34,6 +39,11 @@ namespace giygas {
         void buffer_sub_data(
             GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data
         ) override;
+
+
+        //
+        // Program Functions
+        //
 
         GLuint create_program() override;
         GLuint create_shader(GLenum type) override;
@@ -57,6 +67,11 @@ namespace giygas {
         void uniform_1f(GLint location, GLfloat v0) override;
         void uniform_1i(GLint location, GLint v0) override;
 
+
+        //
+        // Shader Functions
+        //
+
         void shader_source(
             GLuint shader, GLsizei count, const GLchar *const *string,
             const GLint *length
@@ -67,6 +82,19 @@ namespace giygas {
         ) override;
         void get_shader_info_log(
             GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog
+        ) override;
+
+
+        //
+        // Texture Functions
+        //
+
+        void gen_textures(GLsizei n, GLuint *textures) override;
+        void delete_textures(GLsizei n, GLuint *textures) override;
+        void bind_texture(GLenum target, GLuint texture) override;
+        void compressed_tex_image_2d(
+            GLenum target, GLint level, GLenum internalformat, GLsizei width,
+            GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data
         ) override;
     };
 }

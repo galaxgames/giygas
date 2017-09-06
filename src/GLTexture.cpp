@@ -1,25 +1,34 @@
+#include <utility>
 #include "giygas_internal/GLTexture.hpp"
 
 using namespace giygas;
 
-GLTexture::GLTexture() {
-    glGenTextures(1, &_handle);
+GLTexture::GLTexture(GL *gl) {
+    _gl = gl;
+    gl->gen_textures(1, &_handle);
 }
 
-GLTexture::GLTexture(GLTexture &&other) {
+GLTexture::GLTexture(GLTexture &&other) noexcept {
+    *this = std::move(other);
+}
+
+GLTexture &GLTexture::operator=(GLTexture &&other) noexcept {
+    _gl = other._gl;
     _handle = other._handle;
     other._handle = 0;
+
+    return *this;
 }
 
 GLTexture::~GLTexture() {
-    glDeleteTextures(1, &_handle);
+    _gl->delete_textures(1, &_handle);
 }
 
 void GLTexture::set_data(
     const char* data, int size, int width, int height, TextureFormat format
 ) {
-    glBindTexture(GL_TEXTURE_2D, _handle);
-    glCompressedTexImage2D(
+    _gl->bind_texture(GL_TEXTURE_2D, _handle);
+    _gl->compressed_tex_image_2d(
         GL_TEXTURE_2D,
         0,  // mip map
         get_gl_texture_format(format),
@@ -41,8 +50,6 @@ GLenum GLTexture::get_gl_texture_format(TextureFormat format) {
         return GL_RGB;
     case TextureFormat::RGBA:
         return GL_RGBA;
-    default:
-        return GL_NONE;
     }
 }
 
