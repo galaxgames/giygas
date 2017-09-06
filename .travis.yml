@@ -18,6 +18,8 @@ before_install:
   - pip3 install --user dew-pacman
 script:
   - python3 -m dew --cmake-generator "Unix Makefiles"
-  - mkdir build && cd build && cmake -G "Unix Makefiles" .. -DCMAKE_PREFIX_PATH="../.dew/install"
+  - mkdir build
+  - cd build
+  - cmake -G "Unix Makefiles" .. -DCMAKE_PREFIX_PATH="../.dew/install"
   - cmake --build .
   - cmake --build . --target test
