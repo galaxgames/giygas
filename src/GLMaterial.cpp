@@ -1,6 +1,7 @@
 #include "giygas_internal/GLMaterial.hpp"
 #include "giygas_internal/GLShader.hpp"
 #include <memory>
+#include <cstring>
 
 using namespace giygas;
 using namespace std;
@@ -106,18 +107,20 @@ void GLMaterial::set_shader(weak_ptr<Shader> shader) {
 
 }
 
-template <>
-UniformValue* GLMaterial::make_value<float>(float value) {
-    return new FloatUniformValue(value);
-}
+namespace giygas {
+    template <>
+    UniformValue* GLMaterial::make_value<float>(float value) {
+        return new FloatUniformValue(value);
+    }
 
-template <>
-UniformValue* GLMaterial::make_value<weak_ptr<Texture>>(
-    weak_ptr<Texture> value
-) {
-    int index = _next_texture_index++;
-    _textures.push_back(value);
-    return new TextureUniformValue(value, index);
+    template <>
+    UniformValue* GLMaterial::make_value<weak_ptr<Texture>>(
+        weak_ptr<Texture> value
+    ) {
+        int index = _next_texture_index++;
+        _textures.push_back(value);
+        return new TextureUniformValue(value, index);
+    }
 }
 
 template <typename T>
