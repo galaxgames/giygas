@@ -40,6 +40,8 @@ namespace giygas {
         GLMaterial& operator=(GLMaterial &&) noexcept ;
         virtual ~GLMaterial();
 
+        RendererType renderer_type() const override;
+
         void set_shader(std::weak_ptr<Shader> shader) override;
         
         void set_uniform_float(const std::string &name, float value) override;

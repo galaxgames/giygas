@@ -4,6 +4,7 @@
 namespace giygas  {
     class GIYGAS_EXPORT Vector4 {
     public:
+        Vector4();
         Vector4(float x, float y, float z, float w);
 
         float x;

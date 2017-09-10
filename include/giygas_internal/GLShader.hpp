@@ -22,6 +22,8 @@ namespace giygas {
         GLShader& operator=(GLShader &&) noexcept;
         virtual ~GLShader();
 
+        RendererType renderer_type() const override;
+
         void set_from_source(
             const char* vertex,
             const char* fragment

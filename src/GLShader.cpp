@@ -37,6 +37,10 @@ GLShader::~GLShader() {
     _gl->delete_shader(_fragment_shader);
 }
 
+RendererType GLShader::renderer_type() const {
+    return RendererType::OpenGL;
+}
+
 void GLShader::set_from_source(const char* vertex, const char* fragment) {
     bool failed = false;
     failed |= !compile_shader(_vertex_shader, vertex, &_vertex_message);

@@ -2,6 +2,7 @@
 #include "giygas_internal/GLShader.hpp"
 #include <memory>
 #include <cstring>
+#include <cassert>
 
 using namespace giygas;
 using namespace std;
@@ -53,6 +54,10 @@ GLMaterial::~GLMaterial() {
     _gl->delete_program(_program);
 }
 
+RendererType GLMaterial::renderer_type() const {
+    return RendererType::OpenGL;
+}
+
 void GLMaterial::set_shader(weak_ptr<Shader> shader) {
     _shader = shader;
     _locations.clear();
@@ -62,7 +67,7 @@ void GLMaterial::set_shader(weak_ptr<Shader> shader) {
     delete[] _message;
 
     if (auto shared_shader = shader.lock()) {
-        // TODO: Typecheck
+        assert(shared_shader->renderer_type() == RendererType::OpenGL);
         auto *gl_shader = reinterpret_cast<GLShader *>(shared_shader.get());
         _gl->attach_shader(_program, gl_shader->get_vertex_shader());
         _gl->attach_shader(_program, gl_shader->get_fragment_shader());
@@ -128,17 +133,25 @@ void GLMaterial::set_uniform(const string &name, T value) {
     GLint location = get_cached_location(name);
     if (location == -1) {
         location = get_location(name);
-        _locations.insert(make_pair(name, location));
+        if (location != -1) {
+            _locations.insert(make_pair(name, location));
+        }
     }
     
+    UniformValue *value_controller = make_value<T>(value);
+
     auto it = _values.find(name);
     if (it == _values.end()) {
         _values.insert(make_pair(
-            name, unique_ptr<UniformValue>(make_value<T>(value))
+            name, unique_ptr<UniformValue>(value_controller)
         ));
     }
     else {
-        it->second = unique_ptr<UniformValue>(make_value<T>(value));
+        it->second = unique_ptr<UniformValue>(value_controller);
+    }
+
+    if (_is_valid && location != -1) {
+        value_controller->do_gl_call(_gl, location);
     }
 }
 
@@ -178,14 +191,14 @@ GLint GLMaterial::get_location(const string &name) const {
         return -1;
     }
 
-    if (auto shader = _shader.lock()) {
-        // TODO: Ensure given shader is actually a GLShader
-        GLShader *gl_shader = reinterpret_cast<GLShader*>(shader.get());
+    //if (auto shader = _shader.lock()) {
+//        assert(shader->renderer_type() == RendererType::OpenGL);
+//        GLShader *gl_shader = reinterpret_cast<GLShader*>(shader.get());
         return _gl->get_uniform_location(_program, name.c_str());
-    }
-    else {
-        return -1;
-    }
+//    }
+//    else {
+//        return -1;
+//    }
 }
 
 GLuint GLMaterial::get_program() const {

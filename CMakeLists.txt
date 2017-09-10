@@ -83,7 +83,6 @@ add_test(GiygasTests giygas_test)
 
 # Install
 set(config_install_dir "lib/cmake/${PROJECT_NAME}")
-set(include_install_dir "include")
 set(version_config "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake")
 set(project_config "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake")
 set(targets_export_name "${PROJECT_NAME}Targets")
@@ -111,11 +110,11 @@ install(
     LIBRARY DESTINATION "lib"
     ARCHIVE DESTINATION "lib"
     RUNTIME DESTINATION "bin"
-    INCLUDES DESTINATION "${include_install_dir}"
+    INCLUDES DESTINATION "include"
 )
 install(
     DIRECTORY "${PROJECT_SOURCE_DIR}/include/giygas"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
 )
 install (
     DIRECTORY "${PROJECT_BINARY_DIR}/include"
@@ -123,7 +122,7 @@ install (
 )
 install(
     FILES "${project_config}" "${version_config}"
-    DESTINATION "${config_install_dir}"
+    DESTINATION ${config_install_dir}
 )
 install(
     EXPORT "${targets_export_name}"

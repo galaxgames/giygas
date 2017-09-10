@@ -18,8 +18,10 @@ namespace giygas {
         GLTexture &operator=(GLTexture &&) noexcept;
         virtual ~GLTexture();
 
+        RendererType renderer_type() const override;
+
         void set_data(
-            const char* data, int size, int width, int height,
+            const unsigned char* data, size_t size, size_t width, size_t height,
             TextureFormat format
         ) override;
 

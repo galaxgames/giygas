@@ -68,6 +68,14 @@ namespace giygas {
             GLenum target, GLint level, GLenum internalformat, GLsizei width,
             GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data
         ));
+        MOCK_METHOD9(tex_image_2d, void(
+            GLenum target, GLint level, GLint internalFormat, GLsizei width,
+            GLsizei height, GLint border, GLenum format, GLenum type,
+            const GLvoid *data
+        ));
+        MOCK_METHOD3(tex_parameter_i, void(
+            GLenum target, GLenum pname, GLint param
+        ));
 
     };
 }

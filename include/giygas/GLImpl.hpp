@@ -92,9 +92,17 @@ namespace giygas {
         void gen_textures(GLsizei n, GLuint *textures) override;
         void delete_textures(GLsizei n, GLuint *textures) override;
         void bind_texture(GLenum target, GLuint texture) override;
+        void tex_image_2d(
+            GLenum target, GLint level, GLint internalFormat, GLsizei width,
+            GLsizei height, GLint border, GLenum format, GLenum type,
+            const GLvoid *data
+        ) override;
         void compressed_tex_image_2d(
             GLenum target, GLint level, GLenum internalformat, GLsizei width,
             GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data
+        ) override;
+        void tex_parameter_i(
+            GLenum target, GLenum pname, GLint param
         ) override;
     };
 }

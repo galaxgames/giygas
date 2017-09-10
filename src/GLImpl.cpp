@@ -143,6 +143,17 @@ void GLImpl::bind_texture(GLenum target, GLuint texture) {
     glBindTexture(target, texture);
 }
 
+void GLImpl::tex_image_2d(
+    GLenum target, GLint level, GLint internalFormat, GLsizei width,
+    GLsizei height, GLint border, GLenum format, GLenum type,
+    const GLvoid *data
+) {
+    glTexImage2D(
+        target, level, internalFormat, width, height, border, format, type,
+        data
+    );
+}
+
 void GLImpl::compressed_tex_image_2d(
     GLenum target, GLint level, GLenum internalformat, GLsizei width,
     GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data
@@ -150,4 +161,8 @@ void GLImpl::compressed_tex_image_2d(
     glCompressedTexImage2D(
         target, level, internalformat, width, height, border, imageSize, data
     );
+}
+
+void GLImpl::tex_parameter_i(GLenum target, GLenum pname, GLint param) {
+    glTexParameteri(target, pname, param);
 }

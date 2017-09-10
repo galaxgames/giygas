@@ -1,9 +1,11 @@
+#include <cassert>
+#include <giygas_internal/GLVertexArray.hpp>
 #include <glad/glad.h>
-#include "giygas/GLRenderer.hpp"
-#include "giygas_internal/GLVertexBuffer.hpp"
-#include "giygas_internal/GLElementBuffer.hpp"
-#include "giygas_internal/GLMaterial.hpp"
-#include "giygas_internal/GLTexture.hpp"
+#include <giygas/GLRenderer.hpp>
+#include <giygas_internal/GLVertexBuffer.hpp>
+#include <giygas_internal/GLElementBuffer.hpp>
+#include <giygas_internal/GLMaterial.hpp>
+#include <giygas_internal/GLTexture.hpp>
 
 using namespace std;
 using namespace giygas;
@@ -28,61 +30,94 @@ GLRenderer& GLRenderer::operator=(GLRenderer &&other) noexcept {
 
 GLRenderer::~GLRenderer() = default;
 
-VertexBuffer* GLRenderer::make_vbo() {
+VertexBuffer *GLRenderer::make_vbo() {
     return new GLVertexBuffer(&_gl);
 }
 
-ElementBuffer* GLRenderer::make_ebo() {
-    return new GLElementBuffer(&_gl);
+VertexArray *GLRenderer::make_vao() {
+    return new GLVertexArray(&_gl);
 }
 
-Material* GLRenderer::make_material() {
+ElementBuffer<unsigned int> *GLRenderer::make_int_ebo() {
+    return new GLElementBuffer<unsigned int>(&_gl);
+}
+
+ElementBuffer<unsigned short> *GLRenderer::make_short_ebo() {
+    return new GLElementBuffer<unsigned short>(&_gl);
+}
+
+ElementBuffer<unsigned char> *GLRenderer::make_char_ebo() {
+    return new GLElementBuffer<unsigned char>(&_gl);
+}
+
+Material *GLRenderer::make_material() {
     return new GLMaterial(&_gl);
 }
 
-Shader* GLRenderer::make_shader() {
+Shader *GLRenderer::make_shader() {
     return new GLShader(&_gl);
+}
+
+Texture *GLRenderer::make_texture() {
+    return new GLTexture(&_gl);
 }
 
 void GLRenderer::clear() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void GLRenderer::draw(
-    VertexBuffer *vbo, ElementBuffer *ebo, Material *material
+#define DEFINE_DRAW_FUNCTION(type, gltype) \
+void GLRenderer::draw( \
+    VertexArray *vao, ElementBuffer<type> *ebo, Material *material, \
+    size_t element_count \
+) { \
+    assert(ebo->get_renderer_type() == RendererType::OpenGL); \
+    /* NOTE: Cannot directly reinterpret_cast GenericGLElementBuffer, */ \
+    /* doing so will omit the pointer fixup needed for multiple inheritance */ \
+    /* to work (thunking) */ \
+    auto *gl_ebo = reinterpret_cast<GLElementBuffer<type> *>(ebo); \
+    draw_internal(vao, gl_ebo, material, element_count, gltype); \
+}
+
+DEFINE_DRAW_FUNCTION(unsigned int, GL_UNSIGNED_INT);
+DEFINE_DRAW_FUNCTION(unsigned short, GL_UNSIGNED_SHORT);
+DEFINE_DRAW_FUNCTION(unsigned char, GL_UNSIGNED_BYTE);
+
+void GLRenderer::draw_internal(
+    VertexArray *vao, GenericGLElementBuffer *ebo, Material *material,
+    size_t element_count, GLenum element_type
 ) {
-    // TODO: Type checking
-    GLVertexBuffer *gl_vbo = reinterpret_cast<GLVertexBuffer *>(vbo);
-    GLElementBuffer *gl_ebo = reinterpret_cast<GLElementBuffer *>(ebo);
-    GLMaterial *gl_material = reinterpret_cast<GLMaterial *>(material);
+    assert(vao->get_renderer_type() == RendererType::OpenGL);
+    assert(material->renderer_type() == RendererType::OpenGL);
+
+    auto *gl_vao = reinterpret_cast<GLVertexArray *>(vao);
+    auto *gl_material = reinterpret_cast<GLMaterial *>(material);
 
     if (!gl_material->is_valid()) {
         //TODO: Log draw call aborted because of invalid shader.
         return;
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, gl_vbo->get_handle());
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gl_ebo->get_handle());
+    _gl.bind_vertex_array(gl_vao->get_handle());
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo->handle());
     glUseProgram(gl_material->get_program());
 
     for (int i = 0, ilen = gl_material->get_texture_count(); i < ilen; ++i) {
         if (auto texture = gl_material->get_texture(i).lock()) {
-            // TODO: typechecking
+            assert(texture->renderer_type() == RendererType::OpenGL);
             auto *gl_texture = reinterpret_cast<GLTexture *>(texture.get());
-            glActiveTexture(GL_TEXTURE0 + i);
+            glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + i));
             glBindTexture(GL_TEXTURE_2D, gl_texture->get_handle());
         }
     }
 
     glDrawElements(
         get_gl_primitive(Primitive::Triangles),
-        gl_ebo->get_length(),
-        GL_UNSIGNED_INT,
+        static_cast<GLsizei>(element_count),
+        element_type,
         nullptr
     );
-
 }
-
 
 GLenum GLRenderer::get_gl_primitive(Primitive primitive) {
     switch (primitive) {

@@ -1,3 +1,4 @@
 build
 .dew
 .idea
+*.user
