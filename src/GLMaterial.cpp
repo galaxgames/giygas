@@ -7,12 +7,14 @@
 using namespace giygas;
 using namespace std;
 
-GLMaterial::GLMaterial(GL *gl) {
+GLMaterial::GLMaterial(GL *gl) :
+    _textures(new weak_ptr<Texture>[0])
+{
     _gl = gl;
     _program = gl->create_program();
     _is_valid = false;
     _message = nullptr;
-    _next_texture_index = 0;
+    _texture_count = 0;
 }
 
 GLMaterial::GLMaterial(GLMaterial &&other) noexcept :
@@ -25,7 +27,7 @@ GLMaterial::GLMaterial(GLMaterial &&other) noexcept :
     _program = other._program;
     _is_valid = other._is_valid;
     _message = other._message;
-    _next_texture_index = other._next_texture_index;
+    _texture_count = other._texture_count;
 
     other._program = 0;
     other._message = nullptr;
@@ -41,7 +43,7 @@ GLMaterial& GLMaterial::operator=(GLMaterial &&other) noexcept {
     _program = other._program;
     _is_valid = other._is_valid;
     _message = other._message;
-    _next_texture_index = other._next_texture_index;
+    _texture_count = other._texture_count;
 
     other._program = 0;
     other._message = nullptr;
@@ -112,6 +114,14 @@ void GLMaterial::set_shader(weak_ptr<Shader> shader) {
 
 }
 
+void GLMaterial::set_textures(const weak_ptr<Texture> *textures, size_t count) {
+    _textures = unique_ptr<weak_ptr<Texture>[]>(new weak_ptr<Texture>[count]);
+    _texture_count = count;
+    for (size_t i = 0; i < count; ++i) {
+        _textures[i] = textures[i];
+    }
+}
+
 namespace giygas {
     template <>
     UniformValue* GLMaterial::make_value<float>(float value) {
@@ -119,12 +129,8 @@ namespace giygas {
     }
 
     template <>
-    UniformValue* GLMaterial::make_value<weak_ptr<Texture>>(
-        weak_ptr<Texture> value
-    ) {
-        int index = _next_texture_index++;
-        _textures.push_back(value);
-        return new TextureUniformValue(value, index);
+    UniformValue* GLMaterial::make_value<int>(int value) {
+        return new IntUniformValue(value);
     }
 }
 
@@ -156,18 +162,16 @@ void GLMaterial::set_uniform(const string &name, T value) {
 }
 
 template void GLMaterial::set_uniform<float>(const string &name, float value);
-template void GLMaterial::set_uniform<weak_ptr<Texture>>(
-    const string &name, weak_ptr<Texture> value
-);
+template void GLMaterial::set_uniform<int>(const string &name, int value);
 
 void GLMaterial::set_uniform_float(const std::string &name, float value) {
     set_uniform(name, value);
 }
 
 void GLMaterial::set_uniform_texture(
-    const std::string &name, std::weak_ptr<Texture> value
+    const std::string &name, size_t index
 ) {
-    set_uniform(name, value);
+    set_uniform(name, static_cast<int>(index));
 }
 
 bool GLMaterial::is_valid() const {
@@ -205,11 +209,12 @@ GLuint GLMaterial::get_program() const {
     return _program;
 }
 
-int GLMaterial::get_texture_count() const {
-    return _textures.size();
+size_t GLMaterial::get_texture_count() const {
+    return _texture_count;
 }
 
-weak_ptr<Texture> GLMaterial::get_texture(int i) const {
+weak_ptr<Texture> GLMaterial::get_texture(size_t i) const {
+    assert(i < _texture_count);
     return _textures[i];
 }
 
@@ -225,12 +230,11 @@ void FloatUniformValue::do_gl_call(GL *gl, GLint location) {
     gl->uniform_1f(location, _value);
 }
 
-TextureUniformValue::TextureUniformValue(weak_ptr<Texture> value, int index) {
+IntUniformValue::IntUniformValue(int value) {
     _value = value;
-    _index = index;
 }
 
-void TextureUniformValue::do_gl_call(GL *gl, GLint location) {
-    gl->uniform_1i(location, _index);
+void IntUniformValue::do_gl_call(GL *gl, GLint location) {
+    gl->uniform_1i(location, _value);
 }
 

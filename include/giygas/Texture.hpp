@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <giygas/export.h>
 #include <giygas/TextureFormat.hpp>
 #include "RendererType.hpp"

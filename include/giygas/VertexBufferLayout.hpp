@@ -4,7 +4,7 @@
 
 namespace giygas {
     class GIYGAS_EXPORT VertexBufferLayout {
-        std::vector<int> _channels;
+        std::vector<size_t> _channels;
 
     public:
         VertexBufferLayout() = default;
@@ -14,8 +14,8 @@ namespace giygas {
         VertexBufferLayout& operator=(VertexBufferLayout &&) = default;
         virtual ~VertexBufferLayout() = default;
 
-        void set_channel(int index, int size);
-        const std::vector<int>& get_channels() const;
+        void set_channel(size_t index, size_t size);
+        const std::vector<size_t>& get_channels() const;
     };
 
 }

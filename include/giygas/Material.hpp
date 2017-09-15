@@ -14,12 +14,16 @@ namespace giygas {
 
         virtual void set_shader(std::weak_ptr<Shader> shader) = 0;
 
+        virtual void set_textures(
+            const std::weak_ptr<Texture> *textures, size_t count
+        ) = 0;
+
         virtual void set_uniform_float(
             const std::string &name, float value
         ) = 0;
 
         virtual void set_uniform_texture(
-            const std::string &name, std::weak_ptr<Texture> value
+            const std::string &name, size_t index
         ) = 0;
 
         virtual bool is_valid() const = 0;

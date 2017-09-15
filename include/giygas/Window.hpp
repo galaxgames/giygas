@@ -4,6 +4,7 @@
 namespace giygas {
     class GIYGAS_EXPORT Window {
     public:
+        virtual ~Window() = default;
         virtual void show() = 0;
         virtual void update() = 0;
         virtual bool should_close() const = 0;

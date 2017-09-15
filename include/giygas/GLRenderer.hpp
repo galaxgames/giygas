@@ -16,7 +16,7 @@ namespace giygas {
         static GLenum get_gl_primitive(Primitive primitive);
         void draw_internal(
             VertexArray *vao, GenericGLElementBuffer *ebo, Material *material,
-            size_t element_count, GLenum element_type
+            ElementDrawInfo element_info, GLenum element_type
         );
 
     public:
@@ -39,15 +39,15 @@ namespace giygas {
         void clear() override;
         void draw(
             VertexArray *vao, ElementBuffer<unsigned int> *ebo, Material *material,
-            size_t element_count
+            ElementDrawInfo element_info
         ) override;
         void draw(
             VertexArray *vao, ElementBuffer<unsigned short> *ebo, Material *material,
-            size_t element_count
+            ElementDrawInfo element_info
         ) override;
         void draw(
             VertexArray *vao, ElementBuffer<unsigned char> *ebo, Material *material,
-            size_t element_count
+            ElementDrawInfo element_info
         ) override;
 
     };

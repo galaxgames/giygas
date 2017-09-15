@@ -69,14 +69,14 @@ void GLRenderer::clear() {
 #define DEFINE_DRAW_FUNCTION(type, gltype) \
 void GLRenderer::draw( \
     VertexArray *vao, ElementBuffer<type> *ebo, Material *material, \
-    size_t element_count \
+    ElementDrawInfo element_info \
 ) { \
     assert(ebo->get_renderer_type() == RendererType::OpenGL); \
     /* NOTE: Cannot directly reinterpret_cast GenericGLElementBuffer, */ \
     /* doing so will omit the pointer fixup needed for multiple inheritance */ \
     /* to work (thunking) */ \
     auto *gl_ebo = reinterpret_cast<GLElementBuffer<type> *>(ebo); \
-    draw_internal(vao, gl_ebo, material, element_count, gltype); \
+    draw_internal(vao, gl_ebo, material, element_info, gltype); \
 }
 
 DEFINE_DRAW_FUNCTION(unsigned int, GL_UNSIGNED_INT);
@@ -85,7 +85,7 @@ DEFINE_DRAW_FUNCTION(unsigned char, GL_UNSIGNED_BYTE);
 
 void GLRenderer::draw_internal(
     VertexArray *vao, GenericGLElementBuffer *ebo, Material *material,
-    size_t element_count, GLenum element_type
+    ElementDrawInfo element_info, GLenum element_type
 ) {
     assert(vao->get_renderer_type() == RendererType::OpenGL);
     assert(material->renderer_type() == RendererType::OpenGL);
@@ -102,7 +102,7 @@ void GLRenderer::draw_internal(
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo->handle());
     glUseProgram(gl_material->get_program());
 
-    for (int i = 0, ilen = gl_material->get_texture_count(); i < ilen; ++i) {
+    for (size_t i = 0, ilen = gl_material->get_texture_count(); i < ilen; ++i) {
         if (auto texture = gl_material->get_texture(i).lock()) {
             assert(texture->renderer_type() == RendererType::OpenGL);
             auto *gl_texture = reinterpret_cast<GLTexture *>(texture.get());
@@ -113,9 +113,9 @@ void GLRenderer::draw_internal(
 
     glDrawElements(
         get_gl_primitive(Primitive::Triangles),
-        static_cast<GLsizei>(element_count),
+        static_cast<GLsizei>(element_info.count),
         element_type,
-        nullptr
+        (void *)element_info.offset
     );
 }
 

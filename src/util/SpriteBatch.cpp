@@ -1,4 +1,5 @@
 #include <giygas/util/SpriteBatch.hpp>
+#include <cassert>
 
 using namespace giygas;
 using namespace std;
@@ -13,7 +14,7 @@ SpriteBatch::SpriteBatch(Renderer &renderer) :
     VertexBufferLayout layout;
     layout.set_channel(0, 2); // position
     layout.set_channel(1, 2); // uvs
-    layout.set_channel(1, 3); // color
+    layout.set_channel(2, 4); // color
     _vao->add_buffer(_vbo.get(), layout);
 }
 
@@ -26,8 +27,23 @@ void SpriteBatch::set_material(SpriteBatchMaterial mat) {
     _mat = mat;
 }
 
+void SpriteBatch::set_textures(weak_ptr<Texture> *textures, size_t count) {
+    assert(_sprites.size() == 0);
+    _textures.clear();
+    _textures.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        _textures.push_back(textures[i]);
+    }
+    _sprites_by_texture.clear();
+    _sprites_by_texture.resize(count);
+}
+
 void SpriteBatch::begin() {
     _count = 0;
+    _sprites.clear();
+    for (size_t i = 0, ilen = _sprites_by_texture.size(); i < ilen; ++i) {
+        _sprites_by_texture[i].clear();
+    }
 }
 
 void SpriteBatch::end() {
@@ -36,26 +52,34 @@ void SpriteBatch::end() {
         append_verts_for_sprite(sprite, offset);
         offset += COMPONENTS_PER_SPRITE;
     }
-    set_elements(_count);
+    set_elements();
 }
 
 void SpriteBatch::draw(Renderer &renderer) const {
     if (auto mat = _mat.material.lock()) {
-        renderer.draw(
-            _vao.get(),
-            _ebo.get(),
-            mat.get(),
-            _ebo->count()
-        );
+        for (size_t i = 0, ilen = _sprites_by_texture.size(); i < ilen; ++i) {
+            mat->set_textures(&_textures[i], 1);
+            mat->set_uniform_texture(_mat.texture_uniform_name, 0);
+            renderer.draw(
+                _vao.get(),
+                _ebo.get(),
+                mat.get(),
+                _draw_call_details[i]
+            );
+        }
     }
 }
 
 void SpriteBatch::add(SpriteInfo info) {
+    assert(info.texture_index >= 0 && info.texture_index < _textures.size());
+
     ++_count;
-    while (_sprites.size() < _count) {
-        _sprites.emplace_back();
+    size_t last_index = _count - 1;
+    if (_sprites.size() < _count) {
+        _sprites.resize(_count);
     }
-    _sprites[_count - 1] = info;
+    _sprites[last_index] = info;
+    _sprites_by_texture[info.texture_index].push_back(last_index);
 }
 
 void SpriteBatch::append_verts_for_sprite(const SpriteInfo &info, size_t offset) {
@@ -63,32 +87,49 @@ void SpriteBatch::append_verts_for_sprite(const SpriteInfo &info, size_t offset)
     float minY = info.position.y;
     float maxX = minX + info.size.x;
     float maxY = minY + info.size.y;
+    Vector4 color = info.color;
 
     float data[COMPONENTS_PER_SPRITE] = {
         // pos,      uv,    color
-        minX, minY,  0, 0,  1, 1, 1,
-        maxX, minY,  1, 0,  1, 1, 1,
-        minX, maxY,  0, 1,  1, 1, 1,
-        maxX, maxY,  1, 1,  1, 1, 1
+        minX, minY,  0, 0,  color.x, color.y, color.z, color.w,
+        maxX, minY,  1, 0,  color.x, color.y, color.z, color.w,
+        minX, maxY,  0, 1,  color.x, color.y, color.z, color.w,
+        maxX, maxY,  1, 1,  color.x, color.y, color.z, color.w
     };
 
     _vbo->set_data(offset, data, COMPONENTS_PER_SPRITE);
 }
 
-void SpriteBatch::set_elements(size_t sprite_count) {
-    auto sprites_in_ebo = _ebo->count() / ELEMENTS_PER_SPRITE;
-    if (sprite_count > sprites_in_ebo) {
-        size_t offset = sprites_in_ebo * ELEMENTS_PER_SPRITE;
-        unsigned int next_index = static_cast<unsigned int>(sprites_in_ebo * VERTS_PER_SPRITE);
-        while (sprites_in_ebo < sprite_count) {
-            unsigned int data[ELEMENTS_PER_SPRITE] = {
-                next_index, next_index + 1, next_index + 2,
-                next_index + 2, next_index + 1, next_index + 3
-            };
-            _ebo->set(offset, data, ELEMENTS_PER_SPRITE);
-            offset += ELEMENTS_PER_SPRITE;
-            next_index += VERTS_PER_SPRITE;
-            ++sprites_in_ebo;
-        }
+void SpriteBatch::set_elements() {
+
+    // TODO: Use a pre-allocated buffer
+    size_t element_count = _sprites.size() * ELEMENTS_PER_SPRITE;
+    unsigned int *data = new unsigned int[element_count];
+    unsigned int *sub_buffer = data;
+    ElementDrawInfo info = {0, 0};
+    _draw_call_details.clear();
+    for (const auto &sprite_indices : _sprites_by_texture) {
+
+        set_elements_for_texture(sprite_indices, sub_buffer);
+        info.count = sprite_indices.size() * ELEMENTS_PER_SPRITE;
+        sub_buffer += info.count;
+        _draw_call_details.push_back(info);
+        info.offset += info.count;
+    }
+    _ebo->set(0, data, element_count);
+}
+
+void SpriteBatch::set_elements_for_texture(
+    const vector<size_t> &sprite_indices, unsigned int *elements
+) {
+    for (size_t i : sprite_indices) {
+        unsigned int next_index = static_cast<unsigned int>(i * VERTS_PER_SPRITE);
+        elements[0] = next_index;
+        elements[1] = next_index + 1;
+        elements[2] = next_index + 2;
+        elements[3] = next_index + 2;
+        elements[4] = next_index + 1;
+        elements[5] = next_index + 3;
+        elements += ELEMENTS_PER_SPRITE;
     }
 }

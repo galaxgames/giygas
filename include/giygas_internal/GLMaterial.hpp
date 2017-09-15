@@ -19,8 +19,8 @@ namespace giygas {
         std::weak_ptr<Shader> _shader;
         std::unordered_map<std::string, std::unique_ptr<UniformValue>> _values;
         std::unordered_map<std::string, GLint> _locations;
-        std::vector<std::weak_ptr<Texture>> _textures;
-        int _next_texture_index;
+        std::unique_ptr<std::weak_ptr<Texture>[]> _textures;
+        size_t _texture_count;
         bool _is_valid;
         char *_message;
 
@@ -44,9 +44,13 @@ namespace giygas {
 
         void set_shader(std::weak_ptr<Shader> shader) override;
         
+        void set_textures(
+            const std::weak_ptr<Texture> *textures, size_t count
+        ) override;
+
         void set_uniform_float(const std::string &name, float value) override;
         void set_uniform_texture(
-            const std::string &name, std::weak_ptr<Texture> value
+                const std::string &name, size_t index
         ) override;
 
         bool is_valid() const override;
@@ -54,8 +58,8 @@ namespace giygas {
 
         GLint get_cached_location(const std::string& name) const;
         GLuint get_program() const;
-        int get_texture_count() const;
-        std::weak_ptr<Texture> get_texture(int i) const;
+        size_t get_texture_count() const;
+        std::weak_ptr<Texture> get_texture(size_t i) const;
 
     };
 
@@ -65,6 +69,7 @@ namespace giygas {
 
     class UniformValue {
     public:
+        virtual ~UniformValue() = default;
         virtual void do_gl_call(GL *gl, GLint location) = 0;
     };
 
@@ -75,11 +80,10 @@ namespace giygas {
         void do_gl_call(GL *gl, GLint location) override;
     };
 
-    class TextureUniformValue : public UniformValue {
-        std::weak_ptr<Texture> _value;
-        int _index;
+    class IntUniformValue : public UniformValue {
+        int _value;
     public:
-        TextureUniformValue(std::weak_ptr<Texture> value, int index);
+        IntUniformValue(int value);
         void do_gl_call(GL *gl, GLint location) override;
     };
         

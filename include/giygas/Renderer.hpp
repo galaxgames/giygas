@@ -6,6 +6,13 @@
 #include "Material.hpp"
 
 namespace giygas {
+
+    class GIYGAS_EXPORT ElementDrawInfo {
+    public:
+        size_t offset;
+        size_t count;
+    };
+
     class GIYGAS_EXPORT Renderer {
     public:
         virtual ~Renderer() = default;
@@ -21,15 +28,15 @@ namespace giygas {
         virtual void clear() = 0;
         virtual void draw(
             VertexArray *vao, ElementBuffer<unsigned int> *ebo, Material *material,
-            size_t element_count
+            ElementDrawInfo element_info
         ) = 0;
         virtual void draw(
             VertexArray *vao, ElementBuffer<unsigned short> *ebo, Material *material,
-            size_t element_count
+            ElementDrawInfo element_info
         ) = 0;
         virtual void draw(
             VertexArray *vao, ElementBuffer<unsigned char> *ebo, Material *material,
-            size_t element_count
+            ElementDrawInfo element_info
         ) = 0;
 
     };

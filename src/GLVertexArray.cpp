@@ -41,24 +41,24 @@ void GLVertexArray::add_buffer(
 
     const auto& channels = layout.get_channels();
 
-    int stride = 0;
-    for (int size : channels) {
+    size_t stride = 0;
+    for (size_t size : channels) {
         stride += size;
     }
 
-    int offset = 0;
+    size_t offset = 0;
 
     _gl->bind_vertex_array(_handle);
     _gl->bind_buffer(GL_ARRAY_BUFFER, glbuffer->get_handle());
 
-    for (int size : channels) {
+    for (size_t size : channels) {
         _gl->vertex_attrib_pointer(
-            _next_index,                             // index
-            size,                              // size
-            GL_FLOAT,                          // type
-            GL_FALSE,                          // normalized
-            static_cast<GLsizei>(stride) * static_cast<GLsizei>(sizeof(GLfloat)),                     // stride
-            reinterpret_cast<GLvoid *>(offset) // pointer
+            _next_index,                                    // index
+            static_cast<GLint>(size),                       // size
+            GL_FLOAT,                                       // type
+            GL_FALSE,                                       // normalized
+            static_cast<GLsizei>(stride * sizeof(GLfloat)), // stride
+            reinterpret_cast<GLvoid *>(offset)              // pointer
         );
 
         _gl->enable_vertex_attrib_array(_next_index);
