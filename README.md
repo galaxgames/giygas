@@ -4,6 +4,11 @@ Because I'm an almighty idiot (and I ran out of names for my projects)
 ## What
 Giygas is a framework for games and other graphic applications. It provides a modern c++ interface to graphics apis and provides a few extra useful utilities as well.
 
+## What else?
+* Utilizes cool C++11 features like move semantics
+* Right now there's only an OpenGL renderer implementation, but hopefully later it'll support Vulkan, DirectX and Metal!
+* Um....
+
 ## How do I build it?
 Wow, sold already? Here's how building giygas will go down:
 
@@ -25,7 +30,7 @@ Awesome, hopefully that worked. If it did, you should now have the directory `.d
 
 ### Build with CMake
 
-```
+```shell
 # Run these commands in a out-of-source build directory.
 # Usually this is a new directory inside of the source directory. e.g.: mkdir build
 # Also, ${SOURCE_DIR} refers to giygas's source directory, 
@@ -41,5 +46,4 @@ The steps above should have installed a built giygas library into the `.dew/inst
 Sure can, or, I can at least try. Don't be shy about creating github issues. Even if they're just questions.
 
 ## Can I fix it?
-You sure can, or, you can at least try. Don't be shy about creating pull requests. Even if they're dumb.
-
+Sure can, or, you can at least try. Don't be shy about creating pull requests. Even if they're dumb.
