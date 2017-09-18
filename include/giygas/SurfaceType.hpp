@@ -1,5 +1,6 @@
 #pragma once
 #include <type_traits>
+#include <giygas/export.h>
 
 namespace giygas {
     enum class SurfaceType {
@@ -10,21 +11,9 @@ namespace giygas {
 
     using T = std::underlying_type<SurfaceType>::type;
 
-    SurfaceType operator|(SurfaceType lhs, SurfaceType rhs) {
-        return static_cast<SurfaceType>(static_cast<T>(lhs) | static_cast<T>(rhs));
-    }
-
-    SurfaceType operator&(SurfaceType lhs, SurfaceType rhs) {
-        return static_cast<SurfaceType>(static_cast<T>(lhs) & static_cast<T>(rhs));
-    }
-
-    SurfaceType &operator|=(SurfaceType& lhs, SurfaceType rhs) {
-        lhs = static_cast<SurfaceType>(static_cast<T>(lhs) | static_cast<T>(rhs));
-        return lhs;
-    }
-
-    bool has_flag(SurfaceType lhs, SurfaceType rhs) {
-        return static_cast<T>(lhs & rhs) > 0;
-    }
+    GIYGAS_EXPORT SurfaceType operator|(SurfaceType lhs, SurfaceType rhs);
+    GIYGAS_EXPORT SurfaceType operator&(SurfaceType lhs, SurfaceType rhs);
+    GIYGAS_EXPORT SurfaceType &operator|=(SurfaceType& lhs, SurfaceType rhs);
+    GIYGAS_EXPORT bool has_flag(SurfaceType lhs, SurfaceType rhs);
 
 }
