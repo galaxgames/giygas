@@ -4,6 +4,7 @@
 #include "VertexArray.hpp"
 #include "ElementBuffer.hpp"
 #include "Material.hpp"
+#include "SurfaceType.hpp"
 
 namespace giygas {
 
@@ -25,7 +26,10 @@ namespace giygas {
         virtual Shader *make_shader() = 0;
         virtual Texture *make_texture() = 0;
 
-        virtual void clear() = 0;
+        virtual void set_clear_color(Vector4 color) = 0;
+        virtual void set_clear_depth(double value) = 0;
+        virtual void set_clear_stencil(int value) = 0;
+        virtual void clear(SurfaceType surfaces) = 0;
         virtual void draw(
             VertexArray *vao, ElementBuffer<unsigned int> *ebo, Material *material,
             ElementDrawInfo element_info

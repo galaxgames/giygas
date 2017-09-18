@@ -14,6 +14,7 @@ namespace giygas {
         std::shared_ptr<Window> _window;
 
         static GLenum get_gl_primitive(Primitive primitive);
+        static GLenum get_clear_flags(SurfaceType surfaces);
         void draw_internal(
             VertexArray *vao, GenericGLElementBuffer *ebo, Material *material,
             ElementDrawInfo element_info, GLenum element_type
@@ -36,7 +37,10 @@ namespace giygas {
         Shader *make_shader() override;
         Texture *make_texture() override;
 
-        void clear() override;
+        void set_clear_color(Vector4 color) override;
+        void set_clear_depth(double value) override;
+        void set_clear_stencil(int value) override;
+        void clear(SurfaceType surfaces) override;
         void draw(
             VertexArray *vao, ElementBuffer<unsigned int> *ebo, Material *material,
             ElementDrawInfo element_info

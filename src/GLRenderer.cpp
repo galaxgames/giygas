@@ -62,8 +62,20 @@ Texture *GLRenderer::make_texture() {
     return new GLTexture(&_gl);
 }
 
-void GLRenderer::clear() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void GLRenderer::set_clear_color(Vector4 color) {
+    glClearColor(color.x, color.y, color.z, color.w);
+}
+
+void GLRenderer::set_clear_depth(double value) {
+    glClearDepth(value);
+}
+
+void GLRenderer::set_clear_stencil(int value) {
+    glClearStencil(value);
+}
+
+void GLRenderer::clear(SurfaceType surfaces) {
+    glClear(get_clear_flags(surfaces));
 }
 
 #define DEFINE_DRAW_FUNCTION(type, gltype) \
@@ -136,4 +148,19 @@ GLenum GLRenderer::get_gl_primitive(Primitive primitive) {
         case Primitive::Triangles:
             return GL_TRIANGLES;
     }
+}
+
+GLenum GLRenderer::get_clear_flags(SurfaceType surfaces) {
+    GLenum value = GL_NONE;
+
+    if (has_flag(surfaces, SurfaceType::Color)) {
+        value |= GL_COLOR_BUFFER_BIT;
+    }
+    if (has_flag(surfaces, SurfaceType::Depth)) {
+        value |= GL_DEPTH_BUFFER_BIT;
+    }
+    if (has_flag(surfaces, SurfaceType::Stencil)) {
+        value |= GL_STENCIL_BUFFER_BIT;
+    }
+    return value;
 }
