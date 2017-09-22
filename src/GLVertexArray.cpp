@@ -39,11 +39,11 @@ void GLVertexArray::add_buffer(
     assert(buffer->get_renderer_type() == RendererType::OpenGL);
     const auto *glbuffer = reinterpret_cast<const GLVertexBuffer *>(buffer);
 
-    const auto& channels = layout.get_channels();
+    const auto& attributes = layout.attributes();
 
     size_t stride = 0;
-    for (size_t size : channels) {
-        stride += size;
+    for (const LayoutAttribute& attrib : attributes) {
+        stride += attrib.component_size * attrib.component_count;
     }
 
     size_t offset = 0;
@@ -51,19 +51,37 @@ void GLVertexArray::add_buffer(
     _gl->bind_vertex_array(_handle);
     _gl->bind_buffer(GL_ARRAY_BUFFER, glbuffer->get_handle());
 
-    for (size_t size : channels) {
+    for (const LayoutAttribute& attrib : attributes) {
+
+        GLenum type;
+
+        switch (attrib.component_size) {
+        case 2:
+            type = GL_HALF_FLOAT;
+            break;
+        case 4:
+            type = GL_FLOAT;
+            break;
+        case 8:
+            type = GL_DOUBLE;
+            break;
+        default:
+            assert(false);
+            break;
+        }
+
         _gl->vertex_attrib_pointer(
             _next_index,                                    // index
-            static_cast<GLint>(size),                       // size
-            GL_FLOAT,                                       // type
+            static_cast<GLint>(attrib.component_count),     // size
+            type,                                           // type
             GL_FALSE,                                       // normalized
-            static_cast<GLsizei>(stride * sizeof(GLfloat)), // stride
+            static_cast<GLsizei>(stride),                   // stride
             reinterpret_cast<GLvoid *>(offset)              // pointer
         );
 
         _gl->enable_vertex_attrib_array(_next_index);
 
-        offset += size * sizeof(GLfloat);
+        offset += attrib.component_size * attrib.component_count;
         ++_next_index;
     }
 }

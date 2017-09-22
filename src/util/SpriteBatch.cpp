@@ -12,9 +12,9 @@ SpriteBatch::SpriteBatch(Renderer &renderer) :
     _count = 0;
 
     VertexBufferLayout layout;
-    layout.set_channel(0, 2); // position
-    layout.set_channel(1, 2); // uvs
-    layout.set_channel(2, 4); // color
+    layout.add_attribute(2, 4); // position
+    layout.add_attribute(2, 4); // uvs
+    layout.add_attribute(4, 4); // color
     _vao->add_buffer(_vbo.get(), layout);
 }
 
@@ -97,7 +97,7 @@ void SpriteBatch::append_verts_for_sprite(const SpriteInfo &info, size_t offset)
         maxX, maxY,  1, 1,  color.x, color.y, color.z, color.w
     };
 
-    _vbo->set_data(offset, data, COMPONENTS_PER_SPRITE);
+    _vbo->set_data(offset * sizeof(float), data, COMPONENTS_PER_SPRITE * sizeof(float));
 }
 
 void SpriteBatch::set_elements() {

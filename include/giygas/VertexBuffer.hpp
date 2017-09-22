@@ -10,8 +10,14 @@ namespace giygas {
     public:
         virtual ~VertexBuffer() = default;
         virtual RendererType get_renderer_type() const = 0;
-        virtual void set_data(size_t offset, const float* data, size_t count) = 0;
-        virtual void set_data(size_t offset, const Vector4* data, size_t count) = 0;
+
+        /**
+         * @brief set_data  copy data to the vbo
+         * @param offset    byte offset of the vbo to copy data to.
+         * @param data      pointer to data to copy.
+         * @param size      count bytes to copy
+         */
+        virtual void set_data(size_t offset, const void *data, size_t size) = 0;
     };
 }
 

@@ -12,5 +12,21 @@ TEST(GLVertexBufferTest, TestConstructDeconstruct)
     GLVertexBuffer vbo(&gl);
 }
 
+TEST(GLVertexBufferTest, TestSetData)
+{
+    NiceMock<MockGL> gl;
+    {
+        InSequence dummy;
+        EXPECT_CALL(gl, bind_buffer(GL_ARRAY_BUFFER, _)).Times(1);
+        EXPECT_CALL(gl, buffer_data(
+            GL_ARRAY_BUFFER,
+            16,
+            _, // data ptr
+            _  // usage hint
+        )).Times(1);
+    }
 
-
+    GLVertexBuffer vbo(&gl);
+    float data[4] = {0, 1, 2, 3};
+    vbo.set_data(0, data, sizeof(data));
+}

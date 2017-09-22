@@ -3,13 +3,23 @@
 using namespace giygas;
 using namespace std;
 
-void VertexBufferLayout::set_channel(size_t index, size_t size) {
-    if (index >= _channels.size()) {
-        _channels.resize(index + 1);
-    }
-    _channels[index] = size;
+VertexBufferLayout::VertexBufferLayout(size_t attribute_count_hint) {
+    _attributes.reserve(attribute_count_hint);
 }
 
-const vector<size_t>& VertexBufferLayout::get_channels() const {
-    return _channels;
+void VertexBufferLayout::add_attribute(
+    size_t component_count, size_t component_size
+) {
+    LayoutAttribute attrib;
+    attrib.component_size = component_size;
+    attrib.component_count = component_count;
+    add_attribute(attrib);
+}
+
+void VertexBufferLayout::add_attribute(LayoutAttribute attrib) {
+    _attributes.push_back(attrib);
+}
+
+const vector<LayoutAttribute>& VertexBufferLayout::attributes() const {
+    return _attributes;
 }

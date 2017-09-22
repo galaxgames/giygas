@@ -5,6 +5,7 @@
 
 namespace giygas {
     class GLVertexBuffer : public VertexBuffer {
+        typedef unsigned char byte;
 
         GL *_gl;
 
@@ -12,10 +13,10 @@ namespace giygas {
         GLuint _handle;
 
         // The internal buffer
-        float* _data;
+        byte *_data;
 
         // Count of single vertex components
-        size_t _length;
+        size_t _size;
 
         GLuint _channel_count;
 
@@ -28,8 +29,7 @@ namespace giygas {
         virtual ~GLVertexBuffer();
 
         RendererType get_renderer_type() const override;
-        void set_data(size_t offset, const float *verts, size_t count) override;
-        void set_data(size_t offset, const Vector4* verts, size_t count) override;
+        void set_data(size_t offset, const void *verts, size_t count) override;
 
         GLuint get_handle() const;
     };
