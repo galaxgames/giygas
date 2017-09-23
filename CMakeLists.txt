@@ -10,11 +10,17 @@ find_package(glad CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_library(GMOCK_LIBRARY NAMES gmock)
 
-# Library target
-file(GLOB_RECURSE GIYGAS_SOURCE_FILES "./src/*" "./include/*")
+# Source files
+file(GLOB_RECURSE GIYGAS_SOURCE_FILES "./src/core/*.cpp" "./src/util/*.cpp")
+file(GLOB_RECURSE GIYGASFILE_SOURCE_FILES "./src/giygasfile/*.cpp")
 file(GLOB_RECURSE GIYGAS_TEST_SOURCE_FILES "./test/*")
+
+# Targets
 add_library(giygas ${GIYGAS_SOURCE_FILES})
+add_library(giygasfile ${GIYGASFILE_SOURCE_FILES})
 add_library(giygas_testable ${GIYGAS_SOURCE_FILES})
+add_executable(giygas_test ${GIYGAS_TEST_SOURCE_FILES})
+
 # Pre-define GIYGAS_TESTABLE_EXPORT so testable exports aren't exported for
 # main target.
 target_compile_definitions(giygas PRIVATE GIYGAS_TESTABLE_EXPORT)
@@ -29,19 +35,20 @@ generate_export_header(giygas
     EXPORT_FILE_NAME "${PROJECT_BINARY_DIR}/include/giygas/testable_export.h"
 )
 
-set_target_properties(giygas
+set_target_properties(giygas giygasfile giygas_testable giygas_test
     PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED ON
 )
-set_target_properties(giygas_testable
-    PROPERTIES
-        CXX_STANDARD 11
-        CXX_STANDARD_REQUIRED ON
-)
-
 
 target_include_directories(giygas
+    PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+    PUBLIC
+        $<INSTALL_INTERFACE:include/giygas>
+)
+target_include_directories(giygasfile
     PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
@@ -53,27 +60,16 @@ target_include_directories(giygas_testable
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 )
-
-target_link_libraries(giygas
-    glad::glad glfw
-)
-target_link_libraries(giygas_testable
-    glad::glad glfw
-)
-
-# Test executable target
-add_executable(giygas_test ${GIYGAS_TEST_SOURCE_FILES})
-set_target_properties(giygas_test
-    PROPERTIES
-        CXX_STANDARD 11
-        CXX_STANDARD_REQUIRED ON
-)
 target_include_directories(giygas_test
     PRIVATE
         # TODO: Get these directly from giygas target
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 )
+
+target_link_libraries(giygas glad::glad glfw)
+target_link_libraries(giygas_testable glad::glad glfw)
+#target_link_libraries(giygasfile)
 target_link_libraries(giygas_test
     GTest::GTest GTest::Main ${GMOCK_LIBRARY} giygas_testable
 )
@@ -105,7 +101,7 @@ configure_package_config_file(
 )
 
 install(
-    TARGETS giygas
+    TARGETS giygas giygasfile
     EXPORT "${targets_export_name}"
     LIBRARY DESTINATION "lib"
     ARCHIVE DESTINATION "lib"
@@ -114,6 +110,10 @@ install(
 )
 install(
     DIRECTORY "${PROJECT_SOURCE_DIR}/include/giygas"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+)
+install(
+    DIRECTORY "${PROJECT_SOURCE_DIR}/include/giygasfile"
     DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
 )
 install (
