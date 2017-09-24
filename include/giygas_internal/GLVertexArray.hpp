@@ -22,7 +22,7 @@ namespace giygas {
         RendererType get_renderer_type() const override;
 
         void add_buffer(
-            const VertexBuffer *buffer, const VertexBufferLayout &layout
+            const VertexBuffer *buffer, const VertexAttributeLayout &layout
         ) override;
 
         GLuint get_handle() const;

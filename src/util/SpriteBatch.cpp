@@ -11,10 +11,10 @@ SpriteBatch::SpriteBatch(Renderer &renderer) :
 {
     _count = 0;
 
-    VertexBufferLayout layout;
-    layout.add_attribute(2, 4); // position
-    layout.add_attribute(2, 4); // uvs
-    layout.add_attribute(4, 4); // color
+    VertexAttributeLayout layout(3, 32); // 3 attribs, stride 32
+    layout.add_attribute(2, 4, 0); // position
+    layout.add_attribute(2, 4, 8); // uvs
+    layout.add_attribute(4, 4, 16); // color
     _vao->add_buffer(_vbo.get(), layout);
 }
 

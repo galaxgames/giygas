@@ -1,17 +1,12 @@
 #pragma once
 #include "GiygasData.hpp"
 #include "InputIterable.hpp"
+#include <giygasfile/NodeTag.hpp>
 #include <vector>
 
 namespace giygasfile {
 
-    enum class NodeTag : int {
-        VBONode = 0,
-        EBONode = 1,
-        VAONode = 2
-    };
-
-    class GiygasFileParser {
+    class GIYGAS_EXPORT GiygasFileParser {
         InputIterable *_input;
         HeaderData _header;
         std::vector<VBONode> _vbo_nodes;

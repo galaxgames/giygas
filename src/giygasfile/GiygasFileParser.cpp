@@ -61,11 +61,29 @@ void GiygasFileParser::parse_node(NodeTag tag) {
     }
 }
 
+// TODO: Is something like this defined in the standard library?
+// Because that would be pretty nice!!
+template<typename T>
+class TypeWrapper {
+public:
+    typedef T type;
+};
+
+#define READ_FIELD(input, T, field) { \
+    static_assert(std::is_object<T>::value, "T must be an object"); \
+    typedef decltype(field) field_t; \
+    static_assert(std::is_same< \
+        std::conditional< \
+            std::is_enum<field_t>::value, \
+            std::underlying_type<field_t>, TypeWrapper<field_t> \
+        >::type::type, T \
+    >::value, "type mismatch"); \
+    input->read(sizeof(field), &field); \
+}
+
 void GiygasFileParser::parse_vbo_node() {
     VBONode node;
-    unsigned int size;
-    _input->read(sizeof(size), &size);
-    node.size = size;
+    READ_FIELD(_input, unsigned int, node.size);
     node.data = unique_ptr<unsigned char[]>(new unsigned char[node.size]);
     _input->read(node.size, node.data.get());
     _vbo_nodes.emplace_back(std::move(node));
@@ -73,12 +91,9 @@ void GiygasFileParser::parse_vbo_node() {
 
 void GiygasFileParser::parse_ebo_node() {
     EBONode node;
-    unsigned int count, element_size;
-    _input->read(sizeof(count), &count);
-    _input->read(sizeof(element_size), &element_size);
-    node.count = count;
-    node.element_size = element_size;
-    size_t size = count * element_size;
+    READ_FIELD(_input, unsigned int, node.count);
+    READ_FIELD(_input, unsigned int, node.element_size);
+    size_t size = node.count * node.element_size;
     node.data = unique_ptr<unsigned char[]>(new unsigned char[size]);
     _input->read(size, node.data.get());
     _ebo_nodes.emplace_back(std::move(node));
@@ -88,25 +103,21 @@ void GiygasFileParser::parse_vao_node() {
     typedef unsigned short int uint16;
     typedef unsigned char uint8;
     VAONode node;
-    uint16 vbo_count;
-    _input->read(sizeof(vbo_count), &vbo_count);
-    node.buffer_count = vbo_count;
+    READ_FIELD(_input, uint16, node.buffer_count);
     node.buffers = unique_ptr<VAOBufferData[]>(new VAOBufferData[node.buffer_count]);
 
     for (size_t i = 0; i < node.buffer_count; ++i) {
         VAOBufferData buffer;
-        uint16 attrib_count;
-        _input->read(sizeof(attrib_count), &attrib_count);
-        buffer.attribute_count = attrib_count;
+        READ_FIELD(_input, uint16, buffer.attribute_count);
+        READ_FIELD(_input, uint16, buffer.attribute_stride);
         buffer.attributes = unique_ptr<AttributeData[]>(new AttributeData[buffer.attribute_count]);
 
-        for (uint16 j = 0; j < attrib_count; ++j) {
+        for (uint16 j = 0; j < buffer.attribute_count; ++j) {
             AttributeData attrib;
-            uint8 component_size, component_count;
-            _input->read(sizeof(component_size), &component_size);
-            _input->read(sizeof(component_count), &component_count);
-            attrib.component_size = component_size;
-            attrib.component_count = component_count;
+            READ_FIELD(_input, uint8, attrib.component_size);
+            READ_FIELD(_input, uint8, attrib.component_count);
+            READ_FIELD(_input, uint8, attrib.component_offset);
+            READ_FIELD(_input, uint8, attrib.hint);
             buffer.attributes[j] = std::move(attrib);
         }
         node.buffers[i] = std::move(buffer);

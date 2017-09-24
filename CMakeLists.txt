@@ -11,8 +11,8 @@ find_package(glfw3 CONFIG REQUIRED)
 find_library(GMOCK_LIBRARY NAMES gmock)
 
 # Source files
-file(GLOB_RECURSE GIYGAS_SOURCE_FILES "./src/core/*.cpp" "./src/util/*.cpp")
-file(GLOB_RECURSE GIYGASFILE_SOURCE_FILES "./src/giygasfile/*.cpp")
+file(GLOB_RECURSE GIYGAS_SOURCE_FILES "./src/core/*.cpp" "./src/util/*.cpp" "./include/giygas/*.hpp")
+file(GLOB_RECURSE GIYGASFILE_SOURCE_FILES "./src/giygasfile/*.cpp" "./include/giygasfile/*.hpp")
 file(GLOB_RECURSE GIYGAS_TEST_SOURCE_FILES "./test/*")
 
 # Targets
@@ -53,7 +53,7 @@ target_include_directories(giygasfile
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
     PUBLIC
-        $<INSTALL_INTERFACE:include/giygas>
+        $<INSTALL_INTERFACE:include/giygasfile>
 )
 target_include_directories(giygas_testable
     PRIVATE

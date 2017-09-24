@@ -2,7 +2,7 @@
 #include <giygas/Vector2.hpp>
 #include <giygas/Vector3.hpp>
 #include <giygas/Vector4.hpp>
-#include "VertexBufferLayout.hpp"
+#include "VertexAttributeLayout.hpp"
 #include "RendererType.hpp"
 
 namespace giygas {

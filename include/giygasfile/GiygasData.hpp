@@ -1,46 +1,51 @@
 #pragma once
 #include <memory>
+#include <giygas/export.h>
+#include <giygasfile/AttributeUsageHint.hpp>
 
 namespace giygasfile {
 
-    class HeaderData {
+    class GIYGAS_EXPORT HeaderData {
     public:
         char magic[8];
         unsigned int version;
     };
 
-    class VBONode {
+    class GIYGAS_EXPORT VBONode {
     public:
         std::unique_ptr<unsigned char[]> data;
-        size_t size;
+        unsigned int size;
     };
 
-    class EBONode {
+    class GIYGAS_EXPORT EBONode {
     public:
         std::unique_ptr<unsigned char[]> data;
-        size_t count;
-        size_t element_size;
+        unsigned int count;
+        unsigned int element_size;
     };
 
-    class AttributeData {
+    class GIYGAS_EXPORT AttributeData {
     public:
         unsigned char component_size;
         unsigned char component_count;
+        unsigned char component_offset;
+        AttributeUsageHint hint;
     };
 
-    class VAOBufferData {
+    class GIYGAS_EXPORT VAOBufferData {
     public:
         std::unique_ptr<AttributeData[]> attributes;
-        size_t attribute_count;
+        unsigned short int attribute_count;
+        unsigned short int attribute_stride;
     };
 
-    class VAONode {
+    class GIYGAS_EXPORT VAONode {
     public:
         std::unique_ptr<VAOBufferData[]> buffers;
-        size_t buffer_count;
+        unsigned short int buffer_count;
     };
 
-    class GiygasData {
+    class GIYGAS_EXPORT GiygasData {
       public:
         std::unique_ptr<VBONode[]> vbos;
         std::unique_ptr<EBONode[]> ebos;
