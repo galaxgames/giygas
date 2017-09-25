@@ -9,6 +9,17 @@
 #include <giygas/GL.hpp>
 #include "GLShader.hpp"
 
+#define UNIFORM_FUNC(func_name, T) \
+    void func_name(const std::string &name, T value) override;
+
+#define UNIFORM_VALUE_CLASS(class_name, T) \
+    class class_name : public UniformValue { \
+        T _value; \
+    public: \
+        class_name(T value); \
+        void do_gl_call(GL *gl, GLint location) override; \
+    }
+
 namespace giygas {
 
     class UniformValue;
@@ -48,10 +59,12 @@ namespace giygas {
             const std::weak_ptr<Texture> *textures, size_t count
         ) override;
 
-        void set_uniform_float(const std::string &name, float value) override;
-        void set_uniform_texture(
-                const std::string &name, size_t index
-        ) override;
+        UNIFORM_FUNC(set_uniform_float, float)
+        UNIFORM_FUNC(set_uniform_texture, size_t)
+        UNIFORM_FUNC(set_uniform_vector2, Vector2)
+        UNIFORM_FUNC(set_uniform_vector3, Vector3)
+        UNIFORM_FUNC(set_uniform_vector4, Vector4)
+        UNIFORM_FUNC(set_uniform_matrix4x4, const Matrix4x4 &)
 
         bool is_valid() const override;
         const char *get_message() const override;
@@ -73,18 +86,19 @@ namespace giygas {
         virtual void do_gl_call(GL *gl, GLint location) = 0;
     };
 
-    class FloatUniformValue : public UniformValue {
-        float _value;
+    UNIFORM_VALUE_CLASS(FloatUniformValue, float);
+    UNIFORM_VALUE_CLASS(IntUniformValue, int);
+    UNIFORM_VALUE_CLASS(Vector2UniformValue, Vector2);
+    UNIFORM_VALUE_CLASS(Vector3UniformValue, Vector3);
+    UNIFORM_VALUE_CLASS(Vector4UniformValue, Vector4);
+
+    class Matrix4x4UniformValue : public UniformValue {
+        Matrix4x4 _value;
     public:
-        FloatUniformValue(float value);
+        Matrix4x4UniformValue(const Matrix4x4 &value);
         void do_gl_call(GL *gl, GLint location) override;
     };
 
-    class IntUniformValue : public UniformValue {
-        int _value;
-    public:
-        IntUniformValue(int value);
-        void do_gl_call(GL *gl, GLint location) override;
-    };
-        
 }
+
+#undef UNIFORM_FUNC

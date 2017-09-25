@@ -66,6 +66,17 @@ namespace giygas {
 
         void uniform_1f(GLint location, GLfloat v0) override;
         void uniform_1i(GLint location, GLint v0) override;
+        void uniform_2f(GLint location, GLfloat v0, GLfloat v1) override;
+        void uniform_3f(
+            GLint location, GLfloat v0, GLfloat v1, GLfloat v2
+        ) override;
+        void uniform_4f(
+            GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3
+        ) override;
+        void uniform_matrix_4fv(
+            GLint location, GLsizei count, GLboolean transpose,
+            const GLfloat *value
+        ) override;
 
 
         //

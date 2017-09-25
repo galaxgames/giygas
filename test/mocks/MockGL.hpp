@@ -46,8 +46,19 @@ namespace giygas {
         MOCK_METHOD2(get_uniform_location, GLint(
             GLuint program, const GLchar *name
         ));
-        MOCK_METHOD2(uniform_1f, void(GLint location, GLfloat v0));
         MOCK_METHOD2(uniform_1i, void(GLint location, GLint v0));
+        MOCK_METHOD2(uniform_1f, void(GLint location, GLfloat v0));
+        MOCK_METHOD3(uniform_2f, void(GLint location, GLfloat v0, GLfloat v1));
+        MOCK_METHOD4(uniform_3f, void(
+            GLint location, GLfloat v0, GLfloat v2, GLfloat v3
+        ));
+        MOCK_METHOD5(uniform_4f, void(
+            GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3
+        ));
+        MOCK_METHOD4(uniform_matrix_4fv, void(
+            GLint location, GLsizei count, GLboolean transpose,
+            const GLfloat *value
+        ));
 
         MOCK_METHOD4(shader_source, void(
             GLuint shader, GLsizei count, const GLchar *const *string,

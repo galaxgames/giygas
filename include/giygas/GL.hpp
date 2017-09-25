@@ -57,8 +57,19 @@ namespace giygas {
             GLuint program, const GLchar *name
         ) = 0;
 
-        virtual void uniform_1f(GLint location, GLfloat v0) = 0;
         virtual void uniform_1i(GLint location, GLint v0) = 0;
+        virtual void uniform_1f(GLint location, GLfloat v0) = 0;
+        virtual void uniform_2f(GLint location, GLfloat v0, GLfloat v1) = 0;
+        virtual void uniform_3f(
+            GLint location, GLfloat v0, GLfloat v1, GLfloat v2
+        ) = 0;
+        virtual void uniform_4f(
+            GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3
+        ) = 0;
+        virtual void uniform_matrix_4fv(
+            GLint location, GLsizei count, GLboolean transpose,
+            const GLfloat *value
+        ) = 0;
 
 
         //

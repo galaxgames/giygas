@@ -4,6 +4,13 @@
 #include <giygas/Shader.hpp>
 #include "Texture.hpp"
 #include "RendererType.hpp"
+#include "Vector2.hpp"
+#include "Vector3.hpp"
+#include "Vector4.hpp"
+#include "Matrix4x4.hpp"
+
+#define UNIFORM_FUNC(func_name, T) \
+    virtual void func_name(const std::string &name, T value) = 0;
 
 namespace giygas {
     class GIYGAS_EXPORT Material {
@@ -18,16 +25,16 @@ namespace giygas {
             const std::weak_ptr<Texture> *textures, size_t count
         ) = 0;
 
-        virtual void set_uniform_float(
-            const std::string &name, float value
-        ) = 0;
-
-        virtual void set_uniform_texture(
-            const std::string &name, size_t index
-        ) = 0;
+        UNIFORM_FUNC(set_uniform_float, float)
+        UNIFORM_FUNC(set_uniform_texture, size_t)
+        UNIFORM_FUNC(set_uniform_vector2, Vector2)
+        UNIFORM_FUNC(set_uniform_vector3, Vector3)
+        UNIFORM_FUNC(set_uniform_vector4, Vector4)
+        UNIFORM_FUNC(set_uniform_matrix4x4, const Matrix4x4 &)
 
         virtual bool is_valid() const = 0;
         virtual const char *get_message() const = 0;
     };
 }
 
+#undef UNIFORM_FUNC

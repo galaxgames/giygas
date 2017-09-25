@@ -7,6 +7,33 @@
 using namespace giygas;
 using namespace std;
 
+#define UNIFORM_FUNC(func_name, T) \
+    void GLMaterial::func_name(const string &name, T value)
+
+
+#define UNIFORM_FUNC_IMPL(func_name, T) \
+    UNIFORM_FUNC(func_name, T) {\
+        set_uniform<T>(name, value);\
+    } \
+    template void GLMaterial::set_uniform<T>(const string &name, T value);
+
+
+#define MAKE_VALUE_IMPL(T, uniform_value_t) \
+    template <> \
+    UniformValue *GLMaterial::make_value<T>(T value) { \
+        return new uniform_value_t(value);\
+    }
+
+
+#define UNIFORM_VALUE_IMPL(class_name, T, impl) \
+    class_name::class_name(T value) \
+        : _value(value) \
+    { \
+    } \
+    \
+    void class_name::do_gl_call(GL *gl, GLint location) impl
+
+
 GLMaterial::GLMaterial(GL *gl) :
     _textures(new weak_ptr<Texture>[0])
 {
@@ -123,15 +150,12 @@ void GLMaterial::set_textures(const weak_ptr<Texture> *textures, size_t count) {
 }
 
 namespace giygas {
-    template <>
-    UniformValue* GLMaterial::make_value<float>(float value) {
-        return new FloatUniformValue(value);
-    }
-
-    template <>
-    UniformValue* GLMaterial::make_value<int>(int value) {
-        return new IntUniformValue(value);
-    }
+    MAKE_VALUE_IMPL(float, FloatUniformValue)
+    MAKE_VALUE_IMPL(int, IntUniformValue)
+    MAKE_VALUE_IMPL(Vector2, Vector2UniformValue)
+    MAKE_VALUE_IMPL(Vector3, Vector3UniformValue)
+    MAKE_VALUE_IMPL(Vector4, Vector4UniformValue)
+    MAKE_VALUE_IMPL(const Matrix4x4 &, Matrix4x4UniformValue)
 }
 
 template <typename T>
@@ -161,18 +185,17 @@ void GLMaterial::set_uniform(const string &name, T value) {
     }
 }
 
-template void GLMaterial::set_uniform<float>(const string &name, float value);
+UNIFORM_FUNC_IMPL(set_uniform_float, float)
+UNIFORM_FUNC_IMPL(set_uniform_vector2, Vector2)
+UNIFORM_FUNC_IMPL(set_uniform_vector3, Vector3)
+UNIFORM_FUNC_IMPL(set_uniform_vector4, Vector4)
+UNIFORM_FUNC_IMPL(set_uniform_matrix4x4, const Matrix4x4 &)
+
+UNIFORM_FUNC(set_uniform_texture, size_t) {
+    set_uniform(name, static_cast<int>(value));
+}
 template void GLMaterial::set_uniform<int>(const string &name, int value);
 
-void GLMaterial::set_uniform_float(const std::string &name, float value) {
-    set_uniform(name, value);
-}
-
-void GLMaterial::set_uniform_texture(
-    const std::string &name, size_t index
-) {
-    set_uniform(name, static_cast<int>(index));
-}
 
 bool GLMaterial::is_valid() const {
     return _is_valid;
@@ -194,15 +217,7 @@ GLint GLMaterial::get_location(const string &name) const {
     if (!_is_valid) {
         return -1;
     }
-
-    //if (auto shader = _shader.lock()) {
-//        assert(shader->renderer_type() == RendererType::OpenGL);
-//        GLShader *gl_shader = reinterpret_cast<GLShader*>(shader.get());
-        return _gl->get_uniform_location(_program, name.c_str());
-//    }
-//    else {
-//        return -1;
-//    }
+    return _gl->get_uniform_location(_program, name.c_str());
 }
 
 GLuint GLMaterial::get_program() const {
@@ -222,19 +237,33 @@ weak_ptr<Texture> GLMaterial::get_texture(size_t i) const {
 // TODO: Move these into new files
 // *****
 
-FloatUniformValue::FloatUniformValue(float value) {
-    _value = value;
-}
-
-void FloatUniformValue::do_gl_call(GL *gl, GLint location) {
+UNIFORM_VALUE_IMPL(FloatUniformValue, float, {
     gl->uniform_1f(location, _value);
-}
+})
 
-IntUniformValue::IntUniformValue(int value) {
-    _value = value;
-}
-
-void IntUniformValue::do_gl_call(GL *gl, GLint location) {
+UNIFORM_VALUE_IMPL(IntUniformValue, int, {
     gl->uniform_1i(location, _value);
+})
+
+UNIFORM_VALUE_IMPL(Vector2UniformValue, Vector2, {
+    gl->uniform_2f(location, _value.x, _value.y);
+})
+
+UNIFORM_VALUE_IMPL(Vector3UniformValue, Vector3, {
+    gl->uniform_3f(location, _value.x, _value.y, _value.z);
+})
+
+UNIFORM_VALUE_IMPL(Vector4UniformValue, Vector4, {
+    gl->uniform_4f(location, _value.x, _value.y, _value.z, _value.w);
+})
+
+Matrix4x4UniformValue::Matrix4x4UniformValue(const Matrix4x4 &value)
+    :_value(value)
+{
 }
 
+void Matrix4x4UniformValue::do_gl_call(GL *gl, GLint location) {
+    gl->uniform_matrix_4fv(
+        location, 1, false, reinterpret_cast<float *>(&_value)
+    );
+}

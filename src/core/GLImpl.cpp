@@ -110,6 +110,28 @@ void GLImpl::uniform_1i(GLint location, GLint v0) {
     glUniform1i(location, v0);
 }
 
+void GLImpl::uniform_2f(GLint location, GLfloat v0, GLfloat v1) {
+    glUniform2f(location, v0, v1);
+}
+
+void GLImpl::uniform_3f(
+    GLint location, GLfloat v0, GLfloat v1, GLfloat v2
+) {
+    glUniform3f(location, v0, v1, v2);
+}
+
+void GLImpl::uniform_4f(
+    GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3
+) {
+    glUniform4f(location, v0, v1, v2, v3);
+}
+
+void GLImpl::uniform_matrix_4fv(
+    GLint location, GLsizei count, GLboolean transpose, const GLfloat *value
+) {
+    glUniformMatrix4fv(location, count, transpose, value);
+}
+
 void GLImpl::shader_source(
     GLuint shader, GLsizei count, const GLchar *const *string,
     const GLint *length
