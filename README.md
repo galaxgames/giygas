@@ -1,4 +1,4 @@
-# giygas [![Build Status](https://travis-ci.org/sfuller/giygas.svg?branch=master)](https://travis-ci.org/sfuller/giygas)
+# giygas [![Build Status](https://travis-ci.org/galaxgames/giygas.svg?branch=master)](https://travis-ci.org/galaxgames/giygas)
 Because I'm an almighty idiot (and I ran out of names for my projects)
 
 ## What
