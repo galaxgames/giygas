@@ -45,7 +45,7 @@ void GLElementBuffer<T>::set(size_t index, const T *elements, size_t count) {
     size_t required_length = index + count;
     bool need_new_buffer = required_length > _count;
     if (need_new_buffer) {
-        GLuint *new_data = new GLuint[required_length];
+        T *new_data = new T[required_length];
         std::copy_n(_data, _count, new_data);
         _data = new_data;
         _count = required_length;
@@ -57,7 +57,7 @@ void GLElementBuffer<T>::set(size_t index, const T *elements, size_t count) {
     if (need_new_buffer) {
         _gl->buffer_data(
             GL_ELEMENT_ARRAY_BUFFER,
-            static_cast<GLsizei>(_count * sizeof(GLuint)),
+            static_cast<GLsizei>(_count * sizeof(T)),
             _data,
             GL_DYNAMIC_DRAW
         );
@@ -65,8 +65,8 @@ void GLElementBuffer<T>::set(size_t index, const T *elements, size_t count) {
     else {
         _gl->buffer_sub_data(
             GL_ELEMENT_ARRAY_BUFFER,
-            static_cast<GLsizei>(_count * sizeof(GLuint)),
-            static_cast<GLsizei>(count * sizeof(GLuint)),
+            static_cast<GLsizei>(_count * sizeof(T)),
+            static_cast<GLsizei>(count * sizeof(T)),
             elements
         );
     }

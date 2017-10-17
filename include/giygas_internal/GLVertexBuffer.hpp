@@ -1,6 +1,6 @@
 #pragma once
 #include <glad/glad.h>
-#include <giygas/GL.hpp>
+#include <giygas_internal/GL.hpp>
 #include <giygas/VertexBuffer.hpp>
 
 namespace giygas {

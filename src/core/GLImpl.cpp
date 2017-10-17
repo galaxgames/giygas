@@ -1,4 +1,4 @@
-#include "giygas/GLImpl.hpp"
+#include "giygas_internal/GLImpl.hpp"
 
 using namespace giygas;
 
@@ -187,4 +187,65 @@ void GLImpl::compressed_tex_image_2d(
 
 void GLImpl::tex_parameter_i(GLenum target, GLenum pname, GLint param) {
     glTexParameteri(target, pname, param);
+}
+
+//
+// Frame Buffer Functions
+//
+
+void GLImpl::gen_framebuffers(GLsizei n, GLuint *ids) {
+    glGenFramebuffers(n, ids);
+}
+
+void GLImpl::delete_framebuffers(GLsizei n, GLuint *ids) {
+    glDeleteFramebuffers(n, ids);
+}
+
+void GLImpl::bind_framebuffer(GLenum target, GLuint framebuffer) {
+    glBindFramebuffer(target, framebuffer);
+}
+
+void GLImpl::framebuffer_texture_2d(
+    GLenum target,
+    GLenum attachment,
+    GLenum textarget,
+    GLuint texture,
+    GLuint level
+) {
+    glFramebufferTexture2D(target, attachment, textarget, texture, level);
+}
+
+void GLImpl::framebuffer_renderbuffer(
+    GLenum target,
+    GLenum attachment,
+    GLenum renderbuffertarget,
+    GLuint renderbuffer
+) {
+    glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
+}
+
+
+//
+// Render Buffer Functions
+//
+
+void GLImpl::gen_renderbuffers(GLsizei n, GLuint *ids) {
+    glGenRenderbuffers(n, ids);
+}
+
+void GLImpl::delete_renderbuffers(GLsizei n, GLuint *ids) {
+    glDeleteRenderbuffers(n, ids);
+}
+
+void GLImpl::bind_renderbuffer(GLenum target, GLuint renderbuffer) {
+    glBindRenderbuffer(target, renderbuffer);
+}
+
+void GLImpl::renderbuffer_storage(
+    GLenum target,
+    GLenum internalformat,
+    GLsizei width,
+    GLsizei height
+) {
+    glRenderbufferStorage(target, internalformat, width, height);
 }

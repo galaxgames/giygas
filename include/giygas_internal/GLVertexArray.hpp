@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <giygas/GL.hpp>
+#include <giygas_internal/GL.hpp>
 #include <giygas/VertexArray.hpp>
 
 namespace giygas {

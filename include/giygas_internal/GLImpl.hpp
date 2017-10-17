@@ -1,6 +1,6 @@
 #pragma once
 
-#include <giygas/GL.hpp>
+#include <giygas_internal/GL.hpp>
 
 namespace giygas {
     class GLImpl : public GL {
@@ -114,6 +114,42 @@ namespace giygas {
         ) override;
         void tex_parameter_i(
             GLenum target, GLenum pname, GLint param
+        ) override;
+
+        //
+        // Frame Buffer Functions
+        //
+
+        void gen_framebuffers(GLsizei n, GLuint *ids) override;
+        void delete_framebuffers(GLsizei n, GLuint *ids) override;
+        void bind_framebuffer(GLenum target, GLuint framebuffer) override;
+        void framebuffer_texture_2d(
+            GLenum target,
+            GLenum attachment,
+            GLenum textarget,
+            GLuint texture,
+            GLuint level
+        ) override;
+        void framebuffer_renderbuffer(
+            GLenum target,
+            GLenum attachment,
+            GLenum renderbuffertarget,
+            GLuint renderbuffer
+        ) override;
+
+
+        //
+        // Render Buffer Functions
+        //
+
+        void gen_renderbuffers(GLsizei n, GLuint *ids) override;
+        void delete_renderbuffers(GLsizei n, GLuint *ids) override;
+        void bind_renderbuffer(GLenum target, GLuint renderbuffer) override;
+        void renderbuffer_storage(
+            GLenum target,
+            GLenum internalformat,
+            GLsizei width,
+            GLsizei height
         ) override;
     };
 }

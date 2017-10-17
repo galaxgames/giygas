@@ -1,4 +1,4 @@
-#pragma  once
+#pragma once
 
 namespace giygas {
     enum class GIYGAS_EXPORT Primitive {

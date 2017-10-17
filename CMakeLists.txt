@@ -11,7 +11,10 @@ find_package(glfw3 CONFIG REQUIRED)
 find_library(GMOCK_LIBRARY NAMES gmock)
 
 # Source files
-file(GLOB_RECURSE GIYGAS_SOURCE_FILES "./src/core/*.cpp" "./src/util/*.cpp" "./include/giygas/*.hpp")
+file(GLOB_RECURSE GIYGAS_SOURCE_FILES
+    "./src/core/*.cpp" "./src/util/*.cpp"
+    "./include/giygas/*.hpp" "./include/giygas_internal/*.hpp"
+)
 file(GLOB_RECURSE GIYGASFILE_SOURCE_FILES "./src/giygasfile/*.cpp" "./include/giygasfile/*.hpp")
 file(GLOB_RECURSE GIYGAS_TEST_SOURCE_FILES "./test/*")
 
@@ -42,21 +45,21 @@ set_target_properties(giygas giygasfile giygas_testable giygas_test
 )
 
 target_include_directories(giygas
-    PRIVATE
+    PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-    PUBLIC
+    INTERFACE
         $<INSTALL_INTERFACE:include/giygas>
 )
 target_include_directories(giygasfile
-    PRIVATE
+    PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-    PUBLIC
+    INTERFACE
         $<INSTALL_INTERFACE:include/giygasfile>
 )
 target_include_directories(giygas_testable
-    PRIVATE
+    PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 )
@@ -130,4 +133,4 @@ install(
     DESTINATION "${config_install_dir}"
 )
 
-
+add_subdirectory(examples)

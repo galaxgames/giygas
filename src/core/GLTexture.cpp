@@ -54,7 +54,7 @@ void GLTexture::set_data(
     _gl->tex_parameter_i(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-GLuint GLTexture::get_handle() const {
+GLuint GLTexture::handle() const {
     return _handle;
 }
 

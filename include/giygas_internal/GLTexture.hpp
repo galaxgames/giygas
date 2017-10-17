@@ -1,7 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <giygas/Texture.hpp>
-#include <giygas/GL.hpp>
+#include <giygas_internal/GL.hpp>
 
 namespace giygas {
     class GLTexture : public Texture {
@@ -26,7 +26,7 @@ namespace giygas {
             TextureFormat format
         ) override;
 
-        GLuint get_handle() const;
+        GLuint handle() const;
 
     };
 }

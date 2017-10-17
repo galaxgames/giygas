@@ -1,5 +1,5 @@
 #include <glad/glad.h>
-#include "giygas/GLFWWindow.hpp"
+#include <giygas/GLFWWindow.hpp>
 
 using namespace giygas;
 

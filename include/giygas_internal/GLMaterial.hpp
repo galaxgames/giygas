@@ -6,7 +6,7 @@
 #include <glad/glad.h>
 #include <giygas/Material.hpp>
 #include <giygas/Texture.hpp>
-#include <giygas/GL.hpp>
+#include <giygas_internal/GL.hpp>
 #include "GLShader.hpp"
 
 #define UNIFORM_FUNC(func_name, T) \

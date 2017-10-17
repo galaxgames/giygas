@@ -10,6 +10,7 @@
 #include <giygas/ElementBuffer.hpp>
 #include <giygas/Renderer.hpp>
 #include <giygas/Material.hpp>
+#include <giygas/ElementDrawInfo.hpp>
 
 namespace giygas {
 
@@ -54,7 +55,7 @@ namespace giygas {
         void set_textures(std::weak_ptr<Texture> *textures, size_t count);
         void begin();
         void end();
-        void draw(Renderer &renderer) const;
+        void draw(Surface &surface) const;
         void add(SpriteInfo info);
 
     };

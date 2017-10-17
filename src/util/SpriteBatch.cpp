@@ -55,12 +55,12 @@ void SpriteBatch::end() {
     set_elements();
 }
 
-void SpriteBatch::draw(Renderer &renderer) const {
+void SpriteBatch::draw(Surface &surface) const {
     if (auto mat = _mat.material.lock()) {
         for (size_t i = 0, ilen = _sprites_by_texture.size(); i < ilen; ++i) {
             mat->set_textures(&_textures[i], 1);
             mat->set_uniform_texture(_mat.texture_uniform_name, 0);
-            renderer.draw(
+            surface.draw(
                 _vao.get(),
                 _ebo.get(),
                 mat.get(),

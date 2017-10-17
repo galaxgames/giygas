@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gmock/gmock.h>
-#include <giygas/GL.hpp>
+#include <giygas_internal/GL.hpp>
 
 namespace giygas {
     class MockGL : public GL {
@@ -86,6 +86,43 @@ namespace giygas {
         ));
         MOCK_METHOD3(tex_parameter_i, void(
             GLenum target, GLenum pname, GLint param
+        ));
+
+
+        //
+        // Frame Buffer Functions
+        //
+
+        MOCK_METHOD2(gen_framebuffers, void(GLsizei n, GLuint *ids));
+        MOCK_METHOD2(delete_framebuffers, void(GLsizei n, GLuint *ids));
+        MOCK_METHOD2(bind_framebuffer, void(GLenum target, GLuint framebuffer));
+        MOCK_METHOD5(framebuffer_texture_2d, void(
+            GLenum target,
+            GLenum attachment,
+            GLenum textarget,
+            GLuint texture,
+            GLuint level
+        ));
+        MOCK_METHOD4(framebuffer_renderbuffer, void(
+            GLenum target,
+            GLenum attachment,
+            GLenum renderbuffertarget,
+            GLuint renderbuffer
+        ));
+
+
+        //
+        // Render Buffer Functions
+        //
+
+        MOCK_METHOD2(gen_renderbuffers, void(GLsizei n, GLuint *ids));
+        MOCK_METHOD2(delete_renderbuffers, void(GLsizei n, GLuint *ids));
+        MOCK_METHOD2(bind_renderbuffer, void(GLenum target, GLuint renderbuffer));
+        MOCK_METHOD4(renderbuffer_storage, void(
+            GLenum target,
+            GLenum internalformat,
+            GLsizei width,
+            GLsizei height
         ));
 
     };

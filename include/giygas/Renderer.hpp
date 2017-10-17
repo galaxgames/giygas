@@ -4,15 +4,11 @@
 #include "VertexArray.hpp"
 #include "ElementBuffer.hpp"
 #include "Material.hpp"
-#include "SurfaceType.hpp"
+#include "SurfaceBufferType.hpp"
+#include "Surface.hpp"
+#include "FrameBufferSurface.hpp"
 
 namespace giygas {
-
-    class GIYGAS_EXPORT ElementDrawInfo {
-    public:
-        size_t offset;
-        size_t count;
-    };
 
     class GIYGAS_EXPORT Renderer {
     public:
@@ -25,24 +21,9 @@ namespace giygas {
         virtual Material *make_material() = 0;
         virtual Shader *make_shader() = 0;
         virtual Texture *make_texture() = 0;
-
-        virtual void set_clear_color(Vector4 color) = 0;
-        virtual void set_clear_depth(double value) = 0;
-        virtual void set_clear_stencil(int value) = 0;
-        virtual void clear(SurfaceType surfaces) = 0;
-        virtual void draw(
-            VertexArray *vao, ElementBuffer<unsigned int> *ebo, Material *material,
-            ElementDrawInfo element_info
-        ) = 0;
-        virtual void draw(
-            VertexArray *vao, ElementBuffer<unsigned short> *ebo, Material *material,
-            ElementDrawInfo element_info
-        ) = 0;
-        virtual void draw(
-            VertexArray *vao, ElementBuffer<unsigned char> *ebo, Material *material,
-            ElementDrawInfo element_info
-        ) = 0;
-
+        virtual FrameBufferSurface *make_framebuffer() = 0;
+        virtual RenderBuffer *make_renderbuffer() = 0;
+        virtual Surface *main_surface() = 0;
     };
 }
 

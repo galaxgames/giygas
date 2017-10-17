@@ -1,7 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <giygas/Shader.hpp>
-#include <giygas/GL.hpp>
+#include <giygas_internal/GL.hpp>
 
 namespace giygas {
     class GLShader : public Shader {

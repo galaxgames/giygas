@@ -15,6 +15,9 @@ namespace giygas {
         Matrix4x4 operator*(const Matrix4x4 &other) const;
         Matrix4x4 &operator*=(const Matrix4x4 &other);
 
+        static Matrix4x4 perspective(
+            float aspect_ratio, float near, float far, float fov
+        );
         static Matrix4x4 translate(Vector4 translation);
         static Matrix4x4 scale(Vector4 scale);
         static Matrix4x4 rotation(Quaternion q);

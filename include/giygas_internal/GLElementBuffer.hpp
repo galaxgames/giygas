@@ -1,6 +1,6 @@
 #pragma once
 #include <giygas/ElementBuffer.hpp>
-#include <giygas/GL.hpp>
+#include <giygas_internal/GL.hpp>
 
 namespace giygas {
 
@@ -16,7 +16,7 @@ namespace giygas {
     {
         GL *_gl;
         GLuint _handle;
-        GLuint *_data;
+        T *_data;
         size_t _count;
 
     public:
