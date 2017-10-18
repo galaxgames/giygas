@@ -17,6 +17,11 @@ GLRenderer::GLRenderer(shared_ptr<Window> window)
     , _window(move(window))
 {
     gladLoadGL();
+    _window->add_surface_size_changed_listener(this);
+    _main_surface.set_size(
+        _window->framebuffer_width(),
+        _window->framebuffer_height()
+    );
 }
 
 GLRenderer::GLRenderer(GLRenderer &&other) noexcept
@@ -24,12 +29,20 @@ GLRenderer::GLRenderer(GLRenderer &&other) noexcept
     , _main_surface(move(other._main_surface))
     , _window(move(other._window))
 {
+    move_common(move(other));
 }
 
 GLRenderer& GLRenderer::operator=(GLRenderer &&other) noexcept {
     _gl = move(other._gl);
+    _main_surface = move(other._main_surface);
     _window = move(other._window);
+    move_common(move(other));
     return *this;
+}
+
+void GLRenderer::move_common(GLRenderer &&other) noexcept {
+    _window->remove_surface_size_changed_listener(&other);
+    _window->add_surface_size_changed_listener(this);
 }
 
 GLRenderer::~GLRenderer() = default;
@@ -76,4 +89,11 @@ RenderBuffer *GLRenderer::make_renderbuffer() {
 
 Surface *GLRenderer::main_surface() {
     return &_main_surface;
+}
+
+void GLRenderer::handle_surface_size_changed(
+    unsigned int width,
+    unsigned int height
+) {
+    _main_surface.set_size(width, height);
 }

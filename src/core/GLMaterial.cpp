@@ -50,14 +50,7 @@ GLMaterial::GLMaterial(GLMaterial &&other) noexcept :
     _locations(move(other._locations)),
     _textures(move(other._textures))
 {
-    _gl = other._gl;
-    _program = other._program;
-    _is_valid = other._is_valid;
-    _message = other._message;
-    _texture_count = other._texture_count;
-
-    other._program = 0;
-    other._message = nullptr;
+    move_common(move(other));
 }
 
 GLMaterial& GLMaterial::operator=(GLMaterial &&other) noexcept {
@@ -65,17 +58,18 @@ GLMaterial& GLMaterial::operator=(GLMaterial &&other) noexcept {
     _values = move(other._values);
     _locations = move(other._locations);
     _textures = move(other._textures);
+    move_common(move(other));
+    return *this;
+}
 
+void GLMaterial::move_common(GLMaterial &&other) noexcept {
     _gl = other._gl;
     _program = other._program;
     _is_valid = other._is_valid;
     _message = other._message;
     _texture_count = other._texture_count;
-
     other._program = 0;
     other._message = nullptr;
-
-    return *this;
 }
 
 GLMaterial::~GLMaterial() {
@@ -181,6 +175,7 @@ void GLMaterial::set_uniform(const string &name, T value) {
     }
 
     if (_is_valid && location != -1) {
+        _gl->use_program(_program);
         value_controller->do_gl_call(_gl, location);
     }
 }

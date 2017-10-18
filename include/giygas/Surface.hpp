@@ -11,6 +11,14 @@ namespace giygas {
     class GIYGAS_EXPORT Surface {
     public:
         virtual ~Surface() = default;
+        virtual unsigned int width() const = 0;
+        virtual unsigned int height() const = 0;
+        virtual void set_viewport(
+            unsigned int x,
+            unsigned int y,
+            unsigned int width,
+            unsigned int height
+        ) = 0;
         virtual void set_clear_color(Vector4 color) = 0;
         virtual void set_clear_depth(double value) = 0;
         virtual void set_clear_stencil(int value) = 0;

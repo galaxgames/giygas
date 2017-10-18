@@ -19,6 +19,23 @@ GLMainSurface &GLMainSurface::operator=(GLMainSurface &&other) noexcept {
     return *this;
 }
 
+unsigned int GLMainSurface::width() const {
+    return _width;
+}
+
+unsigned int GLMainSurface::height() const {
+    return _height;
+}
+
+void GLMainSurface::set_viewport(
+    unsigned int x,
+    unsigned int y,
+    unsigned int width,
+    unsigned int height
+) {
+    _renderer.set_viewport(x, y, width, height);
+}
+
 void GLMainSurface::set_clear_color(Vector4 color) {
     _renderer.set_clear_color(color);
 }
@@ -64,4 +81,9 @@ void GLMainSurface::draw(
 ) {
     _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
     _renderer.draw(_gl, vao, ebo, material, element_info);
+}
+
+void GLMainSurface::set_size(unsigned int width, unsigned int height) {
+    _width = width;
+    _height = height;
 }

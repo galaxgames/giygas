@@ -13,6 +13,10 @@ namespace giygas {
         Vector4 _clear_color;
         double _clear_depth;
         int _clear_stencil;
+        unsigned int _viewport_x;
+        unsigned int _viewport_y;
+        unsigned int _viewport_width;
+        unsigned int _viewport_height;
 
         static GLenum get_gl_primitive(Primitive primitive);
         static GLenum get_clear_flags(SurfaceBufferType surfaces);
@@ -26,6 +30,13 @@ namespace giygas {
         );
 
     public:
+        GLSurfaceRenderer();
+        void set_viewport(
+            unsigned int x,
+            unsigned int y,
+            unsigned int width,
+            unsigned int height
+        );
         void set_clear_color(Vector4 color);
         void set_clear_depth(double value);
         void set_clear_stencil(int value);

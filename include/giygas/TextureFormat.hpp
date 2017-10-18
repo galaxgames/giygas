@@ -4,6 +4,10 @@
 namespace giygas {
     enum class GIYGAS_EXPORT TextureFormat {
         RGB,
-        RGBA
+        RGBA,
+        Depth16,
+        Depth24,
+        Depth32,
+        Depth32Float
     };
 }

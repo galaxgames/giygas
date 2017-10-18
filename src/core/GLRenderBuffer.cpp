@@ -1,4 +1,5 @@
 #include <giygas_internal/GLRenderBuffer.hpp>
+#include <giygas_internal/gl_enum_conversions.hpp>
 #include <utility>
 
 using namespace giygas;
@@ -36,7 +37,7 @@ void GLRenderBuffer::create_storage(
     _gl->bind_renderbuffer(GL_RENDERBUFFER, _handle);
     _gl->renderbuffer_storage(
         GL_RENDERBUFFER,
-        GL_RGB,
+        get_gl_texture_format(format),
         static_cast<GLsizei>(width),
         static_cast<GLsizei>(height)
     );

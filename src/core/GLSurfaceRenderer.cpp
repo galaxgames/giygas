@@ -6,6 +6,28 @@
 
 using namespace giygas;
 
+GLSurfaceRenderer::GLSurfaceRenderer()
+    : _clear_color(0, 0, 0, 0)
+    , _clear_depth(0)
+    , _clear_stencil(0)
+    , _viewport_x(0)
+    , _viewport_y(0)
+    , _viewport_width(0)
+    , _viewport_height(0)
+{}
+
+void GLSurfaceRenderer::set_viewport(
+    unsigned int x,
+    unsigned int y,
+    unsigned int width,
+    unsigned int height
+) {
+    _viewport_x = x;
+    _viewport_y = y;
+    _viewport_width = width;
+    _viewport_height = height;
+}
+
 void GLSurfaceRenderer::set_clear_color(Vector4 color) {
     _clear_color = color;
 }
@@ -53,10 +75,18 @@ void GLSurfaceRenderer::draw_internal(
     auto *gl_vao = reinterpret_cast<GLVertexArray *>(vao);
     auto *gl_material = reinterpret_cast<GLMaterial *>(material);
 
-    if (!gl_material->is_valid()) {
-        //TODO: Log draw call aborted because of invalid shader.
-        return;
-    }
+    assert(gl_material->is_valid());
+
+    // TODO: debug element buffer validation
+
+    // TODO: Keep track of last bound framebuffer and only call this if
+    // last bound framebuffer wasn't ours and viewport values are not dirty.
+    glViewport(
+        static_cast<GLint>(_viewport_x),
+        static_cast<GLint>(_viewport_y),
+        static_cast<GLsizei>(_viewport_width),
+        static_cast<GLsizei>(_viewport_height)
+    );
 
     gl->bind_vertex_array(gl_vao->get_handle());
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo->handle());

@@ -16,19 +16,23 @@ GLFrameBufferSurface::GLFrameBufferSurface(
 ) noexcept
     : _renderer(move(other._renderer))
 {
-    _gl = other._gl;
-    _handle = other._handle;
-    other._handle = 0;
+    move_common(move(other));
 }
 
 GLFrameBufferSurface &GLFrameBufferSurface::operator=(
     GLFrameBufferSurface &&other
 ) noexcept {
+    _renderer = move(other._renderer);
+    move_common(move(other));
+    return *this;
+}
+
+void GLFrameBufferSurface::move_common(GLFrameBufferSurface &&other) noexcept {
     _gl = other._gl;
     _handle = other._handle;
-    _renderer = move(other._renderer);
+    _width = other._width;
+    _height = other._height;
     other._handle = 0;
-    return *this;
 }
 
 GLFrameBufferSurface::~GLFrameBufferSurface() {
@@ -64,6 +68,28 @@ void GLFrameBufferSurface::attach_renderbuffer(
         GL_RENDERBUFFER,
         gl_buffer->handle()
     );
+}
+
+void GLFrameBufferSurface::set_size(unsigned int width, unsigned int height) {
+    _width = width;
+    _height = height;
+}
+
+unsigned int GLFrameBufferSurface::width() const {
+    return _width;
+}
+
+unsigned int GLFrameBufferSurface::height() const {
+    return _height;
+}
+
+void GLFrameBufferSurface::set_viewport(
+    unsigned int x,
+    unsigned int y,
+    unsigned int width,
+    unsigned int height
+) {
+    _renderer.set_viewport(x, y, width, height);
 }
 
 void GLFrameBufferSurface::set_clear_color(Vector4 color) {

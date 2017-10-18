@@ -8,7 +8,10 @@ namespace giygas {
         GL *_gl;
         GLuint _handle;
         GLSurfaceRenderer _renderer;
+        unsigned int _width;
+        unsigned int _height;
 
+        void move_common(GLFrameBufferSurface &&other) noexcept;
         GLenum get_attachment_flag(SurfaceBufferType attachment_type) const;
 
     public:
@@ -23,9 +26,22 @@ namespace giygas {
             Texture *texture,
             SurfaceBufferType attachment_type
         ) override;
+
         void attach_renderbuffer(
             RenderBuffer *renderbuffer,
             SurfaceBufferType attachment_type
+        ) override;
+
+        void set_size(unsigned int width, unsigned int height);
+
+        unsigned int width() const override;
+        unsigned int height() const override;
+
+        void set_viewport(
+            unsigned int x,
+            unsigned int y,
+            unsigned int width,
+            unsigned int height
         ) override;
 
         void set_clear_color(Vector4 color) override;

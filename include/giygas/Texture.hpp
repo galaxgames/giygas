@@ -12,7 +12,16 @@ namespace giygas {
         virtual RendererType renderer_type() const = 0;
 
         virtual void set_data(
-            const unsigned char *data, size_t size, size_t width, size_t height,
+            const unsigned char *data,
+            size_t size,
+            size_t width,
+            size_t height,
+            TextureFormat format
+        ) = 0;
+
+        virtual void create_storage(
+            size_t width,
+            size_t height,
             TextureFormat format
         ) = 0;
     };

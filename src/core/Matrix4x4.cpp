@@ -40,7 +40,7 @@ Matrix4x4 Matrix4x4::perspective(
     float aspect_ratio, float near, float far, float fov
 ) {
     Matrix4x4 mat;
-    float scale = tan(fov * 0.5f * pi) * near;
+    float scale = tan(fov * 0.5f) * near;
     float right = aspect_ratio * scale;
     float left = -right;
     float top = scale;

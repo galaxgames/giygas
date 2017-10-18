@@ -35,6 +35,7 @@ namespace giygas {
         bool _is_valid;
         char *_message;
 
+        void move_common(GLMaterial &&other) noexcept;
         GLint get_location(const std::string& name) const;
 
         template <typename T> 

@@ -10,10 +10,17 @@ namespace giygas {
 
     class GenericGLElementBuffer;
 
-    class GIYGAS_EXPORT GLRenderer : public Renderer {
+    class GIYGAS_EXPORT GLRenderer : public Renderer, public SurfaceSizeChangedListener {
         GLImpl _gl;
         GLMainSurface _main_surface;
         std::shared_ptr<Window> _window;
+
+        void handle_surface_size_changed(
+            unsigned int width,
+            unsigned int height
+        ) override;
+
+        void move_common(GLRenderer &&other) noexcept;
 
     public:
         GLRenderer(std::shared_ptr<Window> window);

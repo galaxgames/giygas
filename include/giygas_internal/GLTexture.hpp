@@ -8,7 +8,6 @@ namespace giygas {
         GL *_gl;
         GLuint _handle;
 
-        static GLenum get_gl_texture_format(TextureFormat format);
         static size_t pixel_size_for_format(TextureFormat format);
 
     public:
@@ -23,6 +22,12 @@ namespace giygas {
 
         void set_data(
             const unsigned char* data, size_t size, size_t width, size_t height,
+            TextureFormat format
+        ) override;
+
+        void create_storage(
+            size_t width,
+            size_t height,
             TextureFormat format
         ) override;
 
