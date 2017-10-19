@@ -2,9 +2,11 @@
 #include <giygas/GLFWWindow.hpp>
 #include <memory>
 #include <iostream>
+#include <thread>
 
 using namespace giygas;
 using namespace std;
+using namespace chrono;
 
 class FramebufferExample
 {
@@ -51,7 +53,7 @@ public:
             "uniform mat4 worldView;\n"
             "void main()\n"
             "{\n"
-            "    gl_Position = vec4(pos, 1) * modelView;\n"
+            "    gl_Position = worldView * modelView * vec4(pos, 1);\n"
             "    color = vec4(vertexColor, 1);\n"
             "}\n";
 
@@ -79,7 +81,7 @@ public:
             "uniform mat4 worldView;\n"
             "void main()\n"
             "{\n"
-            "    gl_Position = vec4(pos, 1) * modelView;\n"
+            "    gl_Position = worldView * modelView * vec4(pos, 1);\n"
             "    uv = vertexUV;\n"
             "}\n";
 
@@ -92,7 +94,7 @@ public:
             "void main()\n"
             "{\n"
             "    fragColor = texture(tex, uv);\n"
-            "    //fragColor = vec4(1, 0, 1, 1);\n"
+            "    //fragColor = vec4(uv, 0, 1);\n"
             "}\n";
 
         setup_shader(shader, vertex_source, fragment_source, "textured");
@@ -100,7 +102,7 @@ public:
 
     void draw_cube(Surface *surface, Material *material) {
         surface->clear(SurfaceBufferType::Color | SurfaceBufferType::Depth);
-        surface->draw(vao.get(), ebo.get(), material, ElementDrawInfo{0, 3 * 6});
+        surface->draw(vao.get(), ebo.get(), material, ElementDrawInfo{0, 6 * 6});
     }
 
     void run() {
@@ -121,21 +123,24 @@ public:
 
         float vertices[8 * 8] = {
             // x,y,z, u,v, r,g,v
-            0, 0, 0,  0, 0,  0, 0, 0,
-            1, 0, 0,  1, 0,  1, 0, 0,
             0, 0, 1,  0, 0,  0, 0, 1,
             1, 0, 1,  1, 0,  1, 0, 1,
+            0, 0, 0,  1, 0,  0, 0, 0,
+            1, 0, 0,  0, 0,  1, 0, 0,
 
-            0, 1, 0,  0, 1,  0, 1, 0,
-            1, 1, 0,  1, 1,  1, 1, 0,
             0, 1, 1,  0, 1,  0, 1, 1,
             1, 1, 1,  1, 1,  1, 1, 1,
+            0, 1, 0,  1, 1,  0, 1, 0,
+            1, 1, 0,  0, 1,  1, 1, 0,
         };
 
         unsigned char elements[12 * 3] = {
-            0, 1, 2, 2, 1, 3,  // bottom
+            1, 0, 3, 3, 0, 2,  // bottom
             4, 5, 6, 6, 5, 7,  // top
-            0, 1, 4, 4, 1, 5, //side
+            0, 1, 4, 4, 1, 5,  // front side
+            3, 2, 7, 7, 2, 6,  // back side
+            2, 0, 6, 6, 0, 4,  // left side
+            1, 3, 5, 5, 3, 7,  // right side
         };
 
         vbo->set_data(0, vertices, 8 * 8 * sizeof(float));
@@ -145,7 +150,7 @@ public:
         layout.add_attribute(3, sizeof(float), 5 * sizeof(float));
         vao->add_buffer(vbo.get(), layout);
 
-        ebo->set(0, elements, 6 * 3);
+        ebo->set(0, elements, 6 * 6);
 
         setup_colored_shader(*colored_shader.get());
         setup_textured_shader(*textured_shader.get());
@@ -162,23 +167,57 @@ public:
         framebuffer->attach_texture(render_texture.get(), SurfaceBufferType::Color);
         framebuffer->attach_renderbuffer(render_depth_buffer.get(), SurfaceBufferType::Depth);
         framebuffer->set_viewport(0, 0, 512, 512);
-        Matrix4x4 world_view = Matrix4x4::perspective(1, 0, 10, 60.0f * 3.14159f / 180.0f);
-        Matrix4x4 model_view = Matrix4x4::translate(Vector4(0, 0, 0, 1));
+
+        Matrix4x4 framebuffer_worldview = Matrix4x4::perspective(1, 1.0f, 10.0f, 60 * (3.14159f / 180.0f));
+        Matrix4x4 world_view;
+        Matrix4x4 model_view;
+        colored_material->set_uniform_matrix4x4("worldView", framebuffer_worldview);
 
         float current_rotation = 0.0f;
 
+        typedef duration<long long, ratio<1, 60>> Frames;
+        typedef duration<float> FSeconds;
+        typedef high_resolution_clock clock_t;
+
+        clock_t::time_point frame_start = clock_t::now();
+        clock_t::time_point previous_frame_start = frame_start - duration_cast<clock_t::duration>(Frames(1));
+
+        renderer->main_surface()->set_clear_color(Vector4(0.5f, 0.5f, 1.0f, 1.0f));
+
         bool is_running = true;
         while (is_running) {
+            float elapsed_seconds = duration_cast<FSeconds>(frame_start - previous_frame_start).count();
+
+            // Update shared model view rotation
+            current_rotation += elapsed_seconds;
+            model_view = Matrix4x4::translate(Vector4(0, 0, -2.0f, 1))
+                * Matrix4x4::rotation_y(current_rotation)
+                * Matrix4x4::translate(Vector4(-0.5f, -0.5f, -0.5f, 1));
+
+            // Draw cube on framebuffer
             colored_material->set_uniform_matrix4x4("modelView", model_view);
-            textured_material->set_uniform_matrix4x4("modelView", model_view);
-
-            Surface *main_surface = renderer->main_surface();
-            main_surface->set_viewport(0, 0, main_surface->width(), main_surface->height());
-
             draw_cube(framebuffer.get(), colored_material.get());
+
+            // Draw cube on main surface
+            Surface *main_surface = renderer->main_surface();
+            auto width = main_surface->width();
+            auto height = main_surface->height();
+            main_surface->set_viewport(0, 0, width, height);
+            float aspect = static_cast<float>(width) / static_cast<float>(height);
+            world_view = Matrix4x4::perspective(aspect, 1.0f, 10.0f, 60.0f * (3.14159f / 180.0f));
+            textured_material->set_uniform_matrix4x4("worldView", world_view);
+            textured_material->set_uniform_matrix4x4("modelView", model_view);
             draw_cube(renderer->main_surface(), textured_material.get());
 
             window->update();
+
+            // Figure out how much to sleep
+            clock_t::time_point next_frame_start = frame_start + duration_cast<clock_t::duration>(Frames(1));
+            clock_t::time_point current_time = clock_t::now();
+            this_thread::sleep_for(next_frame_start - current_time);
+            previous_frame_start = frame_start;
+            frame_start = clock_t::now();
+
             is_running = !window->should_close();
         }
     }

@@ -21,5 +21,6 @@ namespace giygas {
         static Matrix4x4 translate(Vector4 translation);
         static Matrix4x4 scale(Vector4 scale);
         static Matrix4x4 rotation(Quaternion q);
+        static Matrix4x4 rotation_y(float angle);
     };
 }

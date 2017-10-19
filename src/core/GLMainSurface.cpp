@@ -49,7 +49,7 @@ void GLMainSurface::set_clear_stencil(int value) {
 }
 
 void GLMainSurface::clear(SurfaceBufferType surfaces) {
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, 0);
     _renderer.clear(surfaces);
 }
 
@@ -59,7 +59,7 @@ void GLMainSurface::draw(
     Material *material,
     ElementDrawInfo element_info
 ) {
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, 0);
     _renderer.draw(_gl, vao, ebo, material, element_info);
 }
 
@@ -69,7 +69,7 @@ void GLMainSurface::draw(
     Material *material,
     ElementDrawInfo element_info
 ) {
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, 0);
     _renderer.draw(_gl, vao, ebo, material, element_info);
 }
 
@@ -79,7 +79,7 @@ void GLMainSurface::draw(
     Material *material,
     ElementDrawInfo element_info
 ) {
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, 0);
     _renderer.draw(_gl, vao, ebo, material, element_info);
 }
 

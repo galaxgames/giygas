@@ -45,9 +45,9 @@ void GLFrameBufferSurface::attach_texture(
 ) {
     assert(texture->renderer_type() == RendererType::OpenGL);
     GLTexture *gl_texture = reinterpret_cast<GLTexture *>(texture);
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, _handle);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, _handle);
     _gl->framebuffer_texture_2d(
-        GL_DRAW_FRAMEBUFFER,
+        GL_FRAMEBUFFER,
         get_attachment_flag(attachment_type),
         GL_TEXTURE_2D,
         gl_texture->handle(),
@@ -61,9 +61,9 @@ void GLFrameBufferSurface::attach_renderbuffer(
 ) {
     assert(renderbuffer->renderer_type() == RendererType::OpenGL);
     auto *gl_buffer = reinterpret_cast<GLRenderBuffer *>(renderbuffer);
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, _handle);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, _handle);
     _gl->framebuffer_renderbuffer(
-        GL_DRAW_FRAMEBUFFER,
+        GL_FRAMEBUFFER,
         get_attachment_flag(attachment_type),
         GL_RENDERBUFFER,
         gl_buffer->handle()
@@ -105,7 +105,7 @@ void GLFrameBufferSurface::set_clear_stencil(int value) {
 }
 
 void GLFrameBufferSurface::clear(SurfaceBufferType buffers) {
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, _handle);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, _handle);
     _renderer.clear(buffers);
 }
 
@@ -115,7 +115,7 @@ void GLFrameBufferSurface::draw(
     Material *material,
     ElementDrawInfo element_info
 ) {
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, _handle);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, _handle);
     _renderer.draw(_gl, vao, ebo, material, element_info);
 }
 
@@ -125,7 +125,7 @@ void GLFrameBufferSurface::draw(
     Material *material,
     ElementDrawInfo element_info
 ) {
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, _handle);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, _handle);
     _renderer.draw(_gl, vao, ebo, material, element_info);
 }
 
@@ -135,7 +135,7 @@ void GLFrameBufferSurface::draw(
     Material *material,
     ElementDrawInfo element_info
 ) {
-    _gl->bind_framebuffer(GL_DRAW_FRAMEBUFFER, _handle);
+    _gl->bind_framebuffer(GL_FRAMEBUFFER, _handle);
     _renderer.draw(_gl, vao, ebo, material, element_info);
 }
 

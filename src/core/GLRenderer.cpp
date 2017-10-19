@@ -22,6 +22,9 @@ GLRenderer::GLRenderer(shared_ptr<Window> window)
         _window->framebuffer_width(),
         _window->framebuffer_height()
     );
+
+    // Set up some defaults that should be configurable later
+    glEnable(GL_CULL_FACE);
 }
 
 GLRenderer::GLRenderer(GLRenderer &&other) noexcept
