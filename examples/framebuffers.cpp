@@ -106,8 +106,8 @@ public:
     }
 
     void run() {
-        window->set_show_hints(3, 2);
-        window->show();
+        window->initialize(GLFWWindowInitOptions());
+        //window->show();
 
         renderer = unique_ptr<Renderer>(giygas::make_renderer(window));
         vbo = unique_ptr<VertexBuffer>(renderer->make_vbo());
@@ -183,6 +183,8 @@ public:
         clock_t::time_point previous_frame_start = frame_start - duration_cast<clock_t::duration>(Frames(1));
 
         renderer->main_surface()->set_clear_color(Vector4(0.5f, 0.5f, 1.0f, 1.0f));
+
+        window->show();
 
         bool is_running = true;
         while (is_running) {

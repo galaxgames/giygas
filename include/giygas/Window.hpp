@@ -16,9 +16,6 @@ namespace giygas {
     class GIYGAS_EXPORT Window {
     public:
         virtual ~Window() = default;
-        virtual void show() = 0;
-        virtual void update() = 0;
-        virtual bool should_close() const = 0;
         virtual bool is_valid() const = 0;
         virtual unsigned int framebuffer_width() const = 0;
         virtual unsigned int framebuffer_height() const = 0;

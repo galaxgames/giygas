@@ -16,6 +16,8 @@ GLRenderer::GLRenderer(shared_ptr<Window> window)
     : _main_surface(&_gl)
     , _window(move(window))
 {
+    assert(_window->is_valid());
+
     gladLoadGL();
     _window->add_surface_size_changed_listener(this);
     _main_surface.set_size(

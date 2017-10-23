@@ -91,6 +91,3 @@ size_t GLTexture::pixel_size_for_format(TextureFormat format) {
         return 4;
     }
 }
-
-
-
