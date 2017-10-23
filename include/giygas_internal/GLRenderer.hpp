@@ -15,6 +15,10 @@ namespace giygas {
         GLMainSurface _main_surface;
         std::shared_ptr<Window> _window;
 
+#ifndef NDEBUG
+        bool _initialized;
+#endif
+
         void handle_surface_size_changed(
             unsigned int width,
             unsigned int height
@@ -28,8 +32,12 @@ namespace giygas {
         GLRenderer(GLRenderer &&) noexcept;
         GLRenderer& operator=(const GLRenderer &) = delete;
         GLRenderer& operator=(GLRenderer &&) noexcept;
-        virtual ~GLRenderer();
+        ~GLRenderer();
 
+        void initialize(RendererInitOptions options) override;
+        void set_polygon_culling_enabled(bool value) override;
+        void set_polygon_culling_mode(PolygonCullingMode value) override;
+        void set_front_face_winding(VertexWinding value) override;
         VertexBuffer *make_vbo() override;
         ElementBuffer<unsigned int> *make_int_ebo() override;
         ElementBuffer<unsigned short> *make_short_ebo() override;
@@ -37,7 +45,7 @@ namespace giygas {
         VertexArray *make_vao() override;
         Material *make_material() override;
         Shader *make_shader() override;
-        Texture *make_texture() override;
+        Texture *make_texture(TextureInitOptions options) override;
         FrameBufferSurface *make_framebuffer() override;
         RenderBuffer *make_renderbuffer() override;
         Surface *main_surface() override;

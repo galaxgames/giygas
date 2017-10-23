@@ -107,9 +107,8 @@ public:
 
     void run() {
         window->initialize(GLFWWindowInitOptions());
-        //window->show();
-
         renderer = unique_ptr<Renderer>(giygas::make_renderer(window));
+        renderer->initialize(RendererInitOptions(true));
         vbo = unique_ptr<VertexBuffer>(renderer->make_vbo());
         ebo = unique_ptr<ElementBufferChar>(renderer->make_char_ebo());
         vao = unique_ptr<VertexArray>(renderer->make_vao());
@@ -118,7 +117,7 @@ public:
         colored_shader = shared_ptr<Shader>(renderer->make_shader());
         textured_shader = shared_ptr<Shader>(renderer->make_shader());
         framebuffer = unique_ptr<FrameBufferSurface>(renderer->make_framebuffer());
-        render_texture = shared_ptr<Texture>(renderer->make_texture());
+        render_texture = shared_ptr<Texture>(renderer->make_texture(TextureInitOptions()));
         render_depth_buffer = unique_ptr<RenderBuffer>(renderer->make_renderbuffer());
 
         float vertices[8 * 8] = {
