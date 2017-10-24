@@ -108,7 +108,10 @@ public:
     void run() {
         window->initialize(GLFWWindowInitOptions());
         renderer = unique_ptr<Renderer>(giygas::make_renderer(window));
-        renderer->initialize(RendererInitOptions(true));
+        renderer->initialize(RendererInitOptions(
+            PolygonCullingOptions(true),
+            DepthBufferOptions(true, true, DepthFunction::PassGreater, 0, 1))
+        );
         vbo = unique_ptr<VertexBuffer>(renderer->make_vbo());
         ebo = unique_ptr<ElementBufferChar>(renderer->make_char_ebo());
         vao = unique_ptr<VertexArray>(renderer->make_vao());

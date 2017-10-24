@@ -63,13 +63,22 @@ void GLRenderer::initialize(RendererInitOptions options) {
         _window->framebuffer_height()
     );
 
-    set_polygon_culling_enabled(options.polygon_culling_enabled);
-    set_polygon_culling_mode(options.polygon_culling_mode);
-    set_front_face_winding(options.front_face_vertex_winding);
+    #ifndef NDEBUG
+        _initialized = true;
+    #endif
 
-#ifndef NDEBUG
-    _initialized = true;
-#endif
+    set_polygon_culling_enabled(options.polygon_culling.enabled);
+    set_polygon_culling_mode(options.polygon_culling.mode);
+    set_front_face_winding(options.polygon_culling.front_face_vertex_winding);
+
+    set_depth_test_enabled(options.depth_buffer.depth_test_enabled);
+    set_depth_mask_enabled(options.depth_buffer.mask_enabled);
+    set_depth_function(options.depth_buffer.function);
+    set_depth_range(
+        options.depth_buffer.range_near,
+        options.depth_buffer.range_far
+    );
+
 }
 
 void GLRenderer::set_polygon_culling_enabled(bool value) {
@@ -82,11 +91,38 @@ void GLRenderer::set_polygon_culling_enabled(bool value) {
 }
 
 void GLRenderer::set_polygon_culling_mode(PolygonCullingMode value) {
+    assert(_initialized);
     glCullFace(value == PolygonCullingMode::BackFace ? GL_BACK : GL_FRONT);
 }
 
 void GLRenderer::set_front_face_winding(VertexWinding value) {
+    assert(_initialized);
     glFrontFace(value == VertexWinding::CounterClockwise ? GL_CCW : GL_CW);
+}
+
+void GLRenderer::set_depth_test_enabled(bool value) {
+    assert(_initialized);
+    if (value) {
+        glEnable(GL_DEPTH_TEST);
+    }
+    else {
+        glDisable(GL_DEPTH_TEST);
+    }
+}
+
+void GLRenderer::set_depth_mask_enabled(bool value) {
+    assert(_initialized);
+    glDepthMask(static_cast<GLboolean>(value));
+}
+
+void GLRenderer::set_depth_function(DepthFunction value) {
+    assert(_initialized);
+    glDepthFunc(depth_function_to_enum(value));
+}
+
+void GLRenderer::set_depth_range(double near, double far) {
+    assert(_initialized);
+    glDepthRange(near, far);
 }
 
 VertexBuffer *GLRenderer::make_vbo() {
@@ -148,4 +184,25 @@ void GLRenderer::handle_surface_size_changed(
     unsigned int height
 ) {
     _main_surface.set_size(width, height);
+}
+
+GLenum GLRenderer::depth_function_to_enum(DepthFunction function) {
+    switch (function) {
+        case DepthFunction::PassLess:
+            return GL_LESS;
+        case DepthFunction::PassAlways:
+            return GL_ALWAYS;
+        case DepthFunction::PassEqual:
+            return GL_EQUAL;
+        case DepthFunction::PassGreater:
+            return GL_GREATER;
+        case DepthFunction::PassGreaterThanOrEqual:
+            return GL_GEQUAL;
+        case DepthFunction::PassLessThanOrEqual:
+            return GL_LEQUAL;
+        case DepthFunction::PassNever:
+            return GL_NEVER;
+        case DepthFunction::PassNotEqual:
+            return GL_NOTEQUAL;
+    }
 }

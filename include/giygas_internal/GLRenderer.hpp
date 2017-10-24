@@ -19,12 +19,14 @@ namespace giygas {
         bool _initialized;
 #endif
 
+        void move_common(GLRenderer &&other) noexcept;
+
         void handle_surface_size_changed(
             unsigned int width,
             unsigned int height
         ) override;
 
-        void move_common(GLRenderer &&other) noexcept;
+        static GLenum depth_function_to_enum(DepthFunction function);
 
     public:
         GLRenderer(std::shared_ptr<Window> window);
@@ -35,9 +37,16 @@ namespace giygas {
         ~GLRenderer();
 
         void initialize(RendererInitOptions options) override;
+
         void set_polygon_culling_enabled(bool value) override;
         void set_polygon_culling_mode(PolygonCullingMode value) override;
         void set_front_face_winding(VertexWinding value) override;
+
+        void set_depth_test_enabled(bool value) override;
+        void set_depth_mask_enabled(bool value) override;
+        void set_depth_function(DepthFunction value) override;
+        void set_depth_range(double near, double far) override;
+
         VertexBuffer *make_vbo() override;
         ElementBuffer<unsigned int> *make_int_ebo() override;
         ElementBuffer<unsigned short> *make_short_ebo() override;

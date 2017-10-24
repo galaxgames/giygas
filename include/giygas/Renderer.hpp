@@ -18,9 +18,16 @@ namespace giygas {
     public:
         virtual ~Renderer() = default;
         virtual void initialize(RendererInitOptions options) = 0;
+
         virtual void set_polygon_culling_enabled(bool value) = 0;
         virtual void set_polygon_culling_mode(PolygonCullingMode value) = 0;
         virtual void set_front_face_winding(VertexWinding value) = 0;
+
+        virtual void set_depth_test_enabled(bool value) = 0;
+        virtual void set_depth_mask_enabled(bool value) = 0;
+        virtual void set_depth_function(DepthFunction value) = 0;
+        virtual void set_depth_range(double near, double far) = 0;
+
         virtual VertexBuffer *make_vbo() = 0;
         virtual VertexArray *make_vao() = 0;
         virtual ElementBuffer<unsigned int> *make_int_ebo() = 0;

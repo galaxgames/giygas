@@ -10,5 +10,5 @@ TEST(GLTextureTest, TestConstructDestruct)
     MockGL gl;
     EXPECT_CALL(gl, gen_textures(1, _));
     EXPECT_CALL(gl, delete_textures(1, _));
-    GLTexture texture(&gl);
+    GLTexture texture(&gl, TextureInitOptions());
 }
