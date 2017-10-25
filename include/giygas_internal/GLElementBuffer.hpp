@@ -19,6 +19,12 @@ namespace giygas {
         T *_data;
         size_t _count;
 
+#ifndef NDEBUG
+        T _max_element;
+
+        void update_max_element();
+#endif
+
     public:
         GLElementBuffer(GL *gl);
         GLElementBuffer(const GLElementBuffer &) = delete;

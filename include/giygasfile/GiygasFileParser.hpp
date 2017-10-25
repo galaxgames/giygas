@@ -6,7 +6,7 @@
 
 namespace giygasfile {
 
-    class GIYGAS_EXPORT GiygasFileParser {
+    class GIYGASFILE_EXPORT GiygasFileParser {
         InputIterable *_input;
         HeaderData _header;
         std::vector<VBONode> _vbo_nodes;

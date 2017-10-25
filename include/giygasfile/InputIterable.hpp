@@ -1,9 +1,9 @@
 #pragma once
 #include <cstddef>
-#include <giygas/export.h>
+#include <giygasfile/export.h>
 
 namespace giygasfile {
-    class GIYGAS_EXPORT InputIterable {
+    class GIYGASFILE_EXPORT InputIterable {
     public:
         virtual ~InputIterable() = default;
         virtual size_t read(size_t count, void *out) = 0;

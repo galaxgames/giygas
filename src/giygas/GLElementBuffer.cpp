@@ -25,7 +25,6 @@ GLElementBuffer<T>& GLElementBuffer<T>::operator=(GLElementBuffer &&other) noexc
     _count = other._count;
     other._handle = 0;
     other._data = nullptr;
-
     return *this;
 }
 

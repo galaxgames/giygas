@@ -1,7 +1,7 @@
 #pragma once
 #include <giygas/Renderer.hpp>
 #include <giygas/Primitive.hpp>
-#include "giygas/Window.hpp"
+#include "giygas/Context.hpp"
 #include "GLImpl.hpp"
 #include "giygas/Primitive.hpp"
 #include "GLMainSurface.hpp"
@@ -13,7 +13,7 @@ namespace giygas {
     class GIYGAS_EXPORT GLRenderer : public Renderer, public SurfaceSizeChangedListener {
         GLImpl _gl;
         GLMainSurface _main_surface;
-        std::shared_ptr<Window> _window;
+        std::shared_ptr<Context> _window;
 
 #ifndef NDEBUG
         bool _initialized;
@@ -29,7 +29,7 @@ namespace giygas {
         static GLenum depth_function_to_enum(DepthFunction function);
 
     public:
-        GLRenderer(std::shared_ptr<Window> window);
+        GLRenderer(std::shared_ptr<Context> window);
         GLRenderer(const GLRenderer &) = delete;
         GLRenderer(GLRenderer &&) noexcept;
         GLRenderer& operator=(const GLRenderer &) = delete;

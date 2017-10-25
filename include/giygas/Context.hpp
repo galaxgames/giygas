@@ -13,9 +13,9 @@ namespace giygas {
         ) = 0;
     };
 
-    class GIYGAS_EXPORT Window {
+    class GIYGAS_EXPORT Context {
     public:
-        virtual ~Window() = default;
+        virtual ~Context() = default;
         virtual bool is_valid() const = 0;
         virtual unsigned int framebuffer_width() const = 0;
         virtual unsigned int framebuffer_height() const = 0;

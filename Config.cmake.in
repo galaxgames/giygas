@@ -1,4 +1,6 @@
 @PACKAGE_INIT@
 
-include("${CMAKE_CURRENT_LIST_DIR}/@targets_export_name@.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/giygasTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/giygasfileTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/giygasutilTargets.cmake")
 check_required_components(giygas)

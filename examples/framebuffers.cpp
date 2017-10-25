@@ -1,18 +1,16 @@
 #include <giygas/giygas.hpp>
 #include <giygas/GLFWWindow.hpp>
-#include <memory>
 #include <iostream>
-#include <thread>
+#include <giygasutil/EventLoopUpdatable.hpp>
+#include <giygasutil/EventLoopContextRunner.hpp>
 
 using namespace giygas;
 using namespace std;
-using namespace chrono;
 
-class FramebufferExample
+class FramebufferExample : public EventLoopUpdatable
 {
 public:
-    shared_ptr<GLFWWindow> window;
-    unique_ptr<Renderer> renderer;
+    Renderer *renderer;
     unique_ptr<VertexBuffer> vbo;
     unique_ptr<ElementBufferChar> ebo;
     unique_ptr<VertexArray> vao;
@@ -24,9 +22,12 @@ public:
     shared_ptr<Texture> render_texture;
     unique_ptr<RenderBuffer> render_depth_buffer;
 
-    FramebufferExample()
-        : window(new GLFWWindow)
+    float current_rotation;
+
+    FramebufferExample(Renderer *renderer)
+        : renderer(renderer)
     {
+        current_rotation = 0;
     }
 
     void setup_shader(
@@ -105,9 +106,7 @@ public:
         surface->draw(vao.get(), ebo.get(), material, ElementDrawInfo{0, 6 * 6});
     }
 
-    void run() {
-        window->initialize(GLFWWindowInitOptions());
-        renderer = unique_ptr<Renderer>(giygas::make_renderer(window));
+    void setup() {
         renderer->initialize(RendererInitOptions(
             PolygonCullingOptions(true),
             DepthBufferOptions(true, true, DepthFunction::PassGreater, 0, 1))
@@ -175,62 +174,44 @@ public:
         Matrix4x4 model_view;
         colored_material->set_uniform_matrix4x4("worldView", framebuffer_worldview);
 
-        float current_rotation = 0.0f;
-
-        typedef duration<long long, ratio<1, 60>> Frames;
-        typedef duration<float> FSeconds;
-        typedef high_resolution_clock clock_t;
-
-        clock_t::time_point frame_start = clock_t::now();
-        clock_t::time_point previous_frame_start = frame_start - duration_cast<clock_t::duration>(Frames(1));
-
         renderer->main_surface()->set_clear_color(Vector4(0.5f, 0.5f, 1.0f, 1.0f));
+    }
 
-        window->show();
+    void update(float elapsed_seconds) override {
+        // Update shared model view rotation
+        current_rotation += elapsed_seconds;
+        Matrix4x4 model_view =
+            Matrix4x4::translate(Vector4(0, 0, -2.0f, 1))
+            * Matrix4x4::rotation_y(current_rotation)
+            * Matrix4x4::translate(Vector4(-0.5f, -0.5f, -0.5f, 1));
 
-        bool is_running = true;
-        while (is_running) {
-            float elapsed_seconds = duration_cast<FSeconds>(frame_start - previous_frame_start).count();
+        // Draw cube on framebuffer
+        colored_material->set_uniform_matrix4x4("modelView", model_view);
+        draw_cube(framebuffer.get(), colored_material.get());
 
-            // Update shared model view rotation
-            current_rotation += elapsed_seconds;
-            model_view = Matrix4x4::translate(Vector4(0, 0, -2.0f, 1))
-                * Matrix4x4::rotation_y(current_rotation)
-                * Matrix4x4::translate(Vector4(-0.5f, -0.5f, -0.5f, 1));
-
-            // Draw cube on framebuffer
-            colored_material->set_uniform_matrix4x4("modelView", model_view);
-            draw_cube(framebuffer.get(), colored_material.get());
-
-            // Draw cube on main surface
-            Surface *main_surface = renderer->main_surface();
-            auto width = main_surface->width();
-            auto height = main_surface->height();
-            main_surface->set_viewport(0, 0, width, height);
-            float aspect = static_cast<float>(width) / static_cast<float>(height);
-            world_view = Matrix4x4::perspective(aspect, 1.0f, 10.0f, 60.0f * (3.14159f / 180.0f));
-            textured_material->set_uniform_matrix4x4("worldView", world_view);
-            textured_material->set_uniform_matrix4x4("modelView", model_view);
-            draw_cube(renderer->main_surface(), textured_material.get());
-
-            window->update();
-
-            // Figure out how much to sleep
-            clock_t::time_point next_frame_start = frame_start + duration_cast<clock_t::duration>(Frames(1));
-            clock_t::time_point current_time = clock_t::now();
-            this_thread::sleep_for(next_frame_start - current_time);
-            previous_frame_start = frame_start;
-            frame_start = clock_t::now();
-
-            is_running = !window->should_close();
-        }
+        // Draw cube on main surface
+        Surface *main_surface = renderer->main_surface();
+        auto width = main_surface->width();
+        auto height = main_surface->height();
+        main_surface->set_viewport(0, 0, width, height);
+        float aspect = static_cast<float>(width) / static_cast<float>(height);
+        Matrix4x4 world_view = Matrix4x4::perspective(aspect, 1.0f, 10.0f, 60.0f * (3.14159f / 180.0f));
+        textured_material->set_uniform_matrix4x4("worldView", world_view);
+        textured_material->set_uniform_matrix4x4("modelView", model_view);
+        draw_cube(renderer->main_surface(), textured_material.get());
     }
 
 };
 
 int main(int argc, char **argv)
 {
-    FramebufferExample app;
-    app.run();
+    shared_ptr<GLFWWindow> window(new GLFWWindow);
+    window->initialize(GLFWWindowInitOptions());
+    unique_ptr<Renderer> renderer(giygas::make_renderer(window));
+    FramebufferExample app(renderer.get());
+    app.setup();
+    EventLoopContextRunner runner(window.get(), &app);
+    window->show();
+    runner.run();
 	return 0;
 }

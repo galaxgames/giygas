@@ -3,12 +3,12 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <unordered_set>
-#include "Window.hpp"
+#include "EventLoopContext.hpp"
 #include "GLFWWindowInitOptions.hpp"
 
 namespace giygas {
 
-    class GIYGAS_EXPORT GLFWWindow : public Window {
+    class GIYGAS_EXPORT GLFWWindow : public EventLoopContext {
         GLFWwindow *_window;
         GLVersion _version;
         unsigned int _framebuffer_width;
@@ -51,10 +51,11 @@ namespace giygas {
             SurfaceSizeChangedListener *listener
         ) override;
 
+        void update() override ;
+        bool should_close() const override;
+
         void initialize(const GLFWWindowInitOptions options);
         void show();
-        void update();
-        bool should_close() const;
         void set_size(unsigned int width, unsigned int height);
     };
 

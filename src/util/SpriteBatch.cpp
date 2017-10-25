@@ -1,4 +1,4 @@
-#include <giygas/util/SpriteBatch.hpp>
+#include <giygasutil/SpriteBatch.hpp>
 #include <cassert>
 
 using namespace giygas;

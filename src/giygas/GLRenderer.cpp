@@ -12,7 +12,7 @@
 using namespace std;
 using namespace giygas;
 
-GLRenderer::GLRenderer(shared_ptr<Window> window)
+GLRenderer::GLRenderer(shared_ptr<Context> window)
     : _main_surface(&_gl)
     , _window(move(window))
 {
