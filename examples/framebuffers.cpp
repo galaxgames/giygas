@@ -60,9 +60,7 @@ public:
 
         const char *fragment_source =
             "#version 330\n"
-            "//uniform sampler2D tex;\n"
             "in vec4 color;\n"
-            "//in vec2 uv;\n"
             "out vec4 fragColor;\n"
             "void main()\n"
             "{\n"
@@ -89,13 +87,11 @@ public:
         const char *fragment_source =
             "#version 330\n"
             "uniform sampler2D tex;\n"
-            "//in vec4 color;\n"
             "in vec2 uv;\n"
             "out vec4 fragColor;\n"
             "void main()\n"
             "{\n"
             "    fragColor = texture(tex, uv);\n"
-            "    //fragColor = vec4(uv, 0, 1);\n"
             "}\n";
 
         setup_shader(shader, vertex_source, fragment_source, "textured");
@@ -199,6 +195,7 @@ public:
         textured_material->set_uniform_matrix4x4("worldView", world_view);
         textured_material->set_uniform_matrix4x4("modelView", model_view);
         draw_cube(renderer->main_surface(), textured_material.get());
+        renderer->present();
     }
 
 };

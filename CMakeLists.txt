@@ -5,9 +5,9 @@ include(CMakePackageConfigHelpers)
 
 set(CONFIG_INSTALL_DIR "lib/cmake/giygas")
 
-add_subdirectory(src/giygas)
-add_subdirectory(src/giygasfile)
-add_subdirectory(src/util)
+add_subdirectory(core)
+add_subdirectory(util)
+add_subdirectory(giygasfile)
 add_subdirectory(examples)
 
 add_dependencies(giygasfile giygas)
