@@ -26,7 +26,9 @@ GLRenderer::GLRenderer(shared_ptr<Context> window)
     _next_operation_queue = &_operations_b;
 }
 
-GLRenderer::GLRenderer(GLRenderer &&other) noexcept  {
+GLRenderer::GLRenderer(GLRenderer &&other) noexcept
+    : _surface_size_changed_handler(move(other._surface_size_changed_handler))
+{
     move_common(move(other));
 }
 
@@ -34,6 +36,7 @@ GLRenderer& GLRenderer::operator=(GLRenderer &&other) noexcept {
     if (&other == this) {
         return *this;
     }
+    _surface_size_changed_handler = move(other._surface_size_changed_handler);
     move_common(move(other));
     return *this;
 }
@@ -47,8 +50,8 @@ void GLRenderer::move_common(GLRenderer &&other) noexcept {
     _context = move(other._context);
     _operations_a = move(other._operations_a);
     _operations_b = move(other._operations_b);
-    _context->remove_surface_size_changed_listener(&other);
-    _context->add_surface_size_changed_listener(this);
+    //_context->remove_surface_size_changed_listener(&other);
+    //_context->add_surface_size_changed_listener(this);
     _current_operation_queue = other._current_operation_queue;
     _next_operation_queue = other._next_operation_queue;
 
@@ -63,8 +66,7 @@ void GLRenderer::move_common(GLRenderer &&other) noexcept {
 }
 
 GLRenderer::~GLRenderer() {
-    // TODO: Utilize RAII for listeners.
-    _context->remove_surface_size_changed_listener(this);
+//    _context->remove_surface_size_changed_listener(this);
     stop_worker();
 }
 
@@ -74,7 +76,8 @@ void GLRenderer::initialize(RendererInitOptions options) {
     // TODO: Stop using glad so we can support having more than one GLRenderer
     // instance
     gladLoadGL();
-    _context->add_surface_size_changed_listener(this);
+    _surface_size_changed_handler = _context->surface_size_changed();
+    _surface_size_changed_handler.delegate = bind(&GLRenderer::handle_surface_size_changed, this, placeholders::_1, placeholders::_2);
     _main_surface.set_size(
         _context->framebuffer_width(),
         _context->framebuffer_height()

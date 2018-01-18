@@ -11,13 +11,13 @@ GLFWWindow::GLFWWindow() {
 }
 
 GLFWWindow::GLFWWindow(GLFWWindow &&other) noexcept
-    : _surface_size_listeners(move(other._surface_size_listeners))
+    : _surface_size_changed_event(move(other._surface_size_changed_event))
 {
     move_common(move(other));
 }
 
 GLFWWindow& GLFWWindow::operator=(GLFWWindow &&other) noexcept {
-    _surface_size_listeners = move(other._surface_size_listeners);
+    _surface_size_changed_event = move(other._surface_size_changed_event);
     move_common(move(other));
     return *this;
 }
@@ -156,22 +156,26 @@ unsigned int GLFWWindow::framebuffer_height() const {
     return _framebuffer_height;
 }
 
-void GLFWWindow::add_surface_size_changed_listener(
-    SurfaceSizeChangedListener *listener
-) {
-    assert(listener != nullptr);
-    _surface_size_listeners.insert(listener);
+EventHandler<unsigned int, unsigned int> GLFWWindow::surface_size_changed() {
+    return _surface_size_changed_event.make_handler();
 }
 
-void GLFWWindow::remove_surface_size_changed_listener(
-        SurfaceSizeChangedListener *listener
-) {
-    auto it = _surface_size_listeners.find(listener);
-    if (it == _surface_size_listeners.end()) {
-        return;
-    }
-    _surface_size_listeners.erase(it);
-}
+//void GLFWWindow::add_surface_size_changed_listener(
+//    SurfaceSizeChangedListener *listener
+//) {
+//    assert(listener != nullptr);
+//    _surface_size_listeners.insert(listener);
+//}
+//
+//void GLFWWindow::remove_surface_size_changed_listener(
+//        SurfaceSizeChangedListener *listener
+//) {
+//    auto it = _surface_size_listeners.find(listener);
+//    if (it == _surface_size_listeners.end()) {
+//        return;
+//    }
+//    _surface_size_listeners.erase(it);
+//}
 
 
 void GLFWWindow::framebuffer_size_callback(
@@ -183,10 +187,12 @@ void GLFWWindow::framebuffer_size_callback(
     auto *instance = reinterpret_cast<GLFWWindow *>(userdata);
     instance->_framebuffer_width = static_cast<unsigned int>(width);
     instance->_framebuffer_height = static_cast<unsigned int>(height);
-    for (SurfaceSizeChangedListener *listener : instance->_surface_size_listeners) {
-        listener->handle_surface_size_changed(
-            instance->_framebuffer_width,
-            instance->_framebuffer_height
-        );
-    }
+
+    instance->_surface_size_changed_event.invoke(instance->_framebuffer_width, instance->_framebuffer_height);
+//    for (SurfaceSizeChangedListener *listener : instance->_surface_size_listeners) {
+//        listener->handle_surface_size_changed(
+//            instance->_framebuffer_width,
+//            instance->_framebuffer_height
+//        );
+//    }
 }

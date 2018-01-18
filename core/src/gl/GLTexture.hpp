@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <glad/glad.h>
 #include <giygas/Texture.hpp>
 #include "GL.hpp"
@@ -12,6 +13,10 @@ namespace giygas {
     class GLTexture : public Texture {
         GLRenderer *_renderer;
         GLuint _handle;
+        unique_ptr<unsigned char[]> _data;
+        size_t _width;
+        size_t _height;
+        TextureFormat _data_format;
 
         void set_tex_parameter(GLenum parameter, GLint value);
         static size_t pixel_size_for_format(TextureFormat format);
@@ -26,6 +31,7 @@ namespace giygas {
         GLTexture &operator=(GLTexture &&) noexcept;
         virtual ~GLTexture();
 
+        void move_common(GLTexture &&other) noexcept;
         RendererType renderer_type() const override;
 
         void set_data(

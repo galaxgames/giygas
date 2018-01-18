@@ -6,6 +6,7 @@
 #include "EventLoopContext.hpp"
 #include "GLFWWindowInitOptions.hpp"
 #include "GLContext.hpp"
+#include <giygas/EventHandler.hpp>
 
 namespace giygas {
     using namespace std;
@@ -15,7 +16,8 @@ namespace giygas {
         GLVersion _version;
         unsigned int _framebuffer_width;
         unsigned int _framebuffer_height;
-        unordered_set<SurfaceSizeChangedListener *> _surface_size_listeners;
+        //unordered_set<SurfaceSizeChangedListener *> _surface_size_listeners;
+        Event<unsigned int, unsigned int> _surface_size_changed_event;
 
         void move_common(GLFWWindow &&other) noexcept;
         void get_major_minor(GLVersion version, int &major, int &minor);
@@ -47,13 +49,15 @@ namespace giygas {
         unsigned int framebuffer_width() const override;
         unsigned int framebuffer_height() const override;
 
-        void add_surface_size_changed_listener(
-            SurfaceSizeChangedListener *listener
-        ) override;
 
-        void remove_surface_size_changed_listener(
-            SurfaceSizeChangedListener *listener
-        ) override;
+        EventHandler<unsigned int, unsigned int> surface_size_changed() override;
+//        void add_surface_size_changed_listener(
+//            SurfaceSizeChangedListener *listener
+//        ) override;
+//
+//        void remove_surface_size_changed_listener(
+//            SurfaceSizeChangedListener *listener
+//        ) override;
 
         void update() override;
         void present() override;

@@ -22,7 +22,7 @@ namespace giygas {
         TypelessPool *pool;
     };
 
-    class GLRenderer : public Renderer, public SurfaceSizeChangedListener {
+    class GLRenderer : public Renderer /* ,  public SurfaceSizeChangedListener */ {
         GLImpl _gl;
         GLMainSurface _main_surface;
         shared_ptr<Context> _context;
@@ -35,6 +35,7 @@ namespace giygas {
         thread _worker_thread;
         bool _worker_should_be_running;
         GLOperationPools _pools;
+        EventHandler<unsigned int, unsigned int> _surface_size_changed_handler;
 
 #ifndef NDEBUG
         bool _initialized;
@@ -45,7 +46,7 @@ namespace giygas {
         void handle_surface_size_changed(
             unsigned int width,
             unsigned int height
-        ) override;
+        );
 
         void start_worker();
         void stop_worker();

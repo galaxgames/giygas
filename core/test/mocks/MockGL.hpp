@@ -43,6 +43,8 @@ namespace giygas {
         MOCK_METHOD4(buffer_sub_data, void(
             GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data
         ));
+        MOCK_METHOD2(map_buffer, void *(GLenum target, GLenum access));
+        MOCK_METHOD1(unmap_buffer, GLboolean(GLenum target));
 
         MOCK_METHOD0(create_program, GLuint());
         MOCK_METHOD1(create_shader, GLuint(GLenum type));
@@ -103,6 +105,7 @@ namespace giygas {
         MOCK_METHOD3(tex_parameter_i, void(
             GLenum target, GLenum pname, GLint param
         ));
+        MOCK_METHOD1(active_texture, void(GLenum texture));
 
 
         //
@@ -139,6 +142,24 @@ namespace giygas {
             GLenum internalformat,
             GLsizei width,
             GLsizei height
+        ));
+
+
+        //
+        // Draw Functions
+        //
+        MOCK_METHOD4(viewport, void(
+            GLint x,
+            GLint y,
+            GLsizei width,
+            GLsizei height
+        ));
+
+        MOCK_METHOD4(draw_elements, void(
+            GLenum mode,
+            GLsizei count,
+            GLenum type,
+            const void *indices
         ));
 
     };

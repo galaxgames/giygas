@@ -5,12 +5,15 @@
 #include "GLRenderer.hpp"
 #include "operations/GenTextureGLOperation.hpp"
 #include "operations/SetTextureParameterGLOperation.hpp"
+#include "operations/CreateTextureStorageSyncedGLOperation.hpp"
 
 using namespace giygas;
 
 
 GLTexture::GLTexture(GLRenderer *renderer, TextureInitOptions options) {
     _renderer = renderer;
+    _width = 0;
+    _height = 0;
 
     GenTextureGLOperation gen_op;
     renderer->add_operation(&gen_op, nullptr);
@@ -58,16 +61,25 @@ GLTexture::GLTexture(GLRenderer *renderer, TextureInitOptions options) {
     renderer->add_operation(mag_filter_param_op, &pool);
 }
 
-GLTexture::GLTexture(GLTexture &&other) noexcept {
-    *this = std::move(other);
+GLTexture::GLTexture(GLTexture &&other) noexcept
+    : _data(move(other._data))
+{
+    move_common(move(other));
 }
 
 GLTexture &GLTexture::operator=(GLTexture &&other) noexcept {
+    _data = move(other._data);
+    move_common(move(other));
+    return *this;
+}
+
+void GLTexture::move_common(GLTexture &&other) noexcept {
     _renderer = other._renderer;
     _handle = other._handle;
+    _width = other._width;
+    _height = other._height;
+    _data_format = other._data_format;
     other._handle = 0;
-
-    return *this;
 }
 
 GLTexture::~GLTexture() {
@@ -86,14 +98,26 @@ void GLTexture::set_data(
     const unsigned char* data, size_t size, size_t width, size_t height,
     TextureFormat format
 ) {
-    assert(size == width * height * pixel_size_for_format(format));
+    size_t pixel_size = pixel_size_for_format(format);
+    assert(size == width * height * pixel_size);
 
-    // TODO: Replace with map, make blocking
+    size_t previous_size =
+        _width * _height * pixel_size_for_format(_data_format);
 
-    Pool<CreateTextureStorageGLOperation> &pool
-        = _renderer->pools().create_texture_storage_ops;
-    CreateTextureStorageGLOperation *storage_op = pool.take();
-    storage_op->set(
+    _width = width;
+    _height = height;
+    _data_format = format;
+
+    if (previous_size < size) {
+        // Resize buffer
+        _data = unique_ptr<unsigned char[]>(new unsigned char[size]);
+    }
+    copy_n(data, size, _data.get());
+
+    // TODO: Replace with map (?) research this.
+
+    CreateTextureStorageSyncedGLOperation storage_op;
+    storage_op.set(
         _handle,
         GL_TEXTURE_2D,
         0, // mip map
@@ -104,7 +128,8 @@ void GLTexture::set_data(
         GL_UNSIGNED_BYTE,
         data
     );
-    _renderer->add_operation(storage_op, &pool);
+    _renderer->add_operation(&storage_op, nullptr);
+    storage_op.wait();
 }
 
 void GLTexture::create_storage(

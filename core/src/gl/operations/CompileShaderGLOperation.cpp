@@ -4,18 +4,19 @@ using namespace giygas;
 
 CompileShaderGLOperation::CompileShaderGLOperation(
     GLuint shader,
-    const char *source
+    string &&source
 ) {
     _shader = shader;
-    _source = source;
+    _source = move(source);
     _finished = false;
 }
 
 void CompileShaderGLOperation::execute(GL *gl) {
+    const char *source_ptr = _source.c_str();
     gl->shader_source(
         _shader,
         1,  // only passing 1 string,
-        &_source,
+        &source_ptr,
         nullptr  // null pointer to string lengths because source strings are
         // null terminated.
     );
@@ -29,7 +30,8 @@ void CompileShaderGLOperation::execute(GL *gl) {
     gl->get_shader_iv(_shader, GL_INFO_LOG_LENGTH, &length);
     _message.clear();
     if (length > 0) {
-        _message.reserve(static_cast<string::size_type>(length - 1));
+        _message.resize(static_cast<string::size_type>(length - 1));
+        //_message.reserve(static_cast<string::size_type>(length - 1));
     }
     GLint offset = 0;
     while (offset < length - 1) {
