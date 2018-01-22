@@ -1,4 +1,4 @@
-#include <giygas/RendererInitOptions.hpp>
+#include <giygas/PipelineOptions.hpp>
 
 using namespace giygas;
 
@@ -64,22 +64,22 @@ DepthBufferOptions::DepthBufferOptions(
     , range_far(range_far)
 {}
 
-RendererInitOptions::RendererInitOptions()
+PipelineOptions::PipelineOptions()
     : polygon_culling(false)
     , depth_buffer(false)
 {}
 
-RendererInitOptions::RendererInitOptions(PolygonCullingOptions polygon_culling)
+PipelineOptions::PipelineOptions(PolygonCullingOptions polygon_culling)
     : polygon_culling(polygon_culling)
     , depth_buffer(false)
 {}
 
-RendererInitOptions::RendererInitOptions(DepthBufferOptions depth_buffer)
+PipelineOptions::PipelineOptions(DepthBufferOptions depth_buffer)
     : polygon_culling(false)
     , depth_buffer(depth_buffer)
 {}
 
-RendererInitOptions::RendererInitOptions(
+PipelineOptions::PipelineOptions(
     PolygonCullingOptions polygon_culling,
     DepthBufferOptions depth_buffer
 )

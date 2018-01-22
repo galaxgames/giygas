@@ -14,6 +14,39 @@ GLImpl::~GLImpl() {
 }
 
 //
+// Pipeline State Functions
+//
+
+void GLImpl::enable(GLenum value) {
+    glEnable(value);
+}
+
+void GLImpl::disable(GLenum value) {
+    glDisable(value);
+}
+
+void cull_face(GLenum mode) {
+    glCullFace(mode);
+}
+
+void front_face(GLenum mode) {
+    glFrontFace(mode);
+}
+
+void depth_mask(GLboolean flag) {
+    glDepthMask(flag);
+}
+
+void depth_func(GLenum func) {
+    glDepthFunc(func);
+}
+
+void depth_range(GLdouble near, GLdouble far) {
+    glDepthRange(near, far);
+}
+
+
+//
 // Clear Functions
 //
 

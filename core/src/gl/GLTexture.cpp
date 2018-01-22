@@ -16,7 +16,7 @@ GLTexture::GLTexture(GLRenderer *renderer, TextureInitOptions options) {
     _height = 0;
 
     GenTextureGLOperation gen_op;
-    renderer->add_operation(&gen_op, nullptr);
+    renderer->add_operation_and_notify(&gen_op, nullptr);
     _handle = gen_op.get_generated_handle();
 
     Pool<SetTextureParameterGLOperation> &pool =
@@ -128,7 +128,7 @@ void GLTexture::set_data(
         GL_UNSIGNED_BYTE,
         data
     );
-    _renderer->add_operation(&storage_op, nullptr);
+    _renderer->add_operation_and_notify(&storage_op, nullptr);
     storage_op.wait();
 }
 

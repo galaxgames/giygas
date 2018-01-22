@@ -61,35 +61,21 @@ void GLMainSurface::clear(SurfaceBufferType surfaces) {
     _surface_renderer.clear(_renderer, 0, surfaces);
 }
 
-void GLMainSurface::draw(
-    VertexArray *vao,
-    ElementBuffer<unsigned int> *ebo,
-    Material *material,
-    ElementDrawInfo element_info
-) {
-    assert(_renderer != nullptr);
-    _surface_renderer.draw(_renderer, 0, vao, ebo, material, element_info);
+#define GIYGAS_MAIN_SURFACE_DRAW_FUNC_IMPL(ebo_type) \
+void GLMainSurface::draw( \
+    VertexArray *vao, \
+    ElementBuffer<ebo_type> *ebo, \
+    Material *material, \
+    ElementDrawInfo element_info, \
+    const PipelineOptions &pipeline \
+) { \
+    assert(_renderer != nullptr); \
+    _surface_renderer.draw(_renderer, 0, vao, ebo, material, element_info, pipeline); \
 }
 
-void GLMainSurface::draw(
-    VertexArray *vao,
-    ElementBuffer<unsigned short> *ebo,
-    Material *material,
-    ElementDrawInfo element_info
-) {
-    assert(_renderer != nullptr);
-    _surface_renderer.draw(_renderer, 0, vao, ebo, material, element_info);
-}
-
-void GLMainSurface::draw(
-    VertexArray *vao,
-    ElementBuffer<unsigned char> *ebo,
-    Material *material,
-    ElementDrawInfo element_info
-) {
-    assert(_renderer != nullptr);
-    _surface_renderer.draw(_renderer, 0, vao, ebo, material, element_info);
-}
+GIYGAS_MAIN_SURFACE_DRAW_FUNC_IMPL(unsigned int)
+GIYGAS_MAIN_SURFACE_DRAW_FUNC_IMPL(unsigned short)
+GIYGAS_MAIN_SURFACE_DRAW_FUNC_IMPL(unsigned char)
 
 void GLMainSurface::set_size(unsigned int width, unsigned int height) {
     _width = width;

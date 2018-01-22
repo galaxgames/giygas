@@ -50,8 +50,6 @@ void GLRenderer::move_common(GLRenderer &&other) noexcept {
     _context = move(other._context);
     _operations_a = move(other._operations_a);
     _operations_b = move(other._operations_b);
-    //_context->remove_surface_size_changed_listener(&other);
-    //_context->add_surface_size_changed_listener(this);
     _current_operation_queue = other._current_operation_queue;
     _next_operation_queue = other._next_operation_queue;
 
@@ -66,18 +64,22 @@ void GLRenderer::move_common(GLRenderer &&other) noexcept {
 }
 
 GLRenderer::~GLRenderer() {
-//    _context->remove_surface_size_changed_listener(this);
     stop_worker();
 }
 
-void GLRenderer::initialize(RendererInitOptions options) {
+void GLRenderer::initialize(/* PipelineOptions options */) {
     assert(_context->is_valid());
 
     // TODO: Stop using glad so we can support having more than one GLRenderer
     // instance
     gladLoadGL();
     _surface_size_changed_handler = _context->surface_size_changed();
-    _surface_size_changed_handler.delegate = bind(&GLRenderer::handle_surface_size_changed, this, placeholders::_1, placeholders::_2);
+    _surface_size_changed_handler.delegate = bind(
+        &GLRenderer::handle_surface_size_changed,
+        this,
+        placeholders::_1,
+        placeholders::_2
+    );
     _main_surface.set_size(
         _context->framebuffer_width(),
         _context->framebuffer_height()
@@ -87,17 +89,17 @@ void GLRenderer::initialize(RendererInitOptions options) {
         _initialized = true;
     #endif
 
-    set_polygon_culling_enabled(options.polygon_culling.enabled);
-    set_polygon_culling_mode(options.polygon_culling.mode);
-    set_front_face_winding(options.polygon_culling.front_face_vertex_winding);
-
-    set_depth_test_enabled(options.depth_buffer.depth_test_enabled);
-    set_depth_mask_enabled(options.depth_buffer.mask_enabled);
-    set_depth_function(options.depth_buffer.function);
-    set_depth_range(
-        options.depth_buffer.range_near,
-        options.depth_buffer.range_far
-    );
+//    set_polygon_culling_enabled(options.polygon_culling.enabled);
+//    set_polygon_culling_mode(options.polygon_culling.mode);
+//    set_front_face_winding(options.polygon_culling.front_face_vertex_winding);
+//
+//    set_depth_test_enabled(options.depth_buffer.depth_test_enabled);
+//    set_depth_mask_enabled(options.depth_buffer.mask_enabled);
+//    set_depth_function(options.depth_buffer.function);
+//    set_depth_range(
+//        options.depth_buffer.range_near,
+//        options.depth_buffer.range_far
+//    );
 
     start_worker();
 }
@@ -116,49 +118,52 @@ void GLRenderer::stop_worker() {
     _worker_thread.join();
 }
 
-void GLRenderer::set_polygon_culling_enabled(bool value) {
-    if (value) {
-        glEnable(GL_CULL_FACE);
-    }
-    else {
-        glDisable(GL_CULL_FACE);
-    }
-}
-
-void GLRenderer::set_polygon_culling_mode(PolygonCullingMode value) {
-    assert(_initialized);
-    glCullFace(value == PolygonCullingMode::BackFace ? GL_BACK : GL_FRONT);
-}
-
-void GLRenderer::set_front_face_winding(VertexWinding value) {
-    assert(_initialized);
-    glFrontFace(value == VertexWinding::CounterClockwise ? GL_CCW : GL_CW);
-}
-
-void GLRenderer::set_depth_test_enabled(bool value) {
-    assert(_initialized);
-    if (value) {
-        glEnable(GL_DEPTH_TEST);
-    }
-    else {
-        glDisable(GL_DEPTH_TEST);
-    }
-}
-
-void GLRenderer::set_depth_mask_enabled(bool value) {
-    assert(_initialized);
-    glDepthMask(static_cast<GLboolean>(value));
-}
-
-void GLRenderer::set_depth_function(DepthFunction value) {
-    assert(_initialized);
-    glDepthFunc(depth_function_to_enum(value));
-}
-
-void GLRenderer::set_depth_range(double near, double far) {
-    assert(_initialized);
-    glDepthRange(near, far);
-}
+//void GLRenderer::set_polygon_culling_enabled(bool value) {
+//    assert(_initialized);
+//    Pool<PipelineEnableDisableGLOperation> &pool = _pools._enable_disable_ops;
+//    PipelineEnableDisableGLOperation *op = pool.take();
+//    op->set(GL_CULL_FACE, value);
+//    add_operation(op, &pool);
+//}
+//
+//void GLRenderer::set_polygon_culling_mode(PolygonCullingMode value) {
+//    assert(_initialized);
+//    Pool<PipelineSetCullFaceGLOperation> &pool = _pools._set_cull_face_ops;
+//    PipelineSetCullFaceGLOperation *op = pool.take();
+//    op->set(value == PolygonCullingMode::BackFace ? GL_BACK : GL_FRONT);
+//    add_operation(op, &pool);
+//}
+//
+//void GLRenderer::set_front_face_winding(VertexWinding value) {
+//    assert(_initialized);
+//    Pool<PipelineSetFrontFaceGLOperation> &pool = _pools._set_front_face_ops;
+//    PipelineSetFrontFaceGLOperation *op = pool.take();
+//    op->set(value == VertexWinding::CounterClockwise ? GL_CCW : GL_CW);
+//    add_operation(op, &pool);
+//}
+//
+//void GLRenderer::set_depth_test_enabled(bool value) {
+//    assert(_initialized);
+//    Pool<PipelineEnableDisableGLOperation> &pool = _pools._enable_disable_ops;
+//    PipelineEnableDisableGLOperation *op = pool.take();
+//    op->set(GL_DEPTH_TEST, value);
+//    add_operation(op, &pool);
+//}
+//
+//void GLRenderer::set_depth_mask_enabled(bool value) {
+//    assert(_initialized);
+//    glDepthMask(static_cast<GLboolean>(value));
+//}
+//
+//void GLRenderer::set_depth_function(DepthFunction value) {
+//    assert(_initialized);
+//    glDepthFunc(depth_function_to_enum(value));
+//}
+//
+//void GLRenderer::set_depth_range(double near, double far) {
+//    assert(_initialized);
+//    glDepthRange(near, far);
+//}
 
 VertexBuffer *GLRenderer::make_vbo() {
     assert(_initialized);
@@ -218,7 +223,7 @@ void GLRenderer::present() {
     void *specific_context = _context->cast_to_specific(RendererType::OpenGL);
     GLContext *gl_context = static_cast<GLContext *>(specific_context);
     PresentGLOperation op(gl_context);
-    add_operation(&op, nullptr);
+    add_operation_and_notify(&op, nullptr);
     op.wait();
 }
 
@@ -229,28 +234,18 @@ void GLRenderer::handle_surface_size_changed(
     _main_surface.set_size(width, height);
 }
 
-GLenum GLRenderer::depth_function_to_enum(DepthFunction function) {
-    switch (function) {
-        case DepthFunction::PassLess:
-            return GL_LESS;
-        case DepthFunction::PassAlways:
-            return GL_ALWAYS;
-        case DepthFunction::PassEqual:
-            return GL_EQUAL;
-        case DepthFunction::PassGreater:
-            return GL_GREATER;
-        case DepthFunction::PassGreaterThanOrEqual:
-            return GL_GEQUAL;
-        case DepthFunction::PassLessThanOrEqual:
-            return GL_LEQUAL;
-        case DepthFunction::PassNever:
-            return GL_NEVER;
-        case DepthFunction::PassNotEqual:
-            return GL_NOTEQUAL;
-    }
+void GLRenderer::add_operation(GLOperation *op, TypelessPool *pool) {
+    lock_guard<mutex> lock(_swap_operations_mutex);
+    QueuedGLOperation queued_op;
+    queued_op.op = op;
+    queued_op.pool = pool;
+    _next_operation_queue->push(queued_op);
 }
 
-void GLRenderer::add_operation(GLOperation *op, TypelessPool *pool) {
+void GLRenderer::add_operation_and_notify(
+    GLOperation *op,
+    TypelessPool *pool
+) {
     lock_guard<mutex> lock(_swap_operations_mutex);
     QueuedGLOperation queued_op;
     queued_op.op = op;

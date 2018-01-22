@@ -22,7 +22,7 @@ namespace giygas {
         TypelessPool *pool;
     };
 
-    class GLRenderer : public Renderer /* ,  public SurfaceSizeChangedListener */ {
+    class GLRenderer : public Renderer {
         GLImpl _gl;
         GLMainSurface _main_surface;
         shared_ptr<Context> _context;
@@ -53,10 +53,6 @@ namespace giygas {
         void worker_loop();
         bool worker_routine();
 
-        //void add_operation(GLOperation *op, TypelessPool *pool);
-
-        static GLenum depth_function_to_enum(DepthFunction function);
-
     public:
         GLRenderer(shared_ptr<Context> window);
         GLRenderer(const GLRenderer &) = delete;
@@ -65,16 +61,16 @@ namespace giygas {
         GLRenderer& operator=(GLRenderer &&) noexcept;
         ~GLRenderer();
 
-        void initialize(RendererInitOptions options) override;
+        void initialize(/* PipelineOptions options */) override;
 
-        void set_polygon_culling_enabled(bool value) override;
-        void set_polygon_culling_mode(PolygonCullingMode value) override;
-        void set_front_face_winding(VertexWinding value) override;
-
-        void set_depth_test_enabled(bool value) override;
-        void set_depth_mask_enabled(bool value) override;
-        void set_depth_function(DepthFunction value) override;
-        void set_depth_range(double near, double far) override;
+//        void set_polygon_culling_enabled(bool value) override;
+//        void set_polygon_culling_mode(PolygonCullingMode value) override;
+//        void set_front_face_winding(VertexWinding value) override;
+//
+//        void set_depth_test_enabled(bool value) override;
+//        void set_depth_mask_enabled(bool value) override;
+//        void set_depth_function(DepthFunction value) override;
+//        void set_depth_range(double near, double far) override;
 
         VertexBuffer *make_vbo() override;
         ElementBuffer<unsigned int> *make_int_ebo() override;
@@ -91,6 +87,7 @@ namespace giygas {
         void present() override;
 
         void add_operation(GLOperation *op, TypelessPool *pool);
+        void add_operation_and_notify(GLOperation *op, TypelessPool *pool);
         //void add_operation_delete_buffer(GLuint handle);
 
         GLOperationPools &pools();

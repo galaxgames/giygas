@@ -5,6 +5,24 @@
 #include "Material.hpp"
 #include "VertexArray.hpp"
 #include "ElementDrawInfo.hpp"
+#include "PipelineOptions.hpp"
+
+
+#define GIYGAS_SURFACE_DRAW_FUNC(ebo_type) \
+        virtual void draw( \
+            VertexArray *vao, \
+            ElementBuffer<ebo_type> *ebo, \
+            Material *material, \
+            ElementDrawInfo element_info \
+        ) = 0
+
+#define GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(ebo_type) \
+        void draw( \
+            VertexArray *vao, \
+            ElementBuffer<ebo_type> *ebo, \
+            Material *material, \
+            ElementDrawInfo element_info \
+        ) override
 
 namespace giygas {
 
@@ -23,17 +41,10 @@ namespace giygas {
         virtual void set_clear_depth(double value) = 0;
         virtual void set_clear_stencil(int value) = 0;
         virtual void clear(SurfaceBufferType surfaces) = 0;
-        virtual void draw(
-            VertexArray *vao, ElementBuffer<unsigned int> *ebo, Material *material,
-            ElementDrawInfo element_info
-        ) = 0;
-        virtual void draw(
-            VertexArray *vao, ElementBuffer<unsigned short> *ebo, Material *material,
-            ElementDrawInfo element_info
-        ) = 0;
-        virtual void draw(
-            VertexArray *vao, ElementBuffer<unsigned char> *ebo, Material *material,
-            ElementDrawInfo element_info
-        ) = 0;
+        GIYGAS_SURFACE_DRAW_FUNC(unsigned int);
+        GIYGAS_SURFACE_DRAW_FUNC(unsigned short);
+        GIYGAS_SURFACE_DRAW_FUNC(unsigned char);
     };
 }
+
+#undef GIYGAS_SURFACE_DRAW_FUNC

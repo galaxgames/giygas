@@ -20,10 +20,14 @@
 #include "operations/ClearGLOperation.hpp"
 #include "operations/DeleteRenderbufferGLOperation.hpp"
 #include "operations/CreateRenderbufferStorageGLOperation.hpp"
+#include "operations/Pipeline/SetPipelineGLOperation.hpp"
 
 namespace giygas {
     class GLOperationPools {
     public:
+
+        // Pipeline Operations
+        Pool<SetPipelineGLOperation> _set_pipeline_ops;
 
         // Buffer Operations
         Pool<DeleteBufferGLOperation> delete_buffer_ops;
@@ -65,6 +69,7 @@ namespace giygas {
         GLOperationPools &operator=(const GLOperationPools &other) = delete;
     };
 
+    extern template class Pool<SetPipelineGLOperation>;
 
     extern template class Pool<DeleteBufferGLOperation>;
     extern template class Pool<BufferDataGLOperation>;

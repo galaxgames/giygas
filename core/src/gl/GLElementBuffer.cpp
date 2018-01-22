@@ -16,7 +16,7 @@ GLElementBuffer<T>::GLElementBuffer(GLRenderer *renderer) {
     _count = 0;
 
     GenBufferGLOperation gen_op;
-    _renderer->add_operation(&gen_op, nullptr);
+    _renderer->add_operation_and_notify(&gen_op, nullptr);
     _handle = gen_op.get_generated_handle();
 }
 

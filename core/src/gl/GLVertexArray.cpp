@@ -14,7 +14,7 @@ GLVertexArray::GLVertexArray(GLRenderer *renderer) {
     _next_index = 0;
 
     GenVertexArrayGLOperation gen_op;
-    _renderer->add_operation(&gen_op, nullptr);
+    _renderer->add_operation_and_notify(&gen_op, nullptr);
     _handle = gen_op.get_generated_handle();
 }
 

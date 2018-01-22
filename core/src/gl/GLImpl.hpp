@@ -13,6 +13,19 @@ namespace giygas {
         GLImpl &operator=(GLImpl &&) noexcept;
         virtual ~GLImpl();
 
+
+        //
+        // Pipeline State Functions
+        //
+
+        void enable(GLenum value) override;
+        void disable(GLenum value) override;
+        void cull_face(GLenum mode) override;
+        void front_face(GLenum mode) override;
+        void depth_mask(GLboolean flag) override;
+        void depth_func(GLenum func) override;
+        void depth_range(GLdouble near, GLdouble far) override;
+
         //
         // Clear Functions
         //

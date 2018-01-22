@@ -37,7 +37,7 @@ GLMaterial::GLMaterial(GLRenderer *renderer) :
     _texture_count = 0;
 
     CreateProgramGLOperation create_op;
-    _renderer->add_operation(&create_op, nullptr);
+    _renderer->add_operation_and_notify(&create_op, nullptr);
     _program = create_op.get_handle();
 }
 
@@ -101,46 +101,14 @@ void GLMaterial::set_shader(weak_ptr<Shader> shader) {
             vertex_shader_handle,
             fragment_shader_handle
         );
-        _renderer->add_operation(&link_op, nullptr);
+        _renderer->add_operation_and_notify(&link_op, nullptr);
         link_op.wait();
-
-//        _gl->attach_shader(_program, gl_shader->get_vertex_shader());
-//        _gl->attach_shader(_program, gl_shader->get_fragment_shader());
-//        _gl->link_program(_program);
-//
-//        GLint status;
-//        _gl->get_program_iv(_program, GL_LINK_STATUS, &status);
-//        if (status == GL_FALSE) {
-//            GLint log_length;
-//            GLint log_offset;
-//            GLsizei retrieved;
-//            _gl->get_program_iv(_program, GL_INFO_LOG_LENGTH, &log_length);
-//            _message = new char[log_length];
-//            while (log_offset < log_length - 1) {
-//                _gl->get_program_info_log(
-//                    _program,
-//                    log_length - log_offset,
-//                    &retrieved,
-//                    _message + log_offset
-//                );
-//                log_offset += retrieved;
-//            }
-//            _message[log_length - 1] = '\0';
-//        }
-//        else {
-//            const char *no_error_message = "No error";
-//            // TODO: get length of no error message string at compile time
-//            _message = new char[strlen(no_error_message) + 1];
-//            strcpy(_message, no_error_message);
-//            _is_valid = true;
-//        }
 
         _is_valid = link_op.is_success();
         _message = move(link_op.message());
     }
 
     if (_is_valid) {
-        //_gl->use_program(_program);
         Pool<SetUniformValueGLOperation> &pool
             = _renderer->pools().set_uniform_value_ops;
         for (auto& pair : _values) {
@@ -153,7 +121,6 @@ void GLMaterial::set_shader(weak_ptr<Shader> shader) {
                 pair.second.get()
             );
             _renderer->add_operation(set_op, &pool);
-            //pair.second->do_gl_call(_gl, location);
         }
     }
 
@@ -185,7 +152,9 @@ void GLMaterial::set_uniform(const string &name, T value) {
             _locations.insert(make_pair(name, location));
         }
     }
-    
+
+    // TODO: Re-use previous value controller if uniform was previously set
+    // to the same type (which it usually is)
     GLUniformValue *value_controller = make_value<T>(value);
 
     auto it = _values.find(name);
@@ -199,11 +168,13 @@ void GLMaterial::set_uniform(const string &name, T value) {
     }
 
     if (_is_valid && location != -1) {
-        //_gl->use_program(_program);
-        //value_controller->do_gl_call(_gl, location);
         Pool<SetUniformValueGLOperation> &pool
             = _renderer->pools().set_uniform_value_ops;
         SetUniformValueGLOperation *set_op = pool.take();
+        // TODO: WOAH!! something bad is going to happen here.
+        // Need a different GLOperation per type of uniform.
+        // Otherwise, we might be accesing the passed in value controller after
+        // deleting it (!!!)
         set_op->set(_program, location, value_controller);
         _renderer->add_operation(set_op, &pool);
     }
@@ -242,9 +213,8 @@ GLint GLMaterial::get_location(const string &name) const {
         return -1;
     }
     GetUniformLocationGLOperation op(_program, name.c_str());
-    _renderer->add_operation(&op, nullptr);
+    _renderer->add_operation_and_notify(&op, nullptr);
     return op.get_location();
-//    return gl->get_uniform_location(_program, name.c_str());
 }
 
 GLuint GLMaterial::get_program() const {

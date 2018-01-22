@@ -103,7 +103,7 @@ public:
     }
 
     void setup() {
-        renderer->initialize(RendererInitOptions(
+        renderer->initialize(PipelineOptions(
             PolygonCullingOptions(true),
             DepthBufferOptions(true, true, DepthFunction::PassGreater, 0, 1))
         );

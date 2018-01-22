@@ -11,7 +11,7 @@ using namespace std;
 GLFrameBufferSurface::GLFrameBufferSurface(GLRenderer *renderer) {
     _renderer = renderer;
     GenFramebufferGLOperation gen_op;
-    renderer->add_operation(&gen_op, nullptr);
+    renderer->add_operation_and_notify(&gen_op, nullptr);
     _handle = gen_op.get_generated_handle();
 }
 
@@ -126,27 +126,30 @@ void GLFrameBufferSurface::draw(
     VertexArray *vao,
     ElementBuffer<unsigned int> *ebo,
     Material *material,
-    ElementDrawInfo element_info
+    ElementDrawInfo element_info,
+    const PipelineOptions &pipeline
 ) {
-    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info);
+    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info, pipeline);
 }
 
 void GLFrameBufferSurface::draw(
     VertexArray *vao,
     ElementBuffer<unsigned short> *ebo,
     Material *material,
-    ElementDrawInfo element_info
+    ElementDrawInfo element_info,
+    const PipelineOptions &pipeline
 ) {
-    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info);
+    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info, pipeline);
 }
 
 void GLFrameBufferSurface::draw(
     VertexArray *vao,
     ElementBuffer<unsigned char> *ebo,
     Material *material,
-    ElementDrawInfo element_info
+    ElementDrawInfo element_info,
+    const PipelineOptions &pipeline
 ) {
-    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info);
+    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info, pipeline);
 }
 
 GLenum GLFrameBufferSurface::get_attachment_flag(

@@ -7,7 +7,7 @@
 #include "SurfaceBufferType.hpp"
 #include "Surface.hpp"
 #include "FrameBufferSurface.hpp"
-#include "RendererInitOptions.hpp"
+#include "PipelineOptions.hpp"
 #include "TextureInitOptions.hpp"
 
 namespace giygas {
@@ -15,16 +15,16 @@ namespace giygas {
     class GIYGAS_EXPORT Renderer {
     public:
         virtual ~Renderer() = default;
-        virtual void initialize(RendererInitOptions options) = 0;
+        virtual void initialize(/* PipelineOptions options */) = 0;
 
-        virtual void set_polygon_culling_enabled(bool value) = 0;
-        virtual void set_polygon_culling_mode(PolygonCullingMode value) = 0;
-        virtual void set_front_face_winding(VertexWinding value) = 0;
-
-        virtual void set_depth_test_enabled(bool value) = 0;
-        virtual void set_depth_mask_enabled(bool value) = 0;
-        virtual void set_depth_function(DepthFunction value) = 0;
-        virtual void set_depth_range(double near, double far) = 0;
+//        virtual void set_polygon_culling_enabled(bool value) = 0;
+//        virtual void set_polygon_culling_mode(PolygonCullingMode value) = 0;
+//        virtual void set_front_face_winding(VertexWinding value) = 0;
+//
+//        virtual void set_depth_test_enabled(bool value) = 0;
+//        virtual void set_depth_mask_enabled(bool value) = 0;
+//        virtual void set_depth_function(DepthFunction value) = 0;
+//        virtual void set_depth_range(double near, double far) = 0;
 
         virtual VertexBuffer *make_vbo() = 0;
         virtual VertexArray *make_vao() = 0;

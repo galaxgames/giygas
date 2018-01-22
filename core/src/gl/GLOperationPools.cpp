@@ -7,6 +7,8 @@
 
 
 namespace giygas {
+    template class Pool<SetPipelineGLOperation>;
+
     template class Pool<DeleteBufferGLOperation>;
     template class Pool<BufferDataGLOperation>;
     template class Pool<BufferSubDataGLOperation>;

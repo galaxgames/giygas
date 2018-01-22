@@ -65,14 +65,24 @@ void GLSurfaceRenderer::draw( \
     VertexArray *vao, \
     ElementBuffer<type> *ebo, \
     Material *material, \
-    ElementDrawInfo element_info \
+    ElementDrawInfo element_info, \
+    const PipelineOptions &pipeline \
 ) { \
     assert(ebo->get_renderer_type() == RendererType::OpenGL); \
-    /* NOTE: Cannot directly reinterpret_cast GenericGLElementBuffer, */ \
-    /* doing so will omit the pointer fixup needed for multiple inheritance */ \
-    /* to work (thunking) */ \
+    /* NOTE: Cannot directly reinterpret_cast GenericGLElementBuffer,
+     * doing so will omit the pointer fixup needed for multiple inheritance
+     * to work (thunking)
+     */ \
     auto *gl_ebo = reinterpret_cast<GLElementBuffer<type> *>(ebo); \
-    draw_internal(renderer, framebuffer, vao, gl_ebo, material, element_info, gltype); \
+    draw_internal( \
+        renderer, \
+        framebuffer, \
+        vao, \
+        gl_ebo, \
+        material, \
+        element_info, \
+        pipeline, \
+        gltype); \
 }
 
 DEFINE_DRAW_FUNCTION(unsigned int, GL_UNSIGNED_INT);
@@ -86,6 +96,7 @@ void GLSurfaceRenderer::draw_internal(
     GenericGLElementBuffer *ebo,
     Material *material,
     ElementDrawInfo element_info,
+    const PipelineOptions &pipeline,
     GLenum element_type
 ) {
     assert(vao->get_renderer_type() == RendererType::OpenGL);
@@ -97,6 +108,12 @@ void GLSurfaceRenderer::draw_internal(
     assert(gl_material->is_valid());
 
     // TODO: debug element buffer validation
+
+    Pool<SetPipelineGLOperation> &pipeline_pool
+        = renderer->pools()._set_pipeline_ops;
+    SetPipelineGLOperation *pipeline_op = pipeline_pool.take();
+    pipeline_op->set(pipeline);
+    renderer->add_operation(pipeline_op, &pipeline_pool);
 
     Pool<RenderGLOperation> &pool = renderer->pools().render_ops;
     RenderGLOperation *render_op = pool.take();

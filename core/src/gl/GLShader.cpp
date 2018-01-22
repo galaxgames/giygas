@@ -15,7 +15,7 @@ GLShader::GLShader(GLRenderer *renderer) {
     CreateShaderGLOperation create_fs_op(GL_FRAGMENT_SHADER);
 
     _renderer->add_operation(&create_vs_op, nullptr);
-    _renderer->add_operation(&create_fs_op, nullptr);
+    _renderer->add_operation_and_notify(&create_fs_op, nullptr);
 
     _vertex_shader = create_vs_op.get_handle();
     _fragment_shader = create_fs_op.get_handle();
@@ -64,7 +64,7 @@ bool GLShader::compile_shader(
     GLuint shader, const char *source, string &message
 ) {
     CompileShaderGLOperation compile_op(shader, source);
-    _renderer->add_operation(&compile_op, nullptr);
+    _renderer->add_operation_and_notify(&compile_op, nullptr);
     compile_op.wait();
     message = move(compile_op.message());
     return compile_op.is_successful();

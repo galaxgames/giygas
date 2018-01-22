@@ -29,28 +29,9 @@ namespace giygas {
         void set_clear_depth(double value) override;
         void set_clear_stencil(int value) override;
         void clear(SurfaceBufferType surfaces) override;
-
-        void draw(
-            VertexArray *vao,
-            ElementBuffer<unsigned int> *ebo,
-            Material *material,
-            ElementDrawInfo element_info
-        ) override;
-
-        void draw(
-            VertexArray *vao,
-            ElementBuffer<unsigned short> *ebo,
-            Material *material,
-            ElementDrawInfo element_info
-        ) override;
-
-        void draw(
-            VertexArray *vao,
-            ElementBuffer<unsigned char> *ebo,
-            Material *material,
-            ElementDrawInfo element_info
-        ) override;
-
+        GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(unsigned int);
+        GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(unsigned short);
+        GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(unsigned char);
         void set_size(unsigned int width, unsigned int height);
     };
 }

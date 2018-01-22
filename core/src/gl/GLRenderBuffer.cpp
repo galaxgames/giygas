@@ -10,7 +10,7 @@ using namespace std;
 GLRenderBuffer::GLRenderBuffer(GLRenderer *renderer) {
     _renderer = renderer;
     GenRenderbufferGLOperation gen_op;
-    renderer->add_operation(&gen_op, nullptr);
+    renderer->add_operation_and_notify(&gen_op, nullptr);
     _handle = gen_op.get_generated_handle();
 }
 

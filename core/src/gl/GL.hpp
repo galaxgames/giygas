@@ -1,11 +1,23 @@
 #pragma once
-
 #include <glad.h>
 
 namespace giygas {
     class GL {
     public:
         virtual ~GL() = default;
+
+        //
+        // Pipeline State Functions
+        //
+
+        virtual void enable(GLenum value) = 0;
+        virtual void disable(GLenum value) = 0;
+        virtual void cull_face(GLenum mode) = 0;
+        virtual void front_face(GLenum mode) = 0;
+        virtual void depth_mask(GLboolean flag) = 0;
+        virtual void depth_func(GLenum func) = 0;
+        virtual void depth_range(GLdouble near, GLdouble far) = 0;
+
 
         //
         // Clear Functions

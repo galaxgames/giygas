@@ -64,16 +64,16 @@ namespace giygas {
 
     };
 
-    class GIYGAS_EXPORT RendererInitOptions {
+    class GIYGAS_EXPORT PipelineOptions {
     public:
         PolygonCullingOptions polygon_culling;
         DepthBufferOptions depth_buffer;
 
-        RendererInitOptions();
-        RendererInitOptions(PolygonCullingOptions polygon_culling);
-        RendererInitOptions(DepthBufferOptions depth_buffer);
+        PipelineOptions();
+        PipelineOptions(PolygonCullingOptions polygon_culling);
+        PipelineOptions(DepthBufferOptions depth_buffer);
 
-        RendererInitOptions(
+        PipelineOptions(
             PolygonCullingOptions polygon_culling,
             DepthBufferOptions depth_buffer
         );
