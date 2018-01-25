@@ -66,11 +66,10 @@ void GLMainSurface::draw( \
     VertexArray *vao, \
     ElementBuffer<ebo_type> *ebo, \
     Material *material, \
-    ElementDrawInfo element_info, \
-    const PipelineOptions &pipeline \
+    ElementDrawInfo element_info \
 ) { \
     assert(_renderer != nullptr); \
-    _surface_renderer.draw(_renderer, 0, vao, ebo, material, element_info, pipeline); \
+    _surface_renderer.draw(_renderer, 0, vao, ebo, material, element_info); \
 }
 
 GIYGAS_MAIN_SURFACE_DRAW_FUNC_IMPL(unsigned int)

@@ -3,5 +3,11 @@
 #include "Context.hpp"
 
 namespace giygas {
-    GIYGAS_EXPORT Renderer *make_renderer(std::shared_ptr<Context> window);
+    using namespace std;
+
+    GIYGAS_EXPORT Renderer *make_renderer(shared_ptr<Context> window);
+    GIYGAS_EXPORT Renderer *make_renderer(
+        shared_ptr<Context> window,
+        RendererType type
+    );
 }

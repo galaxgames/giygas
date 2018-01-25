@@ -1,5 +1,6 @@
 #include <utility>
 #include <cassert>
+#include <algorithm>
 #include "GLTexture.hpp"
 #include "gl_enum_conversions.hpp"
 #include "GLRenderer.hpp"

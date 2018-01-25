@@ -4,10 +4,26 @@ project(giygas_core LANGUAGES CXX VERSION 0.1)
 include(GenerateExportHeader)
 
 enable_testing()
-find_package(GTest REQUIRED)
-find_package(glad CONFIG REQUIRED)
+find_package(glad CONFIG)
+find_package(Vulkan)
 find_package(glfw3 CONFIG REQUIRED)
+find_package(GTest REQUIRED)
 find_library(GMOCK_LIBRARY NAMES gmock)
+
+if (${glad_FOUND})
+    set(GIYGAS_WITH_OPENGL True)
+else()
+    set(GIYGAS_WITH_OPENGL False)
+endif()
+
+if (${Vulkan_FOUND})
+    set(GIYGAS_WITH_VULKAN True)
+else()
+    set(GIYGAS_WITH_VULKAN False)
+endif()
+
+message(STATUS "GIYGAS_WITH_OPENGL: ${GIYGAS_WITH_OPENGL}")
+message(STATUS "GIYGAS_WITH_VULKAN: ${GIYGAS_WITH_VULKAN}")
 
 file(GLOB_RECURSE GIYGAS_SOURCE_FILES
     "./src/*.cpp"
@@ -40,6 +56,7 @@ target_include_directories(giygas_objects
     PRIVATE
         $<TARGET_PROPERTY:glad::glad,INTERFACE_INCLUDE_DIRECTORIES>
         $<TARGET_PROPERTY:glfw,INTERFACE_INCLUDE_DIRECTORIES>
+        ${Vulkan_INCLUDE_DIRS}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
 )
@@ -59,8 +76,8 @@ target_include_directories(giygas_internal
 #        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
 #)
 
-target_link_libraries(giygas glad::glad glfw)
-target_link_libraries(giygas_internal glad::glad glfw)
+target_link_libraries(giygas glad::glad glfw ${Vulkan_LIBRARIES})
+target_link_libraries(giygas_internal glad::glad glfw ${Vulkan_LIBRARIES})
 target_link_libraries(giygas_test
     GTest::GTest GTest::Main ${GMOCK_LIBRARY} giygas_internal
 )

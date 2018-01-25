@@ -65,8 +65,7 @@ void GLSurfaceRenderer::draw( \
     VertexArray *vao, \
     ElementBuffer<type> *ebo, \
     Material *material, \
-    ElementDrawInfo element_info, \
-    const PipelineOptions &pipeline \
+    ElementDrawInfo element_info \
 ) { \
     assert(ebo->get_renderer_type() == RendererType::OpenGL); \
     /* NOTE: Cannot directly reinterpret_cast GenericGLElementBuffer,
@@ -81,7 +80,6 @@ void GLSurfaceRenderer::draw( \
         gl_ebo, \
         material, \
         element_info, \
-        pipeline, \
         gltype); \
 }
 
@@ -96,7 +94,6 @@ void GLSurfaceRenderer::draw_internal(
     GenericGLElementBuffer *ebo,
     Material *material,
     ElementDrawInfo element_info,
-    const PipelineOptions &pipeline,
     GLenum element_type
 ) {
     assert(vao->get_renderer_type() == RendererType::OpenGL);
@@ -109,11 +106,11 @@ void GLSurfaceRenderer::draw_internal(
 
     // TODO: debug element buffer validation
 
-    Pool<SetPipelineGLOperation> &pipeline_pool
-        = renderer->pools()._set_pipeline_ops;
-    SetPipelineGLOperation *pipeline_op = pipeline_pool.take();
-    pipeline_op->set(pipeline);
-    renderer->add_operation(pipeline_op, &pipeline_pool);
+//    Pool<SetPipelineGLOperation> &pipeline_pool
+//        = renderer->pools()._set_pipeline_ops;
+//    SetPipelineGLOperation *pipeline_op = pipeline_pool.take();
+//    pipeline_op->set(pipeline);
+//    renderer->add_operation(pipeline_op, &pipeline_pool);
 
     Pool<RenderGLOperation> &pool = renderer->pools().render_ops;
     RenderGLOperation *render_op = pool.take();

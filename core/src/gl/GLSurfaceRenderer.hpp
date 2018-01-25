@@ -30,7 +30,6 @@ namespace giygas {
             GenericGLElementBuffer *ebo,
             Material *material,
             ElementDrawInfo element_info,
-            const PipelineOptions &pipeline,
             GLenum element_type
         );
 
@@ -56,8 +55,7 @@ namespace giygas {
             VertexArray *vao,
             ElementBuffer<unsigned int> *ebo,
             Material *material,
-            ElementDrawInfo element_info,
-            const PipelineOptions &options
+            ElementDrawInfo element_info
         );
         void draw(
             GLRenderer *renderer,
@@ -65,8 +63,7 @@ namespace giygas {
             VertexArray *vao,
             ElementBuffer<unsigned short> *ebo,
             Material *material,
-            ElementDrawInfo element_info,
-            const PipelineOptions &options
+            ElementDrawInfo element_info
         );
         void draw(
             GLRenderer *renderer,
@@ -74,8 +71,7 @@ namespace giygas {
             VertexArray *vao,
             ElementBuffer<unsigned char> *ebo,
             Material *material,
-            ElementDrawInfo element_info,
-            const PipelineOptions &options
+            ElementDrawInfo element_info
         );
     };
 }

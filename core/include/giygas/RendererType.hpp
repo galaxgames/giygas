@@ -2,6 +2,7 @@
 
 namespace giygas {
     enum class RendererType {
-        OpenGL
+        OpenGL,
+        Vulkan
     };
 }

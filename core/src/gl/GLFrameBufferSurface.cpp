@@ -126,30 +126,27 @@ void GLFrameBufferSurface::draw(
     VertexArray *vao,
     ElementBuffer<unsigned int> *ebo,
     Material *material,
-    ElementDrawInfo element_info,
-    const PipelineOptions &pipeline
+    ElementDrawInfo element_info
 ) {
-    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info, pipeline);
+    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info);
 }
 
 void GLFrameBufferSurface::draw(
     VertexArray *vao,
     ElementBuffer<unsigned short> *ebo,
     Material *material,
-    ElementDrawInfo element_info,
-    const PipelineOptions &pipeline
+    ElementDrawInfo element_info
 ) {
-    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info, pipeline);
+    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info);
 }
 
 void GLFrameBufferSurface::draw(
     VertexArray *vao,
     ElementBuffer<unsigned char> *ebo,
     Material *material,
-    ElementDrawInfo element_info,
-    const PipelineOptions &pipeline
+    ElementDrawInfo element_info
 ) {
-    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info, pipeline);
+    _surface_renderer.draw(_renderer, _handle, vao, ebo, material, element_info);
 }
 
 GLenum GLFrameBufferSurface::get_attachment_flag(

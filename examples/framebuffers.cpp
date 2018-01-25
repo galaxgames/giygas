@@ -103,10 +103,11 @@ public:
     }
 
     void setup() {
-        renderer->initialize(PipelineOptions(
-            PolygonCullingOptions(true),
-            DepthBufferOptions(true, true, DepthFunction::PassGreater, 0, 1))
-        );
+//        renderer->initialize(PipelineOptions(
+//            PolygonCullingOptions(true),
+//            DepthBufferOptions(true, true, DepthFunction::PassGreater, 0, 1))
+//        );
+        renderer->initialize();
         vbo = unique_ptr<VertexBuffer>(renderer->make_vbo());
         ebo = unique_ptr<ElementBufferChar>(renderer->make_char_ebo());
         vao = unique_ptr<VertexArray>(renderer->make_vao());
