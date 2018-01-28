@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <giygas/export.h>
+#include <cstdint>
 #include "RendererType.hpp"
 
 namespace giygas {
@@ -14,7 +15,7 @@ namespace giygas {
         virtual size_t count() const = 0;
     };
 
-    typedef ElementBuffer<unsigned int> ElementBufferInt;
-    typedef ElementBuffer<unsigned short> ElementBufferShort;
-    typedef ElementBuffer<unsigned char> ElementBufferChar;
+    typedef ElementBuffer<uint32_t> ElementBuffer32;
+    typedef ElementBuffer<uint16_t> ElementBuffer16;
+    typedef ElementBuffer<uint8_t> ElementBuffer8;
 }

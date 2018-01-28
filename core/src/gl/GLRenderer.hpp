@@ -73,9 +73,9 @@ namespace giygas {
 //        void set_depth_range(double near, double far) override;
 
         VertexBuffer *make_vbo() override;
-        ElementBuffer<unsigned int> *make_int_ebo() override;
-        ElementBuffer<unsigned short> *make_short_ebo() override;
-        ElementBuffer<unsigned char> *make_char_ebo() override;
+        ElementBuffer<uint32_t> *make_ebo32() override;
+        ElementBuffer<uint16_t> *make_ebo16() override;
+        ElementBuffer<uint8_t> *make_ebo8() override;
         VertexArray *make_vao() override;
         Material *make_material() override;
         Shader *make_shader() override;

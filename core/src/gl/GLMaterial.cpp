@@ -42,7 +42,7 @@ GLMaterial::GLMaterial(GLRenderer *renderer) :
 }
 
 GLMaterial::GLMaterial(GLMaterial &&other) noexcept :
-    _shader(move(other._shader)),
+    //_shader(move(other._shader)),
     _values(move(other._values)),
     _locations(move(other._locations)),
     _textures(move(other._textures))
@@ -51,7 +51,7 @@ GLMaterial::GLMaterial(GLMaterial &&other) noexcept :
 }
 
 GLMaterial& GLMaterial::operator=(GLMaterial &&other) noexcept {
-    _shader = move(other._shader);
+    //_shader = move(other._shader);
     _values = move(other._values);
     _locations = move(other._locations);
     _textures = move(other._textures);
@@ -81,32 +81,45 @@ RendererType GLMaterial::renderer_type() const {
     return RendererType::OpenGL;
 }
 
-void GLMaterial::set_shader(weak_ptr<Shader> shader) {
-    _shader = shader;
+void GLMaterial::link_shaders(const Shader **shaders, size_t count) {
+    //void GLMaterial::set_shader(weak_ptr<Shader> shader) {
+    //_shader = shader;
+
     _locations.clear();
 
     _is_valid = false;
 
     //delete[] _message;
 
-    if (auto shared_shader = shader.lock()) {
-        assert(shared_shader->renderer_type() == RendererType::OpenGL);
-        auto *gl_shader = reinterpret_cast<GLShader *>(shared_shader.get());
 
-        GLuint vertex_shader_handle = gl_shader->get_vertex_shader();
-        GLuint fragment_shader_handle = gl_shader->get_fragment_shader();
+    GLuint vertex_handle = 0;
+    GLuint fragment_handle = 0;
 
-        LinkProgramGLOperation link_op(
-            _program,
-            vertex_shader_handle,
-            fragment_shader_handle
-        );
-        _renderer->add_operation_and_notify(&link_op, nullptr);
-        link_op.wait();
+    for (size_t i = 0; i < count; ++i) {
+        const Shader *shader = shaders[i];
+        assert(shader->renderer_type() == RendererType::OpenGL);
+        const auto *gl_shader = reinterpret_cast<const GLShader *>(shader);
 
-        _is_valid = link_op.is_success();
-        _message = move(link_op.message());
+        switch (gl_shader->shader_type()) {
+            case ShaderType::Vertex:
+                vertex_handle = gl_shader->handle();
+                break;
+            case ShaderType::Fragment:
+                fragment_handle = gl_shader->handle();
+                break;
+        }
     }
+
+    LinkProgramGLOperation link_op(
+        _program,
+        vertex_handle,
+        fragment_handle
+    );
+    _renderer->add_operation_and_notify(&link_op, nullptr);
+    link_op.wait();
+
+    _is_valid = link_op.is_success();
+    _message = move(link_op.message());
 
     if (_is_valid) {
         Pool<SetUniformValueGLOperation> &pool

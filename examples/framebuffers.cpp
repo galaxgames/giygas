@@ -12,12 +12,14 @@ class FramebufferExample : public EventLoopUpdatable
 public:
     Renderer *renderer;
     unique_ptr<VertexBuffer> vbo;
-    unique_ptr<ElementBufferChar> ebo;
+    unique_ptr<ElementBuffer8> ebo;
     unique_ptr<VertexArray> vao;
     unique_ptr<Material> colored_material;
     unique_ptr<Material> textured_material;
-    shared_ptr<Shader> colored_shader;
-    shared_ptr<Shader> textured_shader;
+    unique_ptr<Shader> colored_shader_v;
+    unique_ptr<Shader> colored_shader_f;
+    unique_ptr<Shader> textured_shader_v;
+    unique_ptr<Shader> textured_shader_f;
     unique_ptr<FrameBufferSurface> framebuffer;
     shared_ptr<Texture> render_texture;
     unique_ptr<RenderBuffer> render_depth_buffer;
@@ -36,65 +38,65 @@ public:
             const char *fragment_source,
             const char *shader_name
     ) {
-        shader.set_from_source(vertex_source, fragment_source);
-        if (!shader.is_valid()) {
-            cout << "Shader \"" << shader_name << "\" is invalid." << endl
-                 << "Vertex message: " << shader.get_vertex_message() << endl
-                 << "Fragment message: " << shader.get_fragment_message() << endl;
-        }
+//        shader.set_from_source(vertex_source, fragment_source);
+//        if (!shader.is_valid()) {
+//            cout << "Shader \"" << shader_name << "\" is invalid." << endl
+//                 << "Vertex message: " << shader.get_vertex_message() << endl
+//                 << "Fragment message: " << shader.get_fragment_message() << endl;
+//        }
     }
 
-    void setup_colored_shader(Shader &shader) {
-        const char *vertex_source =
-            "#version 330\n"
-            "layout(location = 0)in vec3 pos;\n"
-            "layout(location = 2)in vec3 vertexColor;\n"
-            "out vec4 color;\n"
-            "uniform mat4 modelView;\n"
-            "uniform mat4 worldView;\n"
-            "void main()\n"
-            "{\n"
-            "    gl_Position = worldView * modelView * vec4(pos, 1);\n"
-            "    color = vec4(vertexColor, 1);\n"
-            "}\n";
-
-        const char *fragment_source =
-            "#version 330\n"
-            "in vec4 color;\n"
-            "out vec4 fragColor;\n"
-            "void main()\n"
-            "{\n"
-            "    fragColor = color;\n"
-            "}\n";
-
-        setup_shader(shader, vertex_source, fragment_source, "colored");
+    void setup_colored_shader(Shader *vs, Shader *fs) {
+//        const char *vertex_source =
+//            "#version 330\n"
+//            "layout(location = 0)in vec3 pos;\n"
+//            "layout(location = 2)in vec3 vertexColor;\n"
+//            "out vec4 color;\n"
+//            "uniform mat4 modelView;\n"
+//            "uniform mat4 worldView;\n"
+//            "void main()\n"
+//            "{\n"
+//            "    gl_Position = worldView * modelView * vec4(pos, 1);\n"
+//            "    color = vec4(vertexColor, 1);\n"
+//            "}\n";
+//
+//        const char *fragment_source =
+//            "#version 330\n"
+//            "in vec4 color;\n"
+//            "out vec4 fragColor;\n"
+//            "void main()\n"
+//            "{\n"
+//            "    fragColor = color;\n"
+//            "}\n";
+//
+//        setup_shader(shader, vertex_source, fragment_source, "colored");
     }
 
-    void setup_textured_shader(Shader &shader) {
-        const char *vertex_source =
-            "#version 330\n"
-            "layout(location = 0)in vec3 pos;\n"
-            "layout(location = 1)in vec2 vertexUV;\n"
-            "out vec2 uv;\n"
-            "uniform mat4 modelView;\n"
-            "uniform mat4 worldView;\n"
-            "void main()\n"
-            "{\n"
-            "    gl_Position = worldView * modelView * vec4(pos, 1);\n"
-            "    uv = vertexUV;\n"
-            "}\n";
-
-        const char *fragment_source =
-            "#version 330\n"
-            "uniform sampler2D tex;\n"
-            "in vec2 uv;\n"
-            "out vec4 fragColor;\n"
-            "void main()\n"
-            "{\n"
-            "    fragColor = texture(tex, uv);\n"
-            "}\n";
-
-        setup_shader(shader, vertex_source, fragment_source, "textured");
+    void setup_textured_shader(Shader *vs, Shader *fs) {
+//        const char *vertex_source =
+//            "#version 330\n"
+//            "layout(location = 0)in vec3 pos;\n"
+//            "layout(location = 1)in vec2 vertexUV;\n"
+//            "out vec2 uv;\n"
+//            "uniform mat4 modelView;\n"
+//            "uniform mat4 worldView;\n"
+//            "void main()\n"
+//            "{\n"
+//            "    gl_Position = worldView * modelView * vec4(pos, 1);\n"
+//            "    uv = vertexUV;\n"
+//            "}\n";
+//
+//        const char *fragment_source =
+//            "#version 330\n"
+//            "uniform sampler2D tex;\n"
+//            "in vec2 uv;\n"
+//            "out vec4 fragColor;\n"
+//            "void main()\n"
+//            "{\n"
+//            "    fragColor = texture(tex, uv);\n"
+//            "}\n";
+//
+//        setup_shader(shader, vertex_source, fragment_source, "textured");
     }
 
     void draw_cube(Surface *surface, Material *material) {
@@ -109,12 +111,14 @@ public:
 //        );
         renderer->initialize();
         vbo = unique_ptr<VertexBuffer>(renderer->make_vbo());
-        ebo = unique_ptr<ElementBufferChar>(renderer->make_char_ebo());
+        ebo = unique_ptr<ElementBuffer8>(renderer->make_ebo8());
         vao = unique_ptr<VertexArray>(renderer->make_vao());
         colored_material = unique_ptr<Material>(renderer->make_material());
         textured_material = unique_ptr<Material>(renderer->make_material());
-        colored_shader = shared_ptr<Shader>(renderer->make_shader());
-        textured_shader = shared_ptr<Shader>(renderer->make_shader());
+        colored_shader_v = unique_ptr<Shader>(renderer->make_shader());
+        colored_shader_f = unique_ptr<Shader>(renderer->make_shader());
+        textured_shader_v = unique_ptr<Shader>(renderer->make_shader());
+        textured_shader_f = unique_ptr<Shader>(renderer->make_shader());
         framebuffer = unique_ptr<FrameBufferSurface>(renderer->make_framebuffer());
         render_texture = shared_ptr<Texture>(renderer->make_texture(TextureInitOptions()));
         render_depth_buffer = unique_ptr<RenderBuffer>(renderer->make_renderbuffer());
@@ -150,11 +154,17 @@ public:
 
         ebo->set(0, elements, 6 * 6);
 
-        setup_colored_shader(*colored_shader.get());
-        setup_textured_shader(*textured_shader.get());
+        setup_colored_shader(colored_shader_v.get(), colored_shader_f.get());
+        setup_textured_shader(textured_shader_v.get(), textured_shader_f.get());
 
-        colored_material->set_shader(colored_shader);
-        textured_material->set_shader(textured_shader);
+        array<const Shader *, 2> shaders = {
+            colored_shader_v.get(), colored_shader_f.get()
+        };
+        colored_material->link_shaders(shaders.data(), shaders.size());
+        shaders = {
+            textured_shader_v.get(), textured_shader_f.get()
+        };
+        textured_material->link_shaders(shaders.data(), shaders.size());
         std::weak_ptr<Texture> material_textures[1] = { render_texture };
         textured_material->set_textures(material_textures, 1);
         textured_material->set_uniform_texture("tex", 0);

@@ -33,8 +33,8 @@ namespace giygas {
         VkSurfaceKHR _surface;
         VkDevice _device;
         VkSwapchainKHR _swapchain;
-        unsigned int _image_count;
-        unsigned int _image_view_count;
+        uint32_t _image_count;
+        uint32_t _image_view_count;
         unique_ptr<VkImage[]> _images;
         unique_ptr<VkImageView[]> _image_views;
         VkSurfaceFormatKHR _swapchain_format;
@@ -98,14 +98,14 @@ namespace giygas {
             VkSwapchainKHR &swapchain
         );
 
-        static unsigned int get_swapchain_images(
+        static uint32_t get_swapchain_images(
             VkDevice device,
             VkSwapchainKHR swapchain,
             unique_ptr<VkImage[]> &dest
         );
 
         static VkResult create_image_views(
-            unsigned int count,
+            uint32_t count,
             const VkImage *images,
             VkFormat format,
             VkDevice device,
@@ -113,7 +113,7 @@ namespace giygas {
         );
 
         static void destroy_image_views(
-            unsigned int count,
+            uint32_t count,
             VkImageView *views,
             VkDevice device
         );
@@ -126,13 +126,17 @@ namespace giygas {
         VulkanRenderer &operator=(VulkanRenderer &&) noexcept;
         ~VulkanRenderer() override;
 
+        //
+        // Renderer implementation
+        //
+
         void initialize() override;
 
         VertexBuffer *make_vbo() override;
         VertexArray *make_vao() override;
-        ElementBuffer<unsigned int> *make_int_ebo() override;
-        ElementBuffer<unsigned short> *make_short_ebo() override;
-        ElementBuffer<unsigned char> *make_char_ebo() override;
+        ElementBuffer<uint32_t> *make_ebo32() override;
+        ElementBuffer<uint16_t> *make_ebo16() override;
+        ElementBuffer<uint8_t> *make_ebo8() override;
         Material *make_material() override;
         Shader *make_shader() override;
         Texture *make_texture(TextureInitOptions options) override;
@@ -141,6 +145,13 @@ namespace giygas {
         Surface *main_surface() override;
 
         void present() override;
+
+
+        //
+        // VulkanRenderer implementation
+        //
+
+        VkDevice device() const;
     };
 
 }

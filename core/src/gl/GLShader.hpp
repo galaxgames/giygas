@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <giygas/Shader.hpp>
+#include <giygas/ShaderType.hpp>
 #include <string>
 
 namespace giygas {
@@ -10,34 +11,36 @@ namespace giygas {
 
     class GLShader : public Shader {
         GLRenderer *_renderer;
-        GLuint _vertex_shader;
-        GLuint _fragment_shader;
-        bool _is_valid;
-        string _vertex_message;
-        string _fragment_message;
+        GLuint _handle;
+        ShaderType _type;
 
-        bool compile_shader(GLuint shader, const char *source, string &message);
+        void create_shader(ShaderType type);
+        void delete_shader();
+        static GLenum shader_type_to_enum(ShaderType type);
 
     public:
-        GLShader(GLRenderer *gl);
+        explicit GLShader(GLRenderer *gl);
         GLShader(const GLShader &) = delete;
         GLShader(GLShader &&) noexcept;
         GLShader& operator=(const GLShader &) = delete;
         GLShader& operator=(GLShader &&) noexcept;
-        virtual ~GLShader();
+        ~GLShader() override;
 
         RendererType renderer_type() const override;
 
-        void set_from_source(
-            const char* vertex,
-            const char* fragment
+        void set_code(
+            const uint8_t* vertex, size_t length, ShaderType type
         ) override;
 
-        bool is_valid() const override;
-        const string &get_vertex_message() const override;
-        const string &get_fragment_message() const override;
+        ShaderType shader_type() const override;
 
-        GLuint get_vertex_shader() const;
-        GLuint get_fragment_shader() const;
+//        bool is_valid() const override;
+//        const string &get_vertex_message() const override;
+//        const string &get_fragment_message() const override;
+
+//        GLuint get_vertex_shader() const;
+//        GLuint get_fragment_shader() const;
+
+        GLuint handle() const;
     };
 }

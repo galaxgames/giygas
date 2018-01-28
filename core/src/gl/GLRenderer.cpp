@@ -175,19 +175,19 @@ VertexArray *GLRenderer::make_vao() {
     return new GLVertexArray(this);
 }
 
-ElementBuffer<unsigned int> *GLRenderer::make_int_ebo() {
+ElementBuffer<unsigned int> *GLRenderer::make_ebo32() {
     assert(_initialized);
-    return new GLElementBuffer<unsigned int>(this);
+    return new GLElementBuffer<uint32_t>(this);
 }
 
-ElementBuffer<unsigned short> *GLRenderer::make_short_ebo() {
+ElementBuffer<unsigned short> *GLRenderer::make_ebo16() {
     assert(_initialized);
-    return new GLElementBuffer<unsigned short>(this);
+    return new GLElementBuffer<uint16_t>(this);
 }
 
-ElementBuffer<unsigned char> *GLRenderer::make_char_ebo() {
+ElementBuffer<unsigned char> *GLRenderer::make_ebo8() {
     assert(_initialized);
-    return new GLElementBuffer<unsigned char>(this);
+    return new GLElementBuffer<uint8_t>(this);
 }
 
 Material *GLRenderer::make_material() {

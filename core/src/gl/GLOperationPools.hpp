@@ -21,6 +21,7 @@
 #include "operations/DeleteRenderbufferGLOperation.hpp"
 #include "operations/CreateRenderbufferStorageGLOperation.hpp"
 #include "operations/Pipeline/SetPipelineGLOperation.hpp"
+#include "operations/CompileShaderGLOperation.hpp"
 
 namespace giygas {
     class GLOperationPools {
@@ -44,6 +45,7 @@ namespace giygas {
         Pool<CreateTextureStorageGLOperation> create_texture_storage_ops;
 
         // Shader Operations
+        Pool<CompileShaderGLOperation> compile_shader_ops;
         Pool<DeleteShaderGLOperation> delete_shader_ops;
 
         // Program Operations

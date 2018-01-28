@@ -22,7 +22,7 @@ namespace giygas {
     class GLMaterial : public Material {
         GLRenderer *_renderer;
         GLuint _program;
-        std::weak_ptr<Shader> _shader;
+        //std::weak_ptr<Shader> _shader;
         std::unordered_map<std::string, std::unique_ptr<GLUniformValue>> _values;
         std::unordered_map<std::string, GLint> _locations;
         std::unique_ptr<std::weak_ptr<Texture>[]> _textures;
@@ -40,16 +40,17 @@ namespace giygas {
         void set_uniform(const std::string &name, T value);
 
     public:
-        GLMaterial(GLRenderer *renderer);
+        explicit GLMaterial(GLRenderer *renderer);
         GLMaterial(const GLMaterial &) = delete;
         GLMaterial(GLMaterial &&) noexcept;
         GLMaterial& operator=(const GLMaterial &) = delete;
         GLMaterial& operator=(GLMaterial &&) noexcept ;
-        virtual ~GLMaterial();
+        ~GLMaterial() override;
 
         RendererType renderer_type() const override;
 
-        void set_shader(std::weak_ptr<Shader> shader) override;
+        void link_shaders(const Shader **shaders, size_t count) override;
+        //void set_shader(std::weak_ptr<Shader> shader) override;
         
         void set_textures(
             const std::weak_ptr<Texture> *textures, size_t count

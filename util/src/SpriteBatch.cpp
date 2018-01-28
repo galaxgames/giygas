@@ -7,7 +7,7 @@ using namespace std;
 SpriteBatch::SpriteBatch(Renderer &renderer) :
     _vao(renderer.make_vao()),
     _vbo(renderer.make_vbo()),
-    _ebo(renderer.make_int_ebo())
+    _ebo(renderer.make_ebo32())
 {
     _count = 0;
 

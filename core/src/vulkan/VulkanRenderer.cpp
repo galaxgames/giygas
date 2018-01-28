@@ -137,15 +137,15 @@ VertexArray *VulkanRenderer::make_vao() {
     return nullptr;
 }
 
-ElementBuffer<unsigned int>* VulkanRenderer::make_int_ebo() {
+ElementBuffer<uint32_t>* VulkanRenderer::make_ebo32() {
     return nullptr;
 }
 
-ElementBuffer<unsigned short>* VulkanRenderer::make_short_ebo() {
+ElementBuffer<uint16_t>* VulkanRenderer::make_ebo16() {
     return nullptr;
 }
 
-ElementBuffer<unsigned char>* VulkanRenderer::make_char_ebo() {
+ElementBuffer<uint8_t>* VulkanRenderer::make_ebo8() {
     return nullptr;
 }
 

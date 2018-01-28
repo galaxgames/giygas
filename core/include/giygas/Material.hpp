@@ -21,7 +21,8 @@ namespace giygas {
 
         virtual RendererType renderer_type() const = 0;
 
-        virtual void set_shader(std::weak_ptr<Shader> shader) = 0;
+        virtual void link_shaders(const Shader **shaders, size_t count) = 0;
+        //virtual void set_shader(std::weak_ptr<Shader> shader) = 0;
 
         virtual void set_textures(
             const std::weak_ptr<Texture> *textures, size_t count

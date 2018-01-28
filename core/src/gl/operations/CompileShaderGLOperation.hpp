@@ -9,18 +9,23 @@ namespace giygas {
 
     class CompileShaderGLOperation : public GLOperation {
         GLuint _shader;
-        string _source;
-        bool _success;
-        bool _finished;
-        string _message;
-        mutex _mutex;
-        condition_variable _cv;
+        unique_ptr<const GLchar[]> _source;
+        size_t _length;
+//        bool _success;
+//        bool _finished;
+//        string _message;
+//        mutex _mutex;
+//        condition_variable _cv;
     public:
-        CompileShaderGLOperation(GLuint shader, string &&source);
+        void setup(
+            GLuint shader,
+            unique_ptr<const GLchar[]> &&source,
+            size_t length
+        );
         void execute(GL *gl) override;
-        void wait();
-        bool is_successful() const;
-        string &message();
+//        void wait();
+//        bool is_successful() const;
+//        string &message();
     };
 
 }

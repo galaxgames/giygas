@@ -1,5 +1,6 @@
 #include <cstring>
 #include <utility>
+#include <algorithm>
 #include "GLShader.hpp"
 #include "GLRenderer.hpp"
 #include "operations/CreateShaderGLOperation.hpp"
@@ -10,15 +11,7 @@ using namespace giygas;
 
 GLShader::GLShader(GLRenderer *renderer) {
     _renderer = renderer;
-
-    CreateShaderGLOperation create_vs_op(GL_VERTEX_SHADER);
-    CreateShaderGLOperation create_fs_op(GL_FRAGMENT_SHADER);
-
-    _renderer->add_operation(&create_vs_op, nullptr);
-    _renderer->add_operation_and_notify(&create_fs_op, nullptr);
-
-    _vertex_shader = create_vs_op.get_handle();
-    _fragment_shader = create_fs_op.get_handle();
+    _handle = 0;
 }
 
 GLShader::GLShader(GLShader &&other) noexcept {
@@ -27,65 +20,70 @@ GLShader::GLShader(GLShader &&other) noexcept {
 
 GLShader& GLShader::operator=(GLShader &&other) noexcept {
     _renderer = other._renderer;
-    _vertex_message = other._vertex_message;
-    _fragment_message = other._fragment_message;
-    _vertex_shader = other._vertex_shader;
-    _fragment_shader = other._fragment_shader;
-    other._vertex_shader = 0;
-    other._fragment_shader = 0;
-    other._vertex_message = nullptr;
-    other._fragment_message = nullptr;
-
+    _handle = other._handle;
+    _type = other._type;
+    other._handle = 0;
     return *this;
 }
 
 GLShader::~GLShader() {
-    Pool<DeleteShaderGLOperation> &pool = _renderer->pools().delete_shader_ops;
-    DeleteShaderGLOperation *del_vs_op = pool.take();
-    DeleteShaderGLOperation *del_fs_op = pool.take();
-    del_vs_op->set(_vertex_shader);
-    del_fs_op->set(_fragment_shader);
-    _renderer->add_operation(del_vs_op, &pool);
-    _renderer->add_operation(del_fs_op, &pool);
+    delete_shader();
 }
 
 RendererType GLShader::renderer_type() const {
     return RendererType::OpenGL;
 }
 
-void GLShader::set_from_source(const char* vertex, const char* fragment) {
-    bool failed = false;
-    failed |= !compile_shader(_vertex_shader, vertex, _vertex_message);
-    failed |= !compile_shader(_fragment_shader, fragment, _fragment_message);
-    _is_valid = !failed;
-}
 
-bool GLShader::compile_shader(
-    GLuint shader, const char *source, string &message
+void GLShader::set_code(
+    const uint8_t *code,
+    size_t length,
+    ShaderType type
 ) {
-    CompileShaderGLOperation compile_op(shader, source);
-    _renderer->add_operation_and_notify(&compile_op, nullptr);
-    compile_op.wait();
-    message = move(compile_op.message());
-    return compile_op.is_successful();
+    // Hooray! OpenGL is wonderful!!!
+    GLchar *sanitized_source = new GLchar[length];
+    for (size_t i = 0; i < length; ++i) {
+        sanitized_source[i] = static_cast<GLchar>(code[i]);
+    }
+
+    // Create or re-create the shader if needed.
+    if (_handle == 0 || type != _type) {
+        _type = type;
+        delete_shader();
+        create_shader(type);
+    }
+
+    // Start the operation
+    Pool<CompileShaderGLOperation> &pool =
+        _renderer->pools().compile_shader_ops;
+    CompileShaderGLOperation *compile_op = pool.take();
+    compile_op->setup(
+        _handle,
+        unique_ptr<const GLchar[]>(sanitized_source),
+        length
+    );
+    _renderer->add_operation(compile_op, nullptr);
 }
 
-bool GLShader::is_valid() const {
-    return _is_valid;
+void GLShader::create_shader(ShaderType type) {
+    CreateShaderGLOperation create_op(shader_type_to_enum(type));
+    _renderer->add_operation_and_notify(&create_op, nullptr);
+    _handle = create_op.get_handle();
 }
 
-const string &GLShader::get_vertex_message() const {
-    return _vertex_message;
+void GLShader::delete_shader() {
+    Pool<DeleteShaderGLOperation> &pool = _renderer->pools().delete_shader_ops;
+    DeleteShaderGLOperation *del_op = pool.take();
+    del_op->set(_handle);
+    _renderer->add_operation(del_op, &pool);
+    _handle = 0;
 }
 
-const string &GLShader::get_fragment_message() const {
-    return _fragment_message;
-}
-
-GLuint GLShader::get_vertex_shader() const {
-    return _vertex_shader;
-}
-
-GLuint GLShader::get_fragment_shader() const {
-    return _fragment_shader;
+GLenum GLShader::shader_type_to_enum(ShaderType type) {
+    switch(type) {
+        case ShaderType::Vertex:
+            return GL_VERTEX_SHADER;
+        case ShaderType::Fragment:
+            return GL_FRAGMENT_SHADER;
+    }
 }

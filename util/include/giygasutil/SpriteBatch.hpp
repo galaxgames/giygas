@@ -27,7 +27,7 @@ namespace giygas {
         std::vector<ElementDrawInfo> _draw_call_details;
         std::unique_ptr<VertexArray> _vao;
         std::unique_ptr<VertexBuffer> _vbo;
-        std::unique_ptr<ElementBufferInt> _ebo;
+        std::unique_ptr<ElementBuffer32> _ebo;
         SpriteBatchMaterial _mat;
         unsigned int _count;
 

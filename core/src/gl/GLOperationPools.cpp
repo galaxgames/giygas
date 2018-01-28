@@ -20,6 +20,7 @@ namespace giygas {
     template class Pool<SetTextureParameterGLOperation>;
     template class Pool<CreateTextureStorageGLOperation>;
 
+    template class Pool<CompileShaderGLOperation>;
     template class Pool<DeleteShaderGLOperation>;
 
     template class Pool<DeleteProgramGLOperation>;

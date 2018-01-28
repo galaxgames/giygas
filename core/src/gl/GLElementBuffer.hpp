@@ -41,7 +41,7 @@ namespace giygas {
         GLuint handle() const override;
     };
 
-    extern template class GLElementBuffer<unsigned int>;
-    extern template class GLElementBuffer<unsigned short>;
-    extern template class GLElementBuffer<unsigned char>;
+    extern template class GLElementBuffer<uint32_t>;
+    extern template class GLElementBuffer<uint16_t>;
+    extern template class GLElementBuffer<uint8_t>;
 }
