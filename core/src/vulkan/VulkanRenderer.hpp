@@ -34,7 +34,9 @@ namespace giygas {
         VkDevice _device;
         VkSwapchainKHR _swapchain;
         unsigned int _image_count;
+        unsigned int _image_view_count;
         unique_ptr<VkImage[]> _images;
+        unique_ptr<VkImageView[]> _image_views;
         VkSurfaceFormatKHR _swapchain_format;
         VkExtent2D _swapchain_extent;
 
@@ -100,6 +102,20 @@ namespace giygas {
             VkDevice device,
             VkSwapchainKHR swapchain,
             unique_ptr<VkImage[]> &dest
+        );
+
+        static VkResult create_image_views(
+            unsigned int count,
+            const VkImage *images,
+            VkFormat format,
+            VkDevice device,
+            unique_ptr<VkImageView[]> &views
+        );
+
+        static void destroy_image_views(
+            unsigned int count,
+            VkImageView *views,
+            VkDevice device
         );
 
     public:

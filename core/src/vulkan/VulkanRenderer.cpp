@@ -25,16 +25,19 @@ VulkanRenderer::VulkanRenderer(VulkanContext *context) {
     _device = nullptr;
     _swapchain = nullptr;
     _image_count = 0;
+    _image_view_count = 0;
 }
 
 VulkanRenderer::VulkanRenderer(VulkanRenderer &&other) noexcept
     : _images(move(other._images))
+    , _image_views(move(other._image_views))
 {
     move_common(move(other));
 }
 
 VulkanRenderer& VulkanRenderer::operator=(VulkanRenderer &&other) noexcept {
     _images = move(other._images);
+    _image_views = move(other._image_views);
     move_common(move(other));
     return *this;
 }
@@ -45,17 +48,18 @@ void VulkanRenderer::move_common(VulkanRenderer &&other) noexcept {
     _surface = other._surface;
     _device = other._device;
     _swapchain = other._swapchain;
+    _image_count = other._image_count;
+    _image_view_count = other._image_view_count;
+    _swapchain_format = other._swapchain_format;
+    _swapchain_extent = other._swapchain_extent;
     other._instance = nullptr;
     other._surface = nullptr;
     other._device = nullptr;
     other._swapchain = nullptr;
-
-    _image_count = other._image_count;
-    _swapchain_format = other._swapchain_format;
-    _swapchain_extent = other._swapchain_extent;
 }
 
 VulkanRenderer::~VulkanRenderer() {
+    destroy_image_views(_image_view_count, _image_views.get(), _device);
     vkDestroySwapchainKHR(_device, _swapchain, nullptr);
     vkDestroyDevice(_device, nullptr);
     vkDestroySurfaceKHR(_instance, _surface, nullptr);
@@ -113,7 +117,16 @@ void VulkanRenderer::initialize() {
     }
 
     _image_count = get_swapchain_images(_device, _swapchain, _images);
-
+    _image_view_count = _image_count;
+    if (create_image_views(
+        _image_count,
+        _images.get(),
+        _swapchain_format.format,
+        _device,
+        _image_views
+    ) != VK_SUCCESS) {
+        return;
+    }
 }
 
 VertexBuffer* VulkanRenderer::make_vbo() {
@@ -500,4 +513,58 @@ unsigned int VulkanRenderer::get_swapchain_images(
     dest = unique_ptr<VkImage[]>(new VkImage[count]);
     vkGetSwapchainImagesKHR(device, swapchain, &count, dest.get());
     return count;
+}
+
+VkResult VulkanRenderer::create_image_views(
+    unsigned int count,
+    const VkImage *images,
+    VkFormat format,
+    VkDevice device,
+    unique_ptr<VkImageView[]> &views
+) {
+    views = unique_ptr<VkImageView[]>(new VkImageView[count]);
+    VkImageViewCreateInfo create_info;
+    VkResult create_result;
+
+    create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    create_info.format = format;
+    create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    create_info.subresourceRange.baseMipLevel = 0;
+    create_info.subresourceRange.levelCount = 1;
+    create_info.subresourceRange.baseArrayLayer = 0;
+    create_info.subresourceRange.layerCount = 1;
+
+    for (unsigned int i = 0; i < count; ++i){
+        views[i] = nullptr;
+    }
+    for (unsigned int i = 0; i < count; ++i) {
+        create_info.image = images[i];
+
+        create_result = vkCreateImageView(
+            device,
+            &create_info,
+            nullptr,
+            &views[i]
+        );
+        if (create_result != VK_SUCCESS) {
+            return create_result;
+        }
+    }
+    return VK_SUCCESS;
+}
+
+void VulkanRenderer::destroy_image_views(
+    unsigned int count,
+    VkImageView *views,
+    VkDevice device
+) {
+    for (unsigned int i = 0; i < count; ++i) {
+        vkDestroyImageView(device, views[i], nullptr);
+    }
 }

@@ -16,7 +16,7 @@ Renderer *giygas::make_renderer(Context *context) {
 Renderer* giygas::make_renderer(Context *context, RendererType type) {
     switch (type) {
         case RendererType::OpenGL: {
-            GLContext *gl_context = static_cast<GLContext *>(
+            auto *gl_context = static_cast<GLContext *>(
                 context->cast_to_specific(type)
             );
             if (gl_context != nullptr) {
@@ -25,7 +25,7 @@ Renderer* giygas::make_renderer(Context *context, RendererType type) {
             break;
         }
         case RendererType::Vulkan: {
-            VulkanContext *vulkan_context = static_cast<VulkanContext *>(
+            auto *vulkan_context = static_cast<VulkanContext *>(
                 context->cast_to_specific(type)
             );
             if (vulkan_context != nullptr) {
