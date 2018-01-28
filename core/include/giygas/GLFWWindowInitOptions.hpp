@@ -10,8 +10,6 @@ namespace giygas {
         const char *title;
         unsigned int width;
         unsigned int height;
-        GLVersion gl_min_version;
-        GLVersion gl_max_version;
 
         GLFWWindowInitOptions();
 
@@ -22,21 +20,5 @@ namespace giygas {
             unsigned int height
         );
 
-        GLFWWindowInitOptions(
-            bool is_resizable,
-            const char *title,
-            unsigned int width,
-            unsigned int height,
-            GLVersion gl_min_version
-        );
-
-        GLFWWindowInitOptions(
-            bool is_resizable,
-            const char *title,
-            unsigned int width,
-            unsigned int height,
-            GLVersion gl_min_version,
-            GLVersion gl_max_version
-        );
     };
 }

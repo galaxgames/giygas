@@ -1,5 +1,5 @@
 #include <giygas/giygas.hpp>
-#include <giygas/GLFWWindow.hpp>
+#include <giygas/GLFWContext.hpp>
 #include <iostream>
 #include <giygasutil/EventLoopUpdatable.hpp>
 #include <giygasutil/EventLoopContextRunner.hpp>
@@ -201,11 +201,9 @@ public:
 
 };
 
-int main(int argc, char **argv)
-{
-    shared_ptr<GLFWWindow> window(new GLFWWindow);
-    window->initialize(GLFWWindowInitOptions());
-    unique_ptr<Renderer> renderer(giygas::make_renderer(window));
+int main(int argc, char **argv) {
+    unique_ptr<GLFWContext> window(new GLFWContext(GLFWWindowInitOptions()));
+    unique_ptr<Renderer> renderer(giygas::make_renderer(window.get()));
     FramebufferExample app(renderer.get());
     app.setup();
     EventLoopContextRunner runner(window.get(), &app);

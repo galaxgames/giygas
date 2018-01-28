@@ -1,28 +1,30 @@
 #include <glad/glad.h>
-#include <giygas/GLFWWindow.hpp>
+#include <giygas/GLFWContext.hpp>
 #include <cassert>
+#include <giygas/VulkanContext.hpp>
 
 using namespace giygas;
 using namespace std;
 
-GLFWWindow::GLFWWindow() {
+GLFWContext::GLFWContext(GLFWWindowInitOptions init_options) {
     _window = nullptr;
-    glfwInit();
+    _init_options = init_options;
+    _init_error = glfwInit();
 }
 
-GLFWWindow::GLFWWindow(GLFWWindow &&other) noexcept
+GLFWContext::GLFWContext(GLFWContext &&other) noexcept
     : _surface_size_changed_event(move(other._surface_size_changed_event))
 {
     move_common(move(other));
 }
 
-GLFWWindow& GLFWWindow::operator=(GLFWWindow &&other) noexcept {
+GLFWContext& GLFWContext::operator=(GLFWContext &&other) noexcept {
     _surface_size_changed_event = move(other._surface_size_changed_event);
     move_common(move(other));
     return *this;
 }
 
-void GLFWWindow::move_common(GLFWWindow &&other) noexcept {
+void GLFWContext::move_common(GLFWContext &&other) noexcept {
     _window = other._window;
     _version = other._version;
     _framebuffer_width = other._framebuffer_width;
@@ -30,22 +32,22 @@ void GLFWWindow::move_common(GLFWWindow &&other) noexcept {
     other._window = nullptr;
 }
 
-GLFWWindow::~GLFWWindow() {
+GLFWContext::~GLFWContext() {
     glfwTerminate();
 }
 
-void GLFWWindow::initialize(GLFWWindowInitOptions options) {
-    glfwWindowHint(GLFW_RESIZABLE, options.is_resizable ? GL_TRUE : GL_FALSE);
+void GLFWContext::initialize_for_opengl(GLVersion min, GLVersion max) {
+    glfwWindowHint(GLFW_RESIZABLE, _init_options.is_resizable ? GL_TRUE : GL_FALSE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 
-    _version = options.gl_max_version;
-    while (_version >= options.gl_min_version) {
-        _window = try_create_window(
-            options.title,
-            options.width,
-            options.height,
+    _version = max;
+    while (_version >= min) {
+        _window = try_create_opengl_window(
+            _init_options.title,
+            _init_options.width,
+            _init_options.height,
             _version
         );
         if (_window != nullptr) {
@@ -68,11 +70,11 @@ void GLFWWindow::initialize(GLFWWindowInitOptions options) {
     glfwSetWindowUserPointer(_window, this);
     glfwSetFramebufferSizeCallback(_window, framebuffer_size_callback);
 
-    /* Make the window's context current */
+    // Make the window's context current
     glfwMakeContextCurrent(_window);
 }
 
-GLFWwindow *GLFWWindow::try_create_window(
+GLFWwindow *GLFWContext::try_create_opengl_window(
     const char *title,
     int width,
     int height,
@@ -85,7 +87,7 @@ GLFWwindow *GLFWWindow::try_create_window(
     return glfwCreateWindow(width, height, title, nullptr, nullptr);
 }
 
-void GLFWWindow::get_major_minor(GLVersion version, int &major, int &minor) {
+void GLFWContext::get_major_minor(GLVersion version, int &major, int &minor) {
     GLVersion base;
     int offset;
     switch(version) {
@@ -113,86 +115,114 @@ void GLFWWindow::get_major_minor(GLVersion version, int &major, int &minor) {
     minor = discriminant - base_discriminant + offset;
 }
 
-void GLFWWindow::show() {
+void GLFWContext::show() {
     glfwShowWindow(_window);
 }
 
-void GLFWWindow::update() {
+void GLFWContext::update() {
     glfwPollEvents();
 }
 
-void GLFWWindow::present() {
+void GLFWContext::present() {
     glfwSwapBuffers(_window);
 }
 
-bool GLFWWindow::should_close() const {
+bool GLFWContext::should_close() const {
     return static_cast<bool>(glfwWindowShouldClose(_window));
 }
 
-bool GLFWWindow::is_valid() const {
+bool GLFWContext::is_valid() const {
     return _window != nullptr;
 }
 
-void* GLFWWindow::cast_to_specific(RendererType type) {
+void* GLFWContext::cast_to_specific(RendererType type) {
+    // Returns a pointer that can safely be re-interpreted to the a pointer of
+    // the given context type. (accounts for thunking)
     if (type == RendererType::OpenGL) {
         return static_cast<GLContext *>(this);
+    }
+    if (type == RendererType::Vulkan) {
+        return static_cast<VulkanContext *>(this);
     }
     return nullptr;
 }
 
-bool GLFWWindow::supports_renderer(RendererType type) const {
-    return type == RendererType::OpenGL;
+bool GLFWContext::supports_renderer(RendererType type) const {
+    switch (type)  {
+        case RendererType::OpenGL:
+            return true;
+        case RendererType::Vulkan:
+            return glfwVulkanSupported() == GLFW_TRUE;
+    }
 }
 
-void GLFWWindow::make_current_on_calling_thread() {
+void GLFWContext::make_current_on_calling_thread() {
     glfwMakeContextCurrent(_window);
 }
 
-unsigned int GLFWWindow::framebuffer_width() const {
+bool GLFWContext::initialize_for_vulkan() {
+    glfwWindowHint(GLFW_RESIZABLE, _init_options.is_resizable ? GL_TRUE : GL_FALSE);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+
+    _window = glfwCreateWindow(
+        _init_options.width,
+        _init_options.height,
+        _init_options.title,
+        nullptr, // monitor
+        nullptr  // share
+    );
+
+    if (_window == nullptr) {
+        return false;
+    }
+
+    int framebuffer_width, framebuffer_height;
+    glfwGetFramebufferSize(_window, &framebuffer_width, &framebuffer_height);
+    _framebuffer_width = static_cast<unsigned int>(framebuffer_width);
+    _framebuffer_height = static_cast<unsigned int>(framebuffer_height);
+
+    glfwSetWindowUserPointer(_window, this);
+    glfwSetFramebufferSizeCallback(_window, framebuffer_size_callback);
+    return true;
+}
+
+const char** GLFWContext::get_required_instance_extensions(
+    unsigned int *count
+) const {
+    return glfwGetRequiredInstanceExtensions(count);
+}
+
+VkResult GLFWContext::create_surface(
+    VkInstance instance,
+    VkSurfaceKHR *surface
+) {
+    return glfwCreateWindowSurface(instance, _window, nullptr, surface);
+}
+
+unsigned int GLFWContext::framebuffer_width() const {
     return _framebuffer_width;
 }
 
-unsigned int GLFWWindow::framebuffer_height() const {
+unsigned int GLFWContext::framebuffer_height() const {
     return _framebuffer_height;
 }
 
-EventHandler<unsigned int, unsigned int> GLFWWindow::surface_size_changed() {
+EventHandler<unsigned int, unsigned int> GLFWContext::surface_size_changed() {
     return _surface_size_changed_event.make_handler();
 }
 
-//void GLFWWindow::add_surface_size_changed_listener(
-//    SurfaceSizeChangedListener *listener
-//) {
-//    assert(listener != nullptr);
-//    _surface_size_listeners.insert(listener);
-//}
-//
-//void GLFWWindow::remove_surface_size_changed_listener(
-//        SurfaceSizeChangedListener *listener
-//) {
-//    auto it = _surface_size_listeners.find(listener);
-//    if (it == _surface_size_listeners.end()) {
-//        return;
-//    }
-//    _surface_size_listeners.erase(it);
-//}
-
-
-void GLFWWindow::framebuffer_size_callback(
+void GLFWContext::framebuffer_size_callback(
     GLFWwindow *window,
     int width,
     int height
 ) {
     void *userdata = glfwGetWindowUserPointer(window);
-    auto *instance = reinterpret_cast<GLFWWindow *>(userdata);
+    auto *instance = reinterpret_cast<GLFWContext *>(userdata);
     instance->_framebuffer_width = static_cast<unsigned int>(width);
     instance->_framebuffer_height = static_cast<unsigned int>(height);
-
-    instance->_surface_size_changed_event.invoke(instance->_framebuffer_width, instance->_framebuffer_height);
-//    for (SurfaceSizeChangedListener *listener : instance->_surface_size_listeners) {
-//        listener->handle_surface_size_changed(
-//            instance->_framebuffer_width,
-//            instance->_framebuffer_height
-//        );
-//    }
+    instance->_surface_size_changed_event.invoke(
+        instance->_framebuffer_width,
+        instance->_framebuffer_height
+    );
 }

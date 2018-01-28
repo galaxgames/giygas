@@ -5,9 +5,6 @@
 namespace giygas {
     using namespace std;
 
-    GIYGAS_EXPORT Renderer *make_renderer(shared_ptr<Context> window);
-    GIYGAS_EXPORT Renderer *make_renderer(
-        shared_ptr<Context> window,
-        RendererType type
-    );
+    GIYGAS_EXPORT Renderer *make_renderer(Context *context);
+    GIYGAS_EXPORT Renderer *make_renderer(Context *window, RendererType type);
 }
