@@ -2,9 +2,9 @@
 #include <giygas/export.h>
 #include "VertexBuffer.hpp"
 #include "VertexArray.hpp"
-#include "ElementBuffer.hpp"
+#include "IndexBuffer.hpp"
 #include "Material.hpp"
-#include "SurfaceBufferType.hpp"
+#include "AttachmentType.hpp"
 #include "Surface.hpp"
 #include "FrameBufferSurface.hpp"
 #include "PipelineOptions.hpp"
@@ -28,9 +28,9 @@ namespace giygas {
 
         virtual VertexBuffer *make_vbo() = 0;
         virtual VertexArray *make_vao() = 0;
-        virtual ElementBuffer<uint32_t> *make_ebo32() = 0;
-        virtual ElementBuffer<uint16_t > *make_ebo16() = 0;
-        virtual ElementBuffer<uint8_t> *make_ebo8() = 0;
+        virtual IndexBuffer<uint32_t> *make_ebo32() = 0;
+        virtual IndexBuffer<uint16_t > *make_ebo16() = 0;
+        virtual IndexBuffer<uint8_t> *make_ebo8() = 0;
         virtual Material *make_material() = 0;
         virtual Shader *make_shader() = 0;
         virtual Texture *make_texture(TextureInitOptions options) = 0;

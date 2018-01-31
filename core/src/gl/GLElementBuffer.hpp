@@ -1,5 +1,5 @@
 #pragma once
-#include <giygas/ElementBuffer.hpp>
+#include <giygas/IndexBuffer.hpp>
 #include "GL.hpp"
 
 namespace giygas {
@@ -13,7 +13,7 @@ namespace giygas {
     };
 
     template <typename T>
-    class GLElementBuffer : public ElementBuffer<T>,
+    class GLElementBuffer : public IndexBuffer<T>,
         public GenericGLElementBuffer
     {
         GLRenderer *_renderer;

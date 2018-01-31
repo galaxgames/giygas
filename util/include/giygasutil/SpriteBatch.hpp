@@ -7,7 +7,7 @@
 #include "SpriteInfo.hpp"
 #include <giygas/Texture.hpp>
 #include <giygas/VertexBuffer.hpp>
-#include <giygas/ElementBuffer.hpp>
+#include <giygas/IndexBuffer.hpp>
 #include <giygas/Renderer.hpp>
 #include <giygas/Material.hpp>
 #include <giygas/ElementDrawInfo.hpp>
@@ -27,7 +27,7 @@ namespace giygas {
         std::vector<ElementDrawInfo> _draw_call_details;
         std::unique_ptr<VertexArray> _vao;
         std::unique_ptr<VertexBuffer> _vbo;
-        std::unique_ptr<ElementBuffer32> _ebo;
+        std::unique_ptr<IndexBuffer32> _ebo;
         SpriteBatchMaterial _mat;
         unsigned int _count;
 

@@ -175,17 +175,17 @@ VertexArray *GLRenderer::make_vao() {
     return new GLVertexArray(this);
 }
 
-ElementBuffer<unsigned int> *GLRenderer::make_ebo32() {
+IndexBuffer<unsigned int> *GLRenderer::make_ebo32() {
     assert(_initialized);
     return new GLElementBuffer<uint32_t>(this);
 }
 
-ElementBuffer<unsigned short> *GLRenderer::make_ebo16() {
+IndexBuffer<unsigned short> *GLRenderer::make_ebo16() {
     assert(_initialized);
     return new GLElementBuffer<uint16_t>(this);
 }
 
-ElementBuffer<unsigned char> *GLRenderer::make_ebo8() {
+IndexBuffer<unsigned char> *GLRenderer::make_ebo8() {
     assert(_initialized);
     return new GLElementBuffer<uint8_t>(this);
 }

@@ -10,7 +10,7 @@
 #include "Matrix4x4.hpp"
 
 #define UNIFORM_FUNC(func_name, T) \
-    virtual void func_name(const std::string &name, T value) = 0;
+    virtual void func_name(size_t location, T value) = 0;
 
 namespace giygas {
     using namespace std;

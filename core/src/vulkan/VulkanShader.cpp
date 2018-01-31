@@ -46,5 +46,10 @@ void VulkanShader::set_code(
     create_info.codeSize = length;
     create_info.pCode = reinterpret_cast<const uint32_t *>(code);
 
-    vkCreateShaderModule(_renderer->device(), &create_info, nullptr, &_module);
+    vkCreateShaderModule(
+        _renderer->device(),
+        &create_info,
+        nullptr,
+        &_module
+    );
 }

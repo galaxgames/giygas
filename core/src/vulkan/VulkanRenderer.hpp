@@ -134,9 +134,9 @@ namespace giygas {
 
         VertexBuffer *make_vbo() override;
         VertexArray *make_vao() override;
-        ElementBuffer<uint32_t> *make_ebo32() override;
-        ElementBuffer<uint16_t> *make_ebo16() override;
-        ElementBuffer<uint8_t> *make_ebo8() override;
+        IndexBuffer<uint32_t> *make_ebo32() override;
+        IndexBuffer<uint16_t> *make_ebo16() override;
+        IndexBuffer<uint8_t> *make_ebo8() override;
         Material *make_material() override;
         Shader *make_shader() override;
         Texture *make_texture(TextureInitOptions options) override;
@@ -152,6 +152,10 @@ namespace giygas {
         //
 
         VkDevice device() const;
+        //const VkPhysicalDeviceMemoryProperties &memory_properties() const;
+        const VkMemoryRequirements &buffer_memory_requirements() const;
+        uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags flags) const;
+
     };
 
 }

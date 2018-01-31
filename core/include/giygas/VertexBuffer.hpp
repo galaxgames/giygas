@@ -4,6 +4,7 @@
 #include <giygas/Vector4.hpp>
 #include "VertexAttributeLayout.hpp"
 #include "RendererType.hpp"
+#include <cstdint>
 
 namespace giygas {
     class GIYGAS_EXPORT VertexBuffer {
@@ -17,7 +18,7 @@ namespace giygas {
          * @param data      pointer to data to copy.
          * @param size      count bytes to copy
          */
-        virtual void set_data(size_t offset, const void *data, size_t size) = 0;
+        virtual void set_data(size_t offset, const uint8_t *data, size_t size) = 0;
     };
 }
 

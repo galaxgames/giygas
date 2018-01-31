@@ -56,7 +56,7 @@ void GLMainSurface::set_clear_stencil(int value) {
     _surface_renderer.set_clear_stencil(value);
 }
 
-void GLMainSurface::clear(SurfaceBufferType surfaces) {
+void GLMainSurface::clear(AttachmentType surfaces) {
     assert(_renderer != nullptr);
     _surface_renderer.clear(_renderer, 0, surfaces);
 }
@@ -64,7 +64,7 @@ void GLMainSurface::clear(SurfaceBufferType surfaces) {
 #define GIYGAS_MAIN_SURFACE_DRAW_FUNC_IMPL(ebo_type) \
 void GLMainSurface::draw( \
     VertexArray *vao, \
-    ElementBuffer<ebo_type> *ebo, \
+    IndexBuffer<ebo_type> *ebo, \
     Material *material, \
     ElementDrawInfo element_info \
 ) { \

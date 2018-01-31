@@ -8,11 +8,11 @@ namespace giygas {
         virtual ~FrameBufferSurface() = default;
         virtual void attach_texture(
             Texture *texture,
-            SurfaceBufferType attachment_type
+            AttachmentType attachment_type
         ) = 0;
         virtual void attach_renderbuffer(
             RenderBuffer *renderbuffer,
-            SurfaceBufferType attachment_type
+            AttachmentType attachment_type
         ) = 0;
     };
 }

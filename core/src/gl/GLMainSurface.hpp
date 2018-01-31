@@ -28,7 +28,7 @@ namespace giygas {
         void set_clear_color(Vector4 color) override;
         void set_clear_depth(double value) override;
         void set_clear_stencil(int value) override;
-        void clear(SurfaceBufferType surfaces) override;
+        void clear(AttachmentType surfaces) override;
         GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(unsigned int);
         GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(unsigned short);
         GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(unsigned char);

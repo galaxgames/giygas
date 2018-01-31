@@ -41,6 +41,8 @@ namespace giygas {
         // VulkanShader implementation
         //
 
+        VkShaderModule module() const;
+
     };
 
 }

@@ -12,7 +12,7 @@ class FramebufferExample : public EventLoopUpdatable
 public:
     Renderer *renderer;
     unique_ptr<VertexBuffer> vbo;
-    unique_ptr<ElementBuffer8> ebo;
+    unique_ptr<IndexBuffer8> ebo;
     unique_ptr<VertexArray> vao;
     unique_ptr<Material> colored_material;
     unique_ptr<Material> textured_material;
@@ -26,7 +26,7 @@ public:
 
     float current_rotation;
 
-    FramebufferExample(Renderer *renderer)
+    explicit FramebufferExample(Renderer *renderer)
         : renderer(renderer)
     {
         current_rotation = 0;
@@ -100,7 +100,7 @@ public:
     }
 
     void draw_cube(Surface *surface, Material *material) {
-        surface->clear(SurfaceBufferType::Color | SurfaceBufferType::Depth);
+        surface->clear(AttachmentType::Color | AttachmentType::Depth);
         surface->draw(vao.get(), ebo.get(), material, ElementDrawInfo{0, 6 * 6});
     }
 
@@ -111,7 +111,7 @@ public:
 //        );
         renderer->initialize();
         vbo = unique_ptr<VertexBuffer>(renderer->make_vbo());
-        ebo = unique_ptr<ElementBuffer8>(renderer->make_ebo8());
+        ebo = unique_ptr<IndexBuffer8>(renderer->make_ebo8());
         vao = unique_ptr<VertexArray>(renderer->make_vao());
         colored_material = unique_ptr<Material>(renderer->make_material());
         textured_material = unique_ptr<Material>(renderer->make_material());
@@ -172,8 +172,8 @@ public:
         // Setup framebuffer
         render_texture->create_storage(512, 512, TextureFormat::RGB);
         render_depth_buffer->create_storage(512, 512, TextureFormat::Depth16);
-        framebuffer->attach_texture(render_texture.get(), SurfaceBufferType::Color);
-        framebuffer->attach_renderbuffer(render_depth_buffer.get(), SurfaceBufferType::Depth);
+        framebuffer->attach_texture(render_texture.get(), AttachmentType::Color);
+        framebuffer->attach_renderbuffer(render_depth_buffer.get(), AttachmentType::Depth);
         framebuffer->set_viewport(0, 0, 512, 512);
 
         Matrix4x4 framebuffer_worldview = Matrix4x4::perspective(1, 1.0f, 10.0f, 60 * (3.14159f / 180.0f));

@@ -49,7 +49,7 @@ GLFrameBufferSurface::~GLFrameBufferSurface() {
 
 void GLFrameBufferSurface::attach_texture(
     Texture *texture,
-    SurfaceBufferType attachment_type
+    AttachmentType attachment_type
 ) {
     assert(texture->renderer_type() == RendererType::OpenGL);
     GLTexture *gl_texture = reinterpret_cast<GLTexture *>(texture);
@@ -68,7 +68,7 @@ void GLFrameBufferSurface::attach_texture(
 
 void GLFrameBufferSurface::attach_renderbuffer(
     RenderBuffer *renderbuffer,
-    SurfaceBufferType attachment_type
+    AttachmentType attachment_type
 ) {
     assert(renderbuffer->renderer_type() == RendererType::OpenGL);
     auto *gl_buffer = reinterpret_cast<GLRenderBuffer *>(renderbuffer);
@@ -118,13 +118,13 @@ void GLFrameBufferSurface::set_clear_stencil(int value) {
     _surface_renderer.set_clear_stencil(value);
 }
 
-void GLFrameBufferSurface::clear(SurfaceBufferType buffers) {
+void GLFrameBufferSurface::clear(AttachmentType buffers) {
     _surface_renderer.clear(_renderer, _handle, buffers);
 }
 
 void GLFrameBufferSurface::draw(
     VertexArray *vao,
-    ElementBuffer<unsigned int> *ebo,
+    IndexBuffer<unsigned int> *ebo,
     Material *material,
     ElementDrawInfo element_info
 ) {
@@ -133,7 +133,7 @@ void GLFrameBufferSurface::draw(
 
 void GLFrameBufferSurface::draw(
     VertexArray *vao,
-    ElementBuffer<unsigned short> *ebo,
+    IndexBuffer<unsigned short> *ebo,
     Material *material,
     ElementDrawInfo element_info
 ) {
@@ -142,7 +142,7 @@ void GLFrameBufferSurface::draw(
 
 void GLFrameBufferSurface::draw(
     VertexArray *vao,
-    ElementBuffer<unsigned char> *ebo,
+    IndexBuffer<unsigned char> *ebo,
     Material *material,
     ElementDrawInfo element_info
 ) {
@@ -150,14 +150,14 @@ void GLFrameBufferSurface::draw(
 }
 
 GLenum GLFrameBufferSurface::get_attachment_flag(
-    SurfaceBufferType attachment_type
+    AttachmentType attachment_type
 ) const {
   switch (attachment_type) {
-  case SurfaceBufferType::Color:
+  case AttachmentType::Color:
       return GL_COLOR_ATTACHMENT0;
-  case SurfaceBufferType::Depth:
+  case AttachmentType::Depth:
       return GL_DEPTH_ATTACHMENT;
-  case SurfaceBufferType::Stencil:
+  case AttachmentType::Stencil:
       return GL_STENCIL_ATTACHMENT;
   }
 }

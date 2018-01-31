@@ -2,7 +2,7 @@
 #include <giygas/Vector4.hpp>
 #include <glad/glad.h>
 #include <giygas/Primitive.hpp>
-#include <giygas/SurfaceBufferType.hpp>
+#include <giygas/AttachmentType.hpp>
 #include <giygas/VertexArray.hpp>
 #include <giygas/Material.hpp>
 #include <giygas/Surface.hpp>
@@ -22,7 +22,7 @@ namespace giygas {
         unsigned int _viewport_height;
 
         static GLenum get_gl_primitive(Primitive primitive);
-        static GLenum get_clear_flags(SurfaceBufferType surfaces);
+        static GLenum get_clear_flags(AttachmentType surfaces);
         void draw_internal(
             GLRenderer *renderer,
             GLuint framebuffer,
@@ -47,13 +47,13 @@ namespace giygas {
         void clear(
             GLRenderer *renderer,
             GLuint framebuffer,
-            SurfaceBufferType surfaces
+            AttachmentType surfaces
         );
         void draw(
             GLRenderer *renderer,
             GLuint framebuffer,
             VertexArray *vao,
-            ElementBuffer<unsigned int> *ebo,
+            IndexBuffer<unsigned int> *ebo,
             Material *material,
             ElementDrawInfo element_info
         );
@@ -61,7 +61,7 @@ namespace giygas {
             GLRenderer *renderer,
             GLuint framebuffer,
             VertexArray *vao,
-            ElementBuffer<unsigned short> *ebo,
+            IndexBuffer<unsigned short> *ebo,
             Material *material,
             ElementDrawInfo element_info
         );
@@ -69,7 +69,7 @@ namespace giygas {
             GLRenderer *renderer,
             GLuint framebuffer,
             VertexArray *vao,
-            ElementBuffer<unsigned char> *ebo,
+            IndexBuffer<unsigned char> *ebo,
             Material *material,
             ElementDrawInfo element_info
         );

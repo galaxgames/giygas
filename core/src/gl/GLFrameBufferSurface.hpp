@@ -16,7 +16,7 @@ namespace giygas {
         unsigned int _height;
 
         void move_common(GLFrameBufferSurface &&other) noexcept;
-        GLenum get_attachment_flag(SurfaceBufferType attachment_type) const;
+        GLenum get_attachment_flag(AttachmentType attachment_type) const;
 
     public:
         GLFrameBufferSurface(GLRenderer *renderer);
@@ -28,12 +28,12 @@ namespace giygas {
 
         void attach_texture(
             Texture *texture,
-            SurfaceBufferType attachment_type
+            AttachmentType attachment_type
         ) override;
 
         void attach_renderbuffer(
             RenderBuffer *renderbuffer,
-            SurfaceBufferType attachment_type
+            AttachmentType attachment_type
         ) override;
 
         void set_size(unsigned int width, unsigned int height);
@@ -51,7 +51,7 @@ namespace giygas {
         void set_clear_color(Vector4 color) override;
         void set_clear_depth(double value) override;
         void set_clear_stencil(int value) override;
-        void clear(SurfaceBufferType surfaces) override;
+        void clear(AttachmentType surfaces) override;
         GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(unsigned int);
         GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(unsigned short);
         GIYGAS_SURFACE_DRAW_FUNC_OVERRIDE(unsigned char);

@@ -46,7 +46,7 @@ void GLSurfaceRenderer::set_clear_stencil(int value) {
 void GLSurfaceRenderer::clear(
     GLRenderer *renderer,
     GLuint framebuffer,
-    SurfaceBufferType surfaces
+    AttachmentType surfaces
 ) {
     Pool<ClearGLOperation> &pool = renderer->pools().clear_ops;
     ClearGLOperation *op = pool.take();
@@ -63,7 +63,7 @@ void GLSurfaceRenderer::draw( \
     GLRenderer *renderer, \
     GLuint framebuffer, \
     VertexArray *vao, \
-    ElementBuffer<type> *ebo, \
+    IndexBuffer<type> *ebo, \
     Material *material, \
     ElementDrawInfo element_info \
 ) { \
@@ -167,16 +167,16 @@ GLenum GLSurfaceRenderer::get_gl_primitive(Primitive primitive) {
     }
 }
 
-GLenum GLSurfaceRenderer::get_clear_flags(SurfaceBufferType surfaces) {
+GLenum GLSurfaceRenderer::get_clear_flags(AttachmentType surfaces) {
     GLenum value = GL_NONE;
 
-    if (has_flag(surfaces, SurfaceBufferType::Color)) {
+    if (has_flag(surfaces, AttachmentType::Color)) {
         value |= GL_COLOR_BUFFER_BIT;
     }
-    if (has_flag(surfaces, SurfaceBufferType::Depth)) {
+    if (has_flag(surfaces, AttachmentType::Depth)) {
         value |= GL_DEPTH_BUFFER_BIT;
     }
-    if (has_flag(surfaces, SurfaceBufferType::Stencil)) {
+    if (has_flag(surfaces, AttachmentType::Stencil)) {
         value |= GL_STENCIL_BUFFER_BIT;
     }
     return value;
