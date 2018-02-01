@@ -10,35 +10,51 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(GTest REQUIRED)
 find_library(GMOCK_LIBRARY NAMES gmock)
 
-if (${glad_FOUND})
-    set(GIYGAS_WITH_OPENGL True)
-else()
-    set(GIYGAS_WITH_OPENGL False)
-endif()
+set(GIYGAS_WITH_OPENGL ${glad_FOUND} CACHE BOOL "Build with OpenGL Renderer Implementation")
+set(GIYGAS_WITH_VULKAN ${Vulkan_FOUND} CACHE BOOL "Build with Vulkan Renderer Implementation")
 
-if (${Vulkan_FOUND})
-    set(GIYGAS_WITH_VULKAN True)
-else()
-    set(GIYGAS_WITH_VULKAN False)
-endif()
-
-message(STATUS "GIYGAS_WITH_OPENGL: ${GIYGAS_WITH_OPENGL}")
-message(STATUS "GIYGAS_WITH_VULKAN: ${GIYGAS_WITH_VULKAN}")
-
-file(GLOB_RECURSE GIYGAS_SOURCE_FILES
+file(GLOB GIYGAS_SOURCE_FILES
     "./src/*.cpp"
     "./src/*.hpp"
     "./include/giygas/*.hpp"
 )
 file(GLOB_RECURSE GIYGAS_TEST_SOURCE_FILES
-    "./test/*.cpp"
-    "./test/*.hpp"
+    "./test/core/*.cpp"
+    "./test/core/*.hpp"
 )
+file(GLOB_RECURSE GIYGAS_OPENGL_SOURCE_FILES
+    "./src/gl/*.cpp"
+    "./src/gl/*.hpp"
+)
+file(GLOB_RECURSE GIYGAS_TEST_OPENGL_SOURCE_FILES
+    "./test/src/gl/*.cpp"
+    "./test/src/gl/*.hpp"
+)
+file(GLOB_RECURSE GIYGAS_VULKAN_SOURCE_FILES
+    "./src/vulkan/*.cpp"
+    "./src/vulkan/*.hpp"
+)
+
+if (GIYGAS_WITH_OPENGL)
+    list(APPEND GIYGAS_SOURCE_FILES ${GIYGAS_OPENGL_SOURCE_FILES})
+    list(APPEND GIYGAS_TEST_SOURCE_FILES ${GIYGAS_TEST_OPENGL_SOURCE_FILES})
+endif()
+if (GIYGAS_WITH_VULKAN)
+    list(APPEND GIYGAS_SOURCE_FILES ${GIYGAS_VULKAN_SOURCE_FILES})
+endif()
 
 add_library(giygas_objects OBJECT ${GIYGAS_SOURCE_FILES})
 add_library(giygas_internal STATIC $<TARGET_OBJECTS:giygas_objects>)
 add_library(giygas $<TARGET_OBJECTS:giygas_objects>)
 add_executable(giygas_test ${GIYGAS_TEST_SOURCE_FILES})
+
+if (GIYGAS_WITH_OPENGL)
+    target_compile_definitions(giygas_objects PRIVATE GIYGAS_WITH_OPENGL)
+endif()
+if (GIYGAS_WITH_VULKAN)
+    target_compile_definitions(giygas_objects PRIVATE GIYGAS_WITH_VULKAN=1)
+endif()
+
 
 set_target_properties(giygas_objects giygas_test
     PROPERTIES

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gmock/gmock.h>
-#include "../src/gl/GL.hpp"
+#include "../../../src/gl/GL.hpp"
 
 namespace giygas {
     class MockGL : public GL {

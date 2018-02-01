@@ -2,6 +2,11 @@
 #include <cassert>
 #include <limits>
 #include "VulkanRenderer.hpp"
+#include "VulkanPipeline.hpp"
+#include "VulkanVertexBuffer.hpp"
+#include "VulkanIndexBuffer.hpp"
+#include "VulkanMaterial.hpp"
+#include "VulkanShader.hpp"
 
 using namespace giygas;
 using namespace std;
@@ -129,32 +134,29 @@ void VulkanRenderer::initialize() {
     }
 }
 
-VertexBuffer* VulkanRenderer::make_vbo() {
-    return nullptr;
+VertexBuffer* VulkanRenderer::make_vertex_buffer() {
+    return new VulkanVertexBuffer(this);
 }
 
-VertexArray *VulkanRenderer::make_vao() {
-    return nullptr;
+
+IndexBuffer<uint32_t>* VulkanRenderer::make_index_buffer_32() {
+    return new VulkanIndexBuffer<uint32_t>(this);
 }
 
-IndexBuffer<uint32_t>* VulkanRenderer::make_ebo32() {
-    return nullptr;
+IndexBuffer<uint16_t>* VulkanRenderer::make_index_buffer_16() {
+    return new VulkanIndexBuffer<uint16_t>(this);
 }
 
-IndexBuffer<uint16_t>* VulkanRenderer::make_ebo16() {
-    return nullptr;
-}
-
-IndexBuffer<uint8_t>* VulkanRenderer::make_ebo8() {
-    return nullptr;
+IndexBuffer<uint8_t>* VulkanRenderer::make_index_buffer_8() {
+    return new VulkanIndexBuffer<uint8_t>(this);
 }
 
 Material* VulkanRenderer::make_material() {
-    return nullptr;
+    return new VulkanMaterial(this);
 }
 
 Shader* VulkanRenderer::make_shader() {
-    return nullptr;
+    return new VulkanShader(this);
 }
 
 Texture* VulkanRenderer::make_texture(TextureInitOptions options) {
@@ -169,12 +171,20 @@ RenderBuffer* VulkanRenderer::make_renderbuffer() {
     return nullptr;
 }
 
+Pipeline* VulkanRenderer::make_pipeline() {
+    return new VulkanPipeline(this);
+}
+
 Surface* VulkanRenderer::main_surface() {
     return nullptr;
 }
 
 void VulkanRenderer::present() {
 
+}
+
+VkDevice VulkanRenderer::device() const {
+    return _device;
 }
 
 VkResult VulkanRenderer::create_instance(

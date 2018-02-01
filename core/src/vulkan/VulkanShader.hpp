@@ -13,6 +13,7 @@ namespace giygas {
     class VulkanShader : public Shader {
         const VulkanRenderer *_renderer;
         VkShaderModule _module;
+        ShaderType _type;
 
         void move_common(VulkanShader &&other) noexcept;
 

@@ -52,4 +52,19 @@ void VulkanShader::set_code(
         nullptr,
         &_module
     );
+
+    _type = type;
 }
+
+RendererType VulkanShader::renderer_type() const {
+    return RendererType::Vulkan;
+}
+
+ShaderType VulkanShader::shader_type() const {
+    return _type;
+}
+
+VkShaderModule VulkanShader::module() const {
+    return _module;
+}
+

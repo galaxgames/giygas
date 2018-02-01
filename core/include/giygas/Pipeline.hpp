@@ -5,7 +5,7 @@ namespace giygas {
 
     class Pipeline {
     public:
-        virtual ~Pipeline() = 0;
+        virtual ~Pipeline() = default;
         virtual void create(const PipelineCreateParameters &params) = 0;
     };
 

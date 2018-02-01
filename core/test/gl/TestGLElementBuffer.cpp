@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <../src/gl/GLElementBuffer.hpp>
+#include "../../src/gl/GLElementBuffer.hpp"
 #include "mocks/MockGL.hpp"
 
 using namespace giygas;

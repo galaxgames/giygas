@@ -57,6 +57,6 @@ void VulkanVertexBuffer::set_data(size_t offset, const uint8_t *data, size_t siz
     if (vkMapMemory(device, _device_memory, offset, size, 0, &mapped_buffer) != VK_SUCCESS) {
         return;
     }
-    std::copy_n(data, size, mapped_buffer);
+    std::copy_n(data, size, static_cast<uint8_t *>(mapped_buffer));
     vkUnmapMemory(device, _device_memory);
 }

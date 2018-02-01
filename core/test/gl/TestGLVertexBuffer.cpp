@@ -1,5 +1,5 @@
 #include "mocks/MockGL.hpp"
-#include "../src/gl/GLVertexBuffer.hpp"
+#include "../../src/gl/GLVertexBuffer.hpp"
 
 using namespace giygas;
 using namespace testing;

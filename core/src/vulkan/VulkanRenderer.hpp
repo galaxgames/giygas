@@ -27,7 +27,7 @@ namespace giygas {
     };
 
 
-    class VulkanRenderer : public Renderer {
+    class VulkanRenderer final : public Renderer {
         VulkanContext *_context;
         VkInstance _instance;
         VkSurfaceKHR _surface;
@@ -132,16 +132,16 @@ namespace giygas {
 
         void initialize() override;
 
-        VertexBuffer *make_vbo() override;
-        VertexArray *make_vao() override;
-        IndexBuffer<uint32_t> *make_ebo32() override;
-        IndexBuffer<uint16_t> *make_ebo16() override;
-        IndexBuffer<uint8_t> *make_ebo8() override;
+        VertexBuffer *make_vertex_buffer() override;
+        IndexBuffer<uint32_t> *make_index_buffer_32() override;
+        IndexBuffer<uint16_t> *make_index_buffer_16() override;
+        IndexBuffer<uint8_t> *make_index_buffer_8() override;
         Material *make_material() override;
         Shader *make_shader() override;
         Texture *make_texture(TextureInitOptions options) override;
         FrameBufferSurface *make_framebuffer() override;
         RenderBuffer *make_renderbuffer() override;
+        Pipeline *make_pipeline() override;
         Surface *main_surface() override;
 
         void present() override;

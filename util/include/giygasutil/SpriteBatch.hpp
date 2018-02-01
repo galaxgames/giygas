@@ -17,15 +17,14 @@ namespace giygas {
     class SpriteBatchMaterial {
     public:
         std::weak_ptr<Material> material;
-        std::string texture_uniform_name;
+        size_t texture_location;
     };
 
     class SpriteBatch {
         std::vector<SpriteInfo> _sprites;
         std::vector<std::vector<size_t>> _sprites_by_texture;
-        std::vector<std::weak_ptr<Texture>> _textures;
+        std::vector<Texture *> _textures;
         std::vector<ElementDrawInfo> _draw_call_details;
-        std::unique_ptr<VertexArray> _vao;
         std::unique_ptr<VertexBuffer> _vbo;
         std::unique_ptr<IndexBuffer32> _ebo;
         SpriteBatchMaterial _mat;
@@ -52,7 +51,7 @@ namespace giygas {
         virtual ~SpriteBatch();
 
         void set_material(SpriteBatchMaterial mat);
-        void set_textures(std::weak_ptr<Texture> *textures, size_t count);
+        void set_textures(Texture **textures, size_t count);
         void begin();
         void end();
         void draw(Surface &surface) const;

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <../src/gl/GLTexture.hpp>
+#include "../../src/gl/GLTexture.hpp"
 #include "mocks/MockGL.hpp"
 
 using namespace giygas;

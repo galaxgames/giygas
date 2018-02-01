@@ -5,17 +5,16 @@ using namespace giygas;
 using namespace std;
 
 SpriteBatch::SpriteBatch(Renderer &renderer) :
-    _vao(renderer.make_vao()),
-    _vbo(renderer.make_vbo()),
-    _ebo(renderer.make_ebo32())
+    _vbo(renderer.make_vertex_buffer()),
+    _ebo(renderer.make_index_buffer_32())
 {
     _count = 0;
 
-    VertexAttributeLayout layout(3, 32); // 3 attribs, stride 32
-    layout.add_attribute(2, 4, 0); // position
-    layout.add_attribute(2, 4, 8); // uvs
-    layout.add_attribute(4, 4, 16); // color
-    _vao->add_buffer(_vbo.get(), layout);
+//    VertexAttributeLayout layout(3, 32); // 3 attribs, stride 32
+//    layout.add_attribute(2, 4, 0); // position
+//    layout.add_attribute(2, 4, 8); // uvs
+//    layout.add_attribute(4, 4, 16); // color
+//    _vao->add_buffer(_vbo.get(), layout);
 }
 
 SpriteBatch::SpriteBatch(SpriteBatch &&) noexcept = default;
@@ -27,7 +26,7 @@ void SpriteBatch::set_material(SpriteBatchMaterial mat) {
     _mat = mat;
 }
 
-void SpriteBatch::set_textures(weak_ptr<Texture> *textures, size_t count) {
+void SpriteBatch::set_textures(Texture **textures, size_t count) {
     assert(_sprites.size() == 0);
     _textures.clear();
     _textures.reserve(count);
@@ -58,14 +57,15 @@ void SpriteBatch::end() {
 void SpriteBatch::draw(Surface &surface) const {
     if (auto mat = _mat.material.lock()) {
         for (size_t i = 0, ilen = _sprites_by_texture.size(); i < ilen; ++i) {
-            mat->set_textures(&_textures[i], 1);
-            mat->set_uniform_texture(_mat.texture_uniform_name, 0);
-            surface.draw(
-                _vao.get(),
-                _ebo.get(),
-                mat.get(),
-                _draw_call_details[i]
-            );
+            const Texture *texture = _textures[i];
+            mat->set_textures(&texture, 1);
+            mat->set_uniform_texture(_mat.texture_location, 0);
+//            surface.draw(
+//                _vao.get(),
+//                _ebo.get(),
+//                mat.get(),
+//                _draw_call_details[i]
+//            );
         }
     }
 }
@@ -97,7 +97,7 @@ void SpriteBatch::append_verts_for_sprite(const SpriteInfo &info, size_t offset)
         maxX, maxY,  1, 1,  color.x, color.y, color.z, color.w
     };
 
-    _vbo->set_data(offset * sizeof(float), data, COMPONENTS_PER_SPRITE * sizeof(float));
+    _vbo->set_data(offset * sizeof(float), reinterpret_cast<uint8_t *>(data), COMPONENTS_PER_SPRITE * sizeof(float));
 }
 
 void SpriteBatch::set_elements() {

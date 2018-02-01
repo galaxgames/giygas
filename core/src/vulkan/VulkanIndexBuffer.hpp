@@ -9,7 +9,7 @@ namespace giygas {
     class VulkanRenderer;
 
     template <typename T>
-    class VulkanIndexBuffer : IndexBuffer<T> {
+    class VulkanIndexBuffer : public IndexBuffer<T> {
 
         VulkanRenderer *_renderer;
         vector<T> _data;

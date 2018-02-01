@@ -63,7 +63,7 @@ void VulkanIndexBuffer<T>::set(size_t offset, const T *indices, size_t count) {
     if (vkMapMemory(device, _device_memory, offset, size, 0, &mapped_buffer) != VK_SUCCESS) {
         return;
     }
-    std::copy_n(indices, size, mapped_buffer);
+    std::copy_n(indices, size, static_cast<uint8_t *>(mapped_buffer));
     vkUnmapMemory(device, _device_memory);
 }
 
@@ -73,7 +73,7 @@ size_t VulkanIndexBuffer<T>::count() const {
 }
 
 namespace giygas {
-    template class GLElementBuffer<unsigned int>;
-    template class GLElementBuffer<unsigned short>;
-    template class GLElementBuffer<unsigned char>;
+    template class VulkanIndexBuffer<uint32_t>;
+    template class VulkanIndexBuffer<uint16_t>;
+    template class VulkanIndexBuffer<uint8_t>;
 }

@@ -1,7 +1,6 @@
 #pragma once
 #include <giygas/export.h>
 #include "VertexBuffer.hpp"
-#include "VertexArray.hpp"
 #include "IndexBuffer.hpp"
 #include "Material.hpp"
 #include "AttachmentType.hpp"
@@ -9,6 +8,7 @@
 #include "FrameBufferSurface.hpp"
 #include "PipelineOptions.hpp"
 #include "TextureInitOptions.hpp"
+#include "Pipeline.hpp"
 
 namespace giygas {
 
@@ -26,16 +26,16 @@ namespace giygas {
 //        virtual void set_depth_function(DepthFunction value) = 0;
 //        virtual void set_depth_range(double near, double far) = 0;
 
-        virtual VertexBuffer *make_vbo() = 0;
-        virtual VertexArray *make_vao() = 0;
-        virtual IndexBuffer<uint32_t> *make_ebo32() = 0;
-        virtual IndexBuffer<uint16_t > *make_ebo16() = 0;
-        virtual IndexBuffer<uint8_t> *make_ebo8() = 0;
+        virtual VertexBuffer *make_vertex_buffer() = 0;
+        virtual IndexBuffer<uint32_t> *make_index_buffer_32() = 0;
+        virtual IndexBuffer<uint16_t > *make_index_buffer_16() = 0;
+        virtual IndexBuffer<uint8_t> *make_index_buffer_8() = 0;
         virtual Material *make_material() = 0;
         virtual Shader *make_shader() = 0;
         virtual Texture *make_texture(TextureInitOptions options) = 0;
         virtual FrameBufferSurface *make_framebuffer() = 0;
         virtual RenderBuffer *make_renderbuffer() = 0;
+        virtual Pipeline *make_pipeline() = 0;
         virtual Surface *main_surface() = 0;
 
         virtual void present() = 0;

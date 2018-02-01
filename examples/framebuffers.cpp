@@ -3,6 +3,7 @@
 #include <iostream>
 #include <giygasutil/EventLoopUpdatable.hpp>
 #include <giygasutil/EventLoopContextRunner.hpp>
+#include <giygas/Pipeline.hpp>
 
 using namespace giygas;
 using namespace std;
@@ -13,7 +14,6 @@ public:
     Renderer *renderer;
     unique_ptr<VertexBuffer> vbo;
     unique_ptr<IndexBuffer8> ebo;
-    unique_ptr<VertexArray> vao;
     unique_ptr<Material> colored_material;
     unique_ptr<Material> textured_material;
     unique_ptr<Shader> colored_shader_v;
@@ -21,8 +21,10 @@ public:
     unique_ptr<Shader> textured_shader_v;
     unique_ptr<Shader> textured_shader_f;
     unique_ptr<FrameBufferSurface> framebuffer;
-    shared_ptr<Texture> render_texture;
+    unique_ptr<Texture> render_texture;
     unique_ptr<RenderBuffer> render_depth_buffer;
+    unique_ptr<Pipeline> colored_pipeline;
+    unique_ptr<Pipeline> textured_pipeline;
 
     float current_rotation;
 
@@ -100,8 +102,8 @@ public:
     }
 
     void draw_cube(Surface *surface, Material *material) {
-        surface->clear(AttachmentType::Color | AttachmentType::Depth);
-        surface->draw(vao.get(), ebo.get(), material, ElementDrawInfo{0, 6 * 6});
+        //surface->clear(AttachmentType::Color | AttachmentType::Depth);
+        //surface->draw(vao.get(), ebo.get(), material, ElementDrawInfo{0, 6 * 6});
     }
 
     void setup() {
@@ -110,9 +112,8 @@ public:
 //            DepthBufferOptions(true, true, DepthFunction::PassGreater, 0, 1))
 //        );
         renderer->initialize();
-        vbo = unique_ptr<VertexBuffer>(renderer->make_vbo());
-        ebo = unique_ptr<IndexBuffer8>(renderer->make_ebo8());
-        vao = unique_ptr<VertexArray>(renderer->make_vao());
+        vbo = unique_ptr<VertexBuffer>(renderer->make_vertex_buffer());
+        ebo = unique_ptr<IndexBuffer8>(renderer->make_index_buffer_8());
         colored_material = unique_ptr<Material>(renderer->make_material());
         textured_material = unique_ptr<Material>(renderer->make_material());
         colored_shader_v = unique_ptr<Shader>(renderer->make_shader());
@@ -120,8 +121,10 @@ public:
         textured_shader_v = unique_ptr<Shader>(renderer->make_shader());
         textured_shader_f = unique_ptr<Shader>(renderer->make_shader());
         framebuffer = unique_ptr<FrameBufferSurface>(renderer->make_framebuffer());
-        render_texture = shared_ptr<Texture>(renderer->make_texture(TextureInitOptions()));
+        render_texture = unique_ptr<Texture>(renderer->make_texture(TextureInitOptions()));
         render_depth_buffer = unique_ptr<RenderBuffer>(renderer->make_renderbuffer());
+        colored_pipeline = unique_ptr<Pipeline>(renderer->make_pipeline());
+        textured_pipeline = unique_ptr<Pipeline>(renderer->make_pipeline());
 
         float vertices[8 * 8] = {
             // x,y,z, u,v, r,g,v
@@ -145,29 +148,40 @@ public:
             1, 3, 5, 5, 3, 7,  // right side
         };
 
-        vbo->set_data(0, vertices, 8 * 8 * sizeof(float));
+        vbo->set_data(0, reinterpret_cast<uint8_t *>(vertices), 8 * 8 * sizeof(float));
         VertexAttributeLayout layout(3, 8 * sizeof(float));
         layout.add_attribute(3, sizeof(float), 0);
         layout.add_attribute(2, sizeof(float), 3 * sizeof(float));
         layout.add_attribute(3, sizeof(float), 5 * sizeof(float));
-        vao->add_buffer(vbo.get(), layout);
 
         ebo->set(0, elements, 6 * 6);
 
         setup_colored_shader(colored_shader_v.get(), colored_shader_f.get());
         setup_textured_shader(textured_shader_v.get(), textured_shader_f.get());
 
-        array<const Shader *, 2> shaders = {
+        array<const Shader *, 2> colored_shaders = {
             colored_shader_v.get(), colored_shader_f.get()
         };
-        colored_material->link_shaders(shaders.data(), shaders.size());
-        shaders = {
+        array<const Shader *, 2> textured_shaders = {
             textured_shader_v.get(), textured_shader_f.get()
         };
-        textured_material->link_shaders(shaders.data(), shaders.size());
-        std::weak_ptr<Texture> material_textures[1] = { render_texture };
-        textured_material->set_textures(material_textures, 1);
-        textured_material->set_uniform_texture("tex", 0);
+
+        PipelineCreateParameters colored_pipeline_params = {};
+        colored_pipeline_params.shaders = colored_shaders.data();
+        colored_pipeline_params.shader_count = colored_shaders.size();
+        colored_pipeline_params.vertex_buffer_layout_count = 1;
+        colored_pipeline_params.vertex_buffer_layouts = &layout;
+
+        PipelineCreateParameters textured_pipeline_params = {};
+        textured_pipeline_params.shaders = textured_shaders.data();
+        textured_pipeline_params.shader_count = textured_shaders.size();
+        textured_pipeline_params.vertex_buffer_layout_count = 1;
+        textured_pipeline_params.vertex_buffer_layouts = &layout;
+
+
+        const Texture *textured_material_texture = render_texture.get();
+        textured_material->set_textures(&textured_material_texture, 1);
+        textured_material->set_uniform_texture(0, 0);
 
         // Setup framebuffer
         render_texture->create_storage(512, 512, TextureFormat::RGB);
@@ -179,7 +193,7 @@ public:
         Matrix4x4 framebuffer_worldview = Matrix4x4::perspective(1, 1.0f, 10.0f, 60 * (3.14159f / 180.0f));
         Matrix4x4 world_view;
         Matrix4x4 model_view;
-        colored_material->set_uniform_matrix4x4("worldView", framebuffer_worldview);
+        colored_material->set_uniform_matrix4x4(0, framebuffer_worldview);
 
         renderer->main_surface()->set_clear_color(Vector4(0.5f, 0.5f, 1.0f, 1.0f));
     }
@@ -193,7 +207,7 @@ public:
             * Matrix4x4::translate(Vector4(-0.5f, -0.5f, -0.5f, 1));
 
         // Draw cube on framebuffer
-        colored_material->set_uniform_matrix4x4("modelView", model_view);
+        colored_material->set_uniform_matrix4x4(0, model_view);
         draw_cube(framebuffer.get(), colored_material.get());
 
         // Draw cube on main surface
@@ -203,8 +217,8 @@ public:
         main_surface->set_viewport(0, 0, width, height);
         float aspect = static_cast<float>(width) / static_cast<float>(height);
         Matrix4x4 world_view = Matrix4x4::perspective(aspect, 1.0f, 10.0f, 60.0f * (3.14159f / 180.0f));
-        textured_material->set_uniform_matrix4x4("worldView", world_view);
-        textured_material->set_uniform_matrix4x4("modelView", model_view);
+        textured_material->set_uniform_matrix4x4(0, world_view);
+        textured_material->set_uniform_matrix4x4(1, model_view);
         draw_cube(renderer->main_surface(), textured_material.get());
         renderer->present();
     }
