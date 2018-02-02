@@ -132,6 +132,8 @@ void VulkanRenderer::initialize() {
     ) != VK_SUCCESS) {
         return;
     }
+
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &_memory_properties);
 }
 
 VertexBuffer* VulkanRenderer::make_vertex_buffer() {
@@ -159,7 +161,7 @@ Shader* VulkanRenderer::make_shader() {
     return new VulkanShader(this);
 }
 
-Texture* VulkanRenderer::make_texture(TextureInitOptions options) {
+Texture* VulkanRenderer::make_texture(SamplerOptions options) {
     return nullptr;
 }
 
@@ -185,6 +187,26 @@ void VulkanRenderer::present() {
 
 VkDevice VulkanRenderer::device() const {
     return _device;
+}
+
+//const VkPhysicalDeviceMemoryProperties& VulkanRenderer::memory_properties() const {
+//    return _memory_properties;
+//}
+
+bool VulkanRenderer::find_memory_type(
+    uint32_t type_filter,
+    VkMemoryPropertyFlags properties,
+    uint32_t &found_memory_type
+) const {
+    for (uint32_t i = 0; i < _memory_properties.memoryTypeCount; ++i) {
+        if (type_filter & (1 << i)
+            && _memory_properties.memoryTypes[i].propertyFlags & properties
+        ) {
+            found_memory_type = i;
+            return true;
+        }
+    }
+    return false;
 }
 
 VkResult VulkanRenderer::create_instance(

@@ -121,7 +121,7 @@ public:
         textured_shader_v = unique_ptr<Shader>(renderer->make_shader());
         textured_shader_f = unique_ptr<Shader>(renderer->make_shader());
         framebuffer = unique_ptr<FrameBufferSurface>(renderer->make_framebuffer());
-        render_texture = unique_ptr<Texture>(renderer->make_texture(TextureInitOptions()));
+        render_texture = unique_ptr<Texture>(renderer->make_texture(SamplerOptions()));
         render_depth_buffer = unique_ptr<RenderBuffer>(renderer->make_renderbuffer());
         colored_pipeline = unique_ptr<Pipeline>(renderer->make_pipeline());
         textured_pipeline = unique_ptr<Pipeline>(renderer->make_pipeline());
@@ -180,7 +180,7 @@ public:
 
 
         const Texture *textured_material_texture = render_texture.get();
-        textured_material->set_textures(&textured_material_texture, 1);
+        //textured_material->set_textures(&textured_material_texture, 1);
         textured_material->set_uniform_texture(0, 0);
 
         // Setup framebuffer

@@ -58,7 +58,7 @@ void SpriteBatch::draw(Surface &surface) const {
     if (auto mat = _mat.material.lock()) {
         for (size_t i = 0, ilen = _sprites_by_texture.size(); i < ilen; ++i) {
             const Texture *texture = _textures[i];
-            mat->set_textures(&texture, 1);
+            //mat->set_textures(&texture, 1);
             mat->set_uniform_texture(_mat.texture_location, 0);
 //            surface.draw(
 //                _vao.get(),

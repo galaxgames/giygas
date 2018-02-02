@@ -7,7 +7,7 @@
 #include "Surface.hpp"
 #include "FrameBufferSurface.hpp"
 #include "PipelineOptions.hpp"
-#include "TextureInitOptions.hpp"
+#include "SamplerOptions.hpp"
 #include "Pipeline.hpp"
 
 namespace giygas {
@@ -32,7 +32,7 @@ namespace giygas {
         virtual IndexBuffer<uint8_t> *make_index_buffer_8() = 0;
         virtual Material *make_material() = 0;
         virtual Shader *make_shader() = 0;
-        virtual Texture *make_texture(TextureInitOptions options) = 0;
+        virtual Texture *make_texture(SamplerOptions options) = 0;
         virtual FrameBufferSurface *make_framebuffer() = 0;
         virtual RenderBuffer *make_renderbuffer() = 0;
         virtual Pipeline *make_pipeline() = 0;

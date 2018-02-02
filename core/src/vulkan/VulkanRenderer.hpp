@@ -39,6 +39,7 @@ namespace giygas {
         unique_ptr<VkImageView[]> _image_views;
         VkSurfaceFormatKHR _swapchain_format;
         VkExtent2D _swapchain_extent;
+        VkPhysicalDeviceMemoryProperties _memory_properties;
 
         void move_common(VulkanRenderer &&other) noexcept;
 
@@ -138,7 +139,7 @@ namespace giygas {
         IndexBuffer<uint8_t> *make_index_buffer_8() override;
         Material *make_material() override;
         Shader *make_shader() override;
-        Texture *make_texture(TextureInitOptions options) override;
+        Texture *make_texture(SamplerOptions options) override;
         FrameBufferSurface *make_framebuffer() override;
         RenderBuffer *make_renderbuffer() override;
         Pipeline *make_pipeline() override;
@@ -153,8 +154,11 @@ namespace giygas {
 
         VkDevice device() const;
         //const VkPhysicalDeviceMemoryProperties &memory_properties() const;
-        const VkMemoryRequirements &buffer_memory_requirements() const;
-        uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags flags) const;
+        bool find_memory_type(
+            uint32_t type_filter,
+            VkMemoryPropertyFlags properties,
+            uint32_t& found_memory_type
+        ) const;
 
     };
 

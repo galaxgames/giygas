@@ -3,7 +3,7 @@
 #include <giygas/export.h>
 #include <giygas/TextureFormat.hpp>
 #include "RendererType.hpp"
-#include "TextureInitOptions.hpp"
+#include "SamplerOptions.hpp"
 
 namespace giygas {
     class GIYGAS_EXPORT Texture {
@@ -26,10 +26,6 @@ namespace giygas {
             TextureFormat format
         ) = 0;
 
-        virtual void set_wrap_mode_u(TextureWrapMode mode) = 0;
-        virtual void set_wrap_mode_v(TextureWrapMode mode) = 0;
-        virtual void set_minify_filter_mode(TextureMinifyFilterMode mode) = 0;
-        virtual void set_magnify_filter_mode(TextureMagnifyFilterMode mode) = 0;
     };
 }
 

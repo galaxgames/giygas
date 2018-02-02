@@ -45,13 +45,22 @@ void VulkanIndexBuffer<T>::set(size_t offset, const T *indices, size_t count) {
         if (vkCreateBuffer(device, &create_info, nullptr, &_buffer) != VK_SUCCESS) {
             return;
         }
+
+        VkMemoryRequirements memory_requirements;
+        vkGetBufferMemoryRequirements(device, _buffer, &memory_requirements);
+        uint32_t memory_type_index;
+        if (!_renderer->find_memory_type(
+            memory_requirements.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            memory_type_index
+        )) {
+            return;
+        }
+
         VkMemoryAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize = required_size;
-        alloc_info.memoryTypeIndex = _renderer->find_memory_type(
-            _renderer->buffer_memory_requirements().memoryTypeBits,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-        );
+        alloc_info.memoryTypeIndex = memory_type_index;
         if (vkAllocateMemory(device, &alloc_info, nullptr, &_device_memory) != VK_SUCCESS) {
             return;
         }
