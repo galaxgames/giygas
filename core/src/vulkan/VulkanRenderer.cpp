@@ -25,10 +25,12 @@ bool QueueFamilyIndices::is_complete() const {
 
 VulkanRenderer::VulkanRenderer(VulkanContext *context) {
     _context = context;
-    _instance = nullptr;
-    _surface = nullptr;
-    _device = nullptr;
-    _swapchain = nullptr;
+    _instance = VK_NULL_HANDLE;
+    _surface = VK_NULL_HANDLE;
+    _device = VK_NULL_HANDLE;
+    _swapchain = VK_NULL_HANDLE;
+    _graphics_queue = VK_NULL_HANDLE;
+    _present_queue = VK_NULL_HANDLE;
     _image_count = 0;
     _image_view_count = 0;
 }
@@ -84,12 +86,11 @@ void VulkanRenderer::initialize() {
         return;
     }
 
-    QueueFamilyIndices queue_family_indices;
     SwapchainInfo swapchain_info;
     VkPhysicalDevice physical_device = find_suitable_physical_device(
         _instance,
         _surface,
-        queue_family_indices,
+        _queue_family_indices,
         swapchain_info
     );
     if (physical_device == nullptr) {
@@ -98,7 +99,7 @@ void VulkanRenderer::initialize() {
 
     if (create_logical_device(
         physical_device,
-        queue_family_indices,
+        _queue_family_indices,
         _device
     ) != VK_SUCCESS) {
         return;
@@ -115,7 +116,7 @@ void VulkanRenderer::initialize() {
         present_mode,
         _swapchain_extent,
         swapchain_info,
-        queue_family_indices,
+        _queue_family_indices,
         _swapchain
     ) != VK_SUCCESS) {
         return;
@@ -134,6 +135,10 @@ void VulkanRenderer::initialize() {
     }
 
     vkGetPhysicalDeviceMemoryProperties(physical_device, &_memory_properties);
+    vkGetDeviceQueue(_device, _queue_family_indices.graphics_family, 0, &_graphics_queue);
+    vkGetDeviceQueue(_device, _queue_family_indices.present_family, 0, &_present_queue);
+
+    _copy_command_pool.create(this);
 }
 
 VertexBuffer* VulkanRenderer::make_vertex_buffer() {
@@ -142,15 +147,15 @@ VertexBuffer* VulkanRenderer::make_vertex_buffer() {
 
 
 IndexBuffer<uint32_t>* VulkanRenderer::make_index_buffer_32() {
-    return new VulkanIndexBuffer<uint32_t>(this);
+    return new VulkanIndexBuffer<uint32_t, uint32_t>(this);
 }
 
 IndexBuffer<uint16_t>* VulkanRenderer::make_index_buffer_16() {
-    return new VulkanIndexBuffer<uint16_t>(this);
+    return new VulkanIndexBuffer<uint16_t, uint16_t>(this);
 }
 
 IndexBuffer<uint8_t>* VulkanRenderer::make_index_buffer_8() {
-    return new VulkanIndexBuffer<uint8_t>(this);
+    return new VulkanIndexBuffer<uint8_t, uint16_t>(this);
 }
 
 Material* VulkanRenderer::make_material() {
@@ -165,7 +170,7 @@ Texture* VulkanRenderer::make_texture(SamplerOptions options) {
     return nullptr;
 }
 
-FrameBufferSurface *VulkanRenderer::make_framebuffer() {
+Framebuffer *VulkanRenderer::make_framebuffer() {
     return nullptr;
 }
 
@@ -187,6 +192,10 @@ void VulkanRenderer::present() {
 
 VkDevice VulkanRenderer::device() const {
     return _device;
+}
+
+const QueueFamilyIndices& VulkanRenderer::queue_family_indices() const {
+    return _queue_family_indices;
 }
 
 //const VkPhysicalDeviceMemoryProperties& VulkanRenderer::memory_properties() const {
@@ -599,4 +608,95 @@ void VulkanRenderer::destroy_image_views(
     for (unsigned int i = 0; i < count; ++i) {
         vkDestroyImageView(device, views[i], nullptr);
     }
+}
+
+void VulkanRenderer::create_buffer(
+    VkDeviceSize size,
+    VkBufferUsageFlags usage,
+    VkMemoryPropertyFlags memory_properties,
+    VkBuffer &buffer,
+    VkDeviceMemory &device_memory
+) const {
+    VkBufferCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    create_info.size = size;
+    create_info.usage = usage;
+    create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    if (vkCreateBuffer(_device, &create_info, nullptr, &buffer) != VK_SUCCESS) {
+        return;
+    }
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(_device, buffer, &memory_requirements);
+    uint32_t memory_type_index;
+    if (!find_memory_type(
+        memory_requirements.memoryTypeBits,
+        memory_properties,
+        memory_type_index
+    )) {
+        return;
+    }
+
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = size;
+    alloc_info.memoryTypeIndex = memory_type_index;
+    if (vkAllocateMemory(_device, &alloc_info, nullptr, &device_memory) != VK_SUCCESS) {
+        return;
+    }
+
+    vkBindBufferMemory(_device, buffer, device_memory, 0);
+}
+
+VkResult VulkanRenderer::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize size) const {
+    VkCommandBufferAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandPool = _copy_command_pool.handle();
+    alloc_info.commandBufferCount = 1;
+
+    VkCommandBuffer command_buffer;
+    VkResult result = vkAllocateCommandBuffers(_device, &alloc_info, &command_buffer);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+
+    VkBufferCopy region = {};
+    region.srcOffset = 0;
+    region.dstOffset = 0;
+    region.size = size;
+    vkCmdCopyBuffer(command_buffer, src, dest, 1, &region);
+
+    vkEndCommandBuffer(command_buffer);
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+
+    VkFenceCreateInfo fence_info = {};
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_info.flags = 0;
+    fence_info.pNext = nullptr;
+
+    VkFence fence;
+    vkCreateFence(_device, &fence_info, nullptr, &fence);
+
+    vkQueueSubmit(_graphics_queue, 1, &submit_info, fence);
+
+    // 1e9 -> 1 second timeout
+    result = VK_TIMEOUT;
+    while (result == VK_TIMEOUT) {
+        result = vkWaitForFences(_device, 1, &fence, VK_FALSE, 1000000000);
+    }
+
+    vkFreeCommandBuffers(_device, _copy_command_pool.handle(), 1, &command_buffer);
+
+    return result;
 }

@@ -106,7 +106,7 @@ void SpriteBatch::set_elements() {
     size_t element_count = _sprites.size() * ELEMENTS_PER_SPRITE;
     unsigned int *data = new unsigned int[element_count];
     unsigned int *sub_buffer = data;
-    ElementDrawInfo info = {0, 0};
+    IndexRange info = {0, 0};
     _draw_call_details.clear();
     for (const auto &sprite_indices : _sprites_by_texture) {
 

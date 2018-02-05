@@ -10,7 +10,7 @@
 #include <giygas/IndexBuffer.hpp>
 #include <giygas/Renderer.hpp>
 #include <giygas/Material.hpp>
-#include <giygas/ElementDrawInfo.hpp>
+#include <giygas/IndexRange.hpp>
 
 namespace giygas {
 
@@ -24,7 +24,7 @@ namespace giygas {
         std::vector<SpriteInfo> _sprites;
         std::vector<std::vector<size_t>> _sprites_by_texture;
         std::vector<Texture *> _textures;
-        std::vector<ElementDrawInfo> _draw_call_details;
+        std::vector<IndexRange> _draw_call_details;
         std::unique_ptr<VertexBuffer> _vbo;
         std::unique_ptr<IndexBuffer32> _ebo;
         SpriteBatchMaterial _mat;

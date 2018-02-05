@@ -8,8 +8,16 @@ namespace giygas {
 
     class VulkanRenderer;
 
-    template <typename T>
-    class VulkanIndexBuffer : public IndexBuffer<T> {
+    class VulkanGenericIndexBuffer {
+    public:
+        virtual ~VulkanGenericIndexBuffer() = default;
+        virtual VkBuffer handle() const = 0;
+        virtual VkIndexType index_type() const = 0;
+    };
+
+
+    template <typename T, typename DeviceT>
+    class VulkanIndexBuffer final : public IndexBuffer<T>, VulkanGenericIndexBuffer {
 
         VulkanRenderer *_renderer;
         vector<T> _data;
@@ -25,23 +33,27 @@ namespace giygas {
         ~VulkanIndexBuffer() override;
 
         //
+        // GenericIndexBuffer implementation
+        //
+
+        RendererType renderer_type() const override;
+        const void *cast_to_specific() const override;
+
+        //
         // IndexBuffer implementation
         //
 
-        RendererType get_renderer_type() const override;
         void set(size_t index, const T *indices, size_t count) override;
         size_t count() const override;
 
 
         //
-        // VulkanIndexBuffer implementation
+        // VulkanGenericIndexBuffer implementation
         //
 
-
+        VkBuffer handle() const override;
+        VkIndexType index_type() const override;
 
     };
 
-    extern template class VulkanIndexBuffer<uint32_t>;
-    extern template class VulkanIndexBuffer<uint16_t>;
-    extern template class VulkanIndexBuffer<uint8_t>;
 }

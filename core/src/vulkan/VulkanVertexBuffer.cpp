@@ -16,7 +16,7 @@ VulkanVertexBuffer::~VulkanVertexBuffer() {
     vkFreeMemory(device, _device_memory, nullptr);
 }
 
-RendererType VulkanVertexBuffer::get_renderer_type() const {
+RendererType VulkanVertexBuffer::renderer_type() const {
     return RendererType::Vulkan;
 }
 
@@ -68,4 +68,8 @@ void VulkanVertexBuffer::set_data(size_t offset, const uint8_t *data, size_t siz
     }
     std::copy_n(data, size, static_cast<uint8_t *>(mapped_buffer));
     vkUnmapMemory(device, _device_memory);
+}
+
+VkBuffer VulkanVertexBuffer::handle() const {
+    return _handle;
 }

@@ -16,6 +16,7 @@ namespace giygas {
         const RenderPass *render_pass;
         const Shader **shaders;
         size_t shader_count;
+        size_t material_uniform_data_size;
     };
 
 }

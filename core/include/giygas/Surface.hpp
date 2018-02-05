@@ -3,7 +3,7 @@
 #include "AttachmentType.hpp"
 #include "IndexBuffer.hpp"
 #include "Material.hpp"
-#include "ElementDrawInfo.hpp"
+#include "IndexRange.hpp"
 #include "PipelineOptions.hpp"
 
 

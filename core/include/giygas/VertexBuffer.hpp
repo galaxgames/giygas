@@ -10,7 +10,7 @@ namespace giygas {
     class GIYGAS_EXPORT VertexBuffer {
     public:
         virtual ~VertexBuffer() = default;
-        virtual RendererType get_renderer_type() const = 0;
+        virtual RendererType renderer_type() const = 0;
 
         /**
          * @brief set_data  copy data to the vbo

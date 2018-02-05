@@ -6,11 +6,23 @@
 
 namespace giygas {
 
+    //
+    // TODO: Get rid of these classes. Combine them with VertexBuffer, so we can possibly
+    // store both vertex and index data in the same buffer. This is recomended by gpu driver
+    // developers for performance.
+    //
+
+    class GenericIndexBuffer {
+    public:
+        virtual ~GenericIndexBuffer() = default;
+        virtual RendererType renderer_type() const = 0;
+        virtual const void *cast_to_specific() const = 0;
+    };
+
     template <typename T>
-    class GIYGAS_EXPORT IndexBuffer {
+    class GIYGAS_EXPORT IndexBuffer : public GenericIndexBuffer {
     public:
         virtual ~IndexBuffer() = default;
-        virtual RendererType get_renderer_type() const = 0;
         virtual void set(size_t offset, const T *indices, size_t count) = 0;
         virtual size_t count() const = 0;
     };

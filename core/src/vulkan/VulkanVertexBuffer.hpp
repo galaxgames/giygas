@@ -23,9 +23,20 @@ namespace giygas {
         VulkanVertexBuffer &operator=(VulkanVertexBuffer &&) noexcept = delete;
         ~VulkanVertexBuffer() override;
 
-        RendererType get_renderer_type() const override;
+        //
+        // VertexBuffer implementation
+        //
+
+        RendererType renderer_type() const override;
 
         void set_data(size_t offset, const uint8_t *data, size_t size) override;
+
+
+        //
+        // VulkanVertexBuffer implementation
+        //
+
+        VkBuffer handle() const;
 
     };
 

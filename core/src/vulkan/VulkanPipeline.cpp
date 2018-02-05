@@ -22,12 +22,52 @@ VulkanPipeline::~VulkanPipeline() {
 void VulkanPipeline::create(const PipelineCreateParameters &params) {
     VkDevice device = _renderer->device();
 
+    unique_ptr<VkVertexInputBindingDescription[]> input_bindings(
+        new VkVertexInputBindingDescription[params.vertex_buffer_layout_count]
+    );
+
+    auto binding_count = static_cast<uint32_t>(params.vertex_buffer_layout_count);
+    uint32_t total_attributes = count_total_attributes(
+        params.vertex_buffer_layouts,
+        params.vertex_buffer_layout_count
+    );
+
+    vector<VkVertexInputAttributeDescription> attribute_descriptions;
+    attribute_descriptions.resize(total_attributes);
+
+    size_t attrib_index = 0;
+    for (
+        uint32_t binding_index = 0;
+        binding_index < params.vertex_buffer_layout_count;
+        ++binding_index
+    ) {
+        const VertexAttributeLayout &layout = params.vertex_buffer_layouts[binding_index];
+        VkVertexInputBindingDescription &binding = input_bindings[binding_index];
+        binding = {};
+        binding.binding = binding_index;
+        binding.stride = static_cast<uint32_t>(layout.stride);
+        binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        for (const LayoutAttribute &attrib : layout.attributes()) {
+            VkVertexInputAttributeDescription &attrib_desc = attribute_descriptions[attrib_index];
+            VkFormat format = get_attrib_format(attrib.component_count);
+            assert(format != VK_FORMAT_UNDEFINED);
+
+            attrib_desc = {};
+            attrib_desc.binding = binding_index;
+            attrib_desc.location = static_cast<uint32_t>(attrib_index);
+            attrib_desc.format = format;
+            attrib_desc.offset = static_cast<uint32_t>(attrib.offset);
+            ++attrib_index;
+        }
+    }
+
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_info.vertexBindingDescriptionCount = 0;
-    vertex_input_info.pVertexBindingDescriptions = nullptr;
-    vertex_input_info.vertexAttributeDescriptionCount = 0;
-    vertex_input_info.pVertexAttributeDescriptions = nullptr;
+    vertex_input_info.vertexBindingDescriptionCount = binding_count;
+    vertex_input_info.pVertexBindingDescriptions = input_bindings.get();
+    vertex_input_info.vertexAttributeDescriptionCount = total_attributes;
+    vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly_info = {};
     input_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -120,12 +160,22 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
     dynamic_state.pDynamicStates = dynamic_states.data();
 
+    uint32_t push_constant_range_count = 0;
+    VkPushConstantRange push_constant_range;
+    if (params.material_uniform_data_size > 0) {
+        push_constant_range_count = 1;
+        push_constant_range = {};
+        push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        push_constant_range.size = static_cast<uint32_t>(params.material_uniform_data_size);
+        push_constant_range.offset = 0;
+    }
+
     VkPipelineLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     layout_info.setLayoutCount = 0;
     layout_info.pSetLayouts = nullptr;
-    layout_info.pushConstantRangeCount = 0;
-    layout_info.pPushConstantRanges = nullptr;
+    layout_info.pushConstantRangeCount = push_constant_range_count;
+    layout_info.pPushConstantRanges = &push_constant_range;
     if (vkCreatePipelineLayout(device, &layout_info, nullptr, &_layout) != VK_SUCCESS) {
         return;
     }
@@ -169,11 +219,45 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &_handle);
 }
 
+RendererType VulkanPipeline::renderer_type() const {
+    return RendererType::Vulkan;
+}
+
+VkPipeline VulkanPipeline::handle() const {
+    return _handle;
+}
+
 VkShaderStageFlagBits VulkanPipeline::shader_type_to_stage_flags(ShaderType type) {
     switch (type) {
         case ShaderType::Vertex:
             return VK_SHADER_STAGE_VERTEX_BIT;
         case ShaderType::Fragment:
             return VK_SHADER_STAGE_FRAGMENT_BIT;
+    }
+}
+
+uint32_t VulkanPipeline::count_total_attributes(
+    const VertexAttributeLayout *layouts,
+    size_t layout_count
+) {
+    uint32_t count = 0;
+    for (size_t i = 0; i < layout_count; ++i) {
+        count += layouts[i].attributes().size();
+    }
+    return count;
+}
+
+VkFormat VulkanPipeline::get_attrib_format(size_t component_count) {
+    switch (component_count) {
+        case 1:
+            return VK_FORMAT_R32_SFLOAT;
+        case 2:
+            return VK_FORMAT_R32G32_SFLOAT;
+        case 3:
+            return VK_FORMAT_R32G32B32_SFLOAT;
+        case 4:
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+        default:
+            return VK_FORMAT_UNDEFINED;
     }
 }

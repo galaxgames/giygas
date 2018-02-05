@@ -3,6 +3,7 @@
 #include <giygas/Context.hpp>
 #include <vulkan/vulkan.h>
 #include <giygas/VulkanContext.hpp>
+#include "VulkanCommandPool.hpp"
 
 
 namespace giygas {
@@ -10,8 +11,8 @@ namespace giygas {
 
     class QueueFamilyIndices {
     public:
-        unsigned int graphics_family;
-        unsigned int present_family;
+        uint32_t graphics_family;
+        uint32_t present_family;
 
         QueueFamilyIndices();
         bool is_complete() const;
@@ -20,8 +21,8 @@ namespace giygas {
     class SwapchainInfo {
     public:
         VkSurfaceCapabilitiesKHR capabilities;
-        unsigned int format_count;
-        unsigned int present_mode_count;
+        uint32_t format_count;
+        uint32_t present_mode_count;
         unique_ptr<VkSurfaceFormatKHR[]> formats;
         unique_ptr<VkPresentModeKHR[]> present_modes;
     };
@@ -33,6 +34,9 @@ namespace giygas {
         VkSurfaceKHR _surface;
         VkDevice _device;
         VkSwapchainKHR _swapchain;
+        QueueFamilyIndices _queue_family_indices;
+        VkQueue _graphics_queue;
+        VkQueue _present_queue;
         uint32_t _image_count;
         uint32_t _image_view_count;
         unique_ptr<VkImage[]> _images;
@@ -40,6 +44,9 @@ namespace giygas {
         VkSurfaceFormatKHR _swapchain_format;
         VkExtent2D _swapchain_extent;
         VkPhysicalDeviceMemoryProperties _memory_properties;
+        VulkanCommandPool _copy_command_pool;
+        VkSemaphore image_available_semaphore;
+        VkSemaphore render_finished_semaphore;
 
         void move_common(VulkanRenderer &&other) noexcept;
 
@@ -140,7 +147,7 @@ namespace giygas {
         Material *make_material() override;
         Shader *make_shader() override;
         Texture *make_texture(SamplerOptions options) override;
-        FrameBufferSurface *make_framebuffer() override;
+        Framebuffer *make_framebuffer() override;
         RenderBuffer *make_renderbuffer() override;
         Pipeline *make_pipeline() override;
         Surface *main_surface() override;
@@ -153,11 +160,27 @@ namespace giygas {
         //
 
         VkDevice device() const;
-        //const VkPhysicalDeviceMemoryProperties &memory_properties() const;
+
+        const QueueFamilyIndices &queue_family_indices() const;
+
         bool find_memory_type(
             uint32_t type_filter,
             VkMemoryPropertyFlags properties,
             uint32_t& found_memory_type
+        ) const;
+
+        void create_buffer(
+            VkDeviceSize size,
+            VkBufferUsageFlags usage,
+            VkMemoryPropertyFlags memory_properties,
+            VkBuffer &buffer,
+            VkDeviceMemory &device_memory
+        ) const;
+
+        VkResult copy_buffer(
+            VkBuffer src,
+            VkBuffer dest,
+            VkDeviceSize size
         ) const;
 
     };

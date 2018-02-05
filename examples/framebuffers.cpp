@@ -20,7 +20,7 @@ public:
     unique_ptr<Shader> colored_shader_f;
     unique_ptr<Shader> textured_shader_v;
     unique_ptr<Shader> textured_shader_f;
-    unique_ptr<FrameBufferSurface> framebuffer;
+    unique_ptr<Framebuffer> framebuffer;
     unique_ptr<Texture> render_texture;
     unique_ptr<RenderBuffer> render_depth_buffer;
     unique_ptr<Pipeline> colored_pipeline;
@@ -103,7 +103,7 @@ public:
 
     void draw_cube(Surface *surface, Material *material) {
         //surface->clear(AttachmentType::Color | AttachmentType::Depth);
-        //surface->draw(vao.get(), ebo.get(), material, ElementDrawInfo{0, 6 * 6});
+        //surface->draw(vao.get(), ebo.get(), material, IndexRange{0, 6 * 6});
     }
 
     void setup() {
@@ -120,7 +120,7 @@ public:
         colored_shader_f = unique_ptr<Shader>(renderer->make_shader());
         textured_shader_v = unique_ptr<Shader>(renderer->make_shader());
         textured_shader_f = unique_ptr<Shader>(renderer->make_shader());
-        framebuffer = unique_ptr<FrameBufferSurface>(renderer->make_framebuffer());
+        framebuffer = unique_ptr<Framebuffer>(renderer->make_framebuffer());
         render_texture = unique_ptr<Texture>(renderer->make_texture(SamplerOptions()));
         render_depth_buffer = unique_ptr<RenderBuffer>(renderer->make_renderbuffer());
         colored_pipeline = unique_ptr<Pipeline>(renderer->make_pipeline());
@@ -186,9 +186,9 @@ public:
         // Setup framebuffer
         render_texture->create_storage(512, 512, TextureFormat::RGB);
         render_depth_buffer->create_storage(512, 512, TextureFormat::Depth16);
-        framebuffer->attach_texture(render_texture.get(), AttachmentType::Color);
-        framebuffer->attach_renderbuffer(render_depth_buffer.get(), AttachmentType::Depth);
-        framebuffer->set_viewport(0, 0, 512, 512);
+        //framebuffer->attach_texture(render_texture.get(), AttachmentType::Color);
+        //framebuffer->attach_renderbuffer(render_depth_buffer.get(), AttachmentType::Depth);
+        //framebuffer->set_viewport(0, 0, 512, 512);
 
         Matrix4x4 framebuffer_worldview = Matrix4x4::perspective(1, 1.0f, 10.0f, 60 * (3.14159f / 180.0f));
         Matrix4x4 world_view;
@@ -208,7 +208,7 @@ public:
 
         // Draw cube on framebuffer
         colored_material->set_uniform_matrix4x4(0, model_view);
-        draw_cube(framebuffer.get(), colored_material.get());
+        //draw_cube(framebuffer.get(), colored_material.get());
 
         // Draw cube on main surface
         Surface *main_surface = renderer->main_surface();

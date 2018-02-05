@@ -1,7 +1,7 @@
 #pragma once
 #include "../GLOperation.hpp"
 #include <vector>
-#include <giygas/ElementDrawInfo.hpp>
+#include <giygas/IndexRange.hpp>
 
 namespace giygas {
     using namespace std;
