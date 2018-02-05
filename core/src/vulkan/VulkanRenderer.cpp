@@ -696,6 +696,7 @@ VkResult VulkanRenderer::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize s
         result = vkWaitForFences(_device, 1, &fence, VK_FALSE, 1000000000);
     }
 
+    vkDestroyFence(_device, fence, nullptr);
     vkFreeCommandBuffers(_device, _copy_command_pool.handle(), 1, &command_buffer);
 
     return result;

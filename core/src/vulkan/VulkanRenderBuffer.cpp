@@ -15,7 +15,7 @@ RendererType VulkanRenderBuffer::renderer_type() const {
 }
 
 void VulkanRenderBuffer::create_storage(uint32_t width, uint32_t height, TextureFormat format) {
-    
+
 
 }
 

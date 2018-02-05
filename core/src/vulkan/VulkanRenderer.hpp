@@ -160,8 +160,9 @@ namespace giygas {
         //
 
         VkDevice device() const;
-
         const QueueFamilyIndices &queue_family_indices() const;
+        VkCommandPool copy_command_pool() const;
+        VkQueue graphics_queue() const;
 
         bool find_memory_type(
             uint32_t type_filter,
