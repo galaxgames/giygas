@@ -6,9 +6,8 @@
 using namespace giygas;
 using namespace std;
 
-GLFWContext::GLFWContext(GLFWWindowInitOptions init_options) {
+GLFWContext::GLFWContext() {
     _window = nullptr;
-    _init_options = init_options;
     _init_error = glfwInit();
 }
 
@@ -147,14 +146,14 @@ void* GLFWContext::cast_to_specific(RendererType type) {
     return nullptr;
 }
 
-bool GLFWContext::supports_renderer(RendererType type) const {
-    switch (type)  {
-        case RendererType::OpenGL:
-            return true;
-        case RendererType::Vulkan:
-            return glfwVulkanSupported() == GLFW_TRUE;
-    }
-}
+//bool GLFWContext::supports_renderer(RendererType type) const {
+//    switch (type)  {
+//        case RendererType::OpenGL:
+//            return true;
+//        case RendererType::Vulkan:
+//            return glfwVulkanSupported() == GLFW_TRUE;
+//    }
+//}
 
 void GLFWContext::make_current_on_calling_thread() {
     glfwMakeContextCurrent(_window);

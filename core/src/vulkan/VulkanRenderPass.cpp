@@ -9,7 +9,11 @@ VulkanRenderPass::VulkanRenderPass(VulkanRenderer *renderer) {
 }
 
 VulkanRenderPass::~VulkanRenderPass() {
+    vkDestroyRenderPass(_renderer->device(), _handle, nullptr);
+}
 
+RendererType VulkanRenderPass::renderer_type() const {
+    return RendererType::Vulkan;
 }
 
 void VulkanRenderPass::create(const RenderPassCreateParameters &params) {

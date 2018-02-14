@@ -187,6 +187,7 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
         VkPipelineShaderStageCreateInfo &stage = shader_stages[i];
         const Shader *public_shader = params.shaders[i];
         assert(public_shader->renderer_type() == RendererType::Vulkan);
+
         const auto *shader = reinterpret_cast<const VulkanShader *>(public_shader);
         stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stage.stage = shader_type_to_stage_flags(shader->shader_type());

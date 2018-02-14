@@ -7,67 +7,30 @@
 #include "VulkanIndexBuffer.hpp"
 #include "VulkanMaterial.hpp"
 #include "VulkanShader.hpp"
+#include "VulkanTexture.hpp"
+#include "VulkanFramebuffer.hpp"
+#include "VulkanRenderBuffer.hpp"
+#include "VulkanRenderPass.hpp"
+#include "VulkanCommandBuffer.hpp"
+#include "../CommandBufferImpl.hpp"
 
 using namespace giygas;
 using namespace std;
-
-QueueFamilyIndices::QueueFamilyIndices() {
-    graphics_family = static_cast<unsigned int>(-1);
-    present_family = static_cast<unsigned int>(-1);
-}
-
-bool QueueFamilyIndices::is_complete() const {
-    return (
-        graphics_family != static_cast<unsigned int>(-1) &&
-        present_family != static_cast<unsigned int>(-1)
-    );
-}
 
 VulkanRenderer::VulkanRenderer(VulkanContext *context) {
     _context = context;
     _instance = VK_NULL_HANDLE;
     _surface = VK_NULL_HANDLE;
     _device = VK_NULL_HANDLE;
-    _swapchain = VK_NULL_HANDLE;
     _graphics_queue = VK_NULL_HANDLE;
     _present_queue = VK_NULL_HANDLE;
-    _image_count = 0;
-    _image_view_count = 0;
-}
-
-VulkanRenderer::VulkanRenderer(VulkanRenderer &&other) noexcept
-    : _images(move(other._images))
-    , _image_views(move(other._image_views))
-{
-    move_common(move(other));
-}
-
-VulkanRenderer& VulkanRenderer::operator=(VulkanRenderer &&other) noexcept {
-    _images = move(other._images);
-    _image_views = move(other._image_views);
-    move_common(move(other));
-    return *this;
-}
-
-void VulkanRenderer::move_common(VulkanRenderer &&other) noexcept {
-    _context = other._context;
-    _instance = other._instance;
-    _surface = other._surface;
-    _device = other._device;
-    _swapchain = other._swapchain;
-    _image_count = other._image_count;
-    _image_view_count = other._image_view_count;
-    _swapchain_format = other._swapchain_format;
-    _swapchain_extent = other._swapchain_extent;
-    other._instance = nullptr;
-    other._surface = nullptr;
-    other._device = nullptr;
-    other._swapchain = nullptr;
+    _image_available_semaphore = VK_NULL_HANDLE;
+    _render_finished_semaphore = VK_NULL_HANDLE;
 }
 
 VulkanRenderer::~VulkanRenderer() {
-    destroy_image_views(_image_view_count, _image_views.get(), _device);
-    vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+    vkDestroySemaphore(_device, _render_finished_semaphore, nullptr);
+    vkDestroySemaphore(_device, _image_available_semaphore, nullptr);
     vkDestroyDevice(_device, nullptr);
     vkDestroySurfaceKHR(_instance, _surface, nullptr);
     vkDestroyInstance(_instance, nullptr);
@@ -105,40 +68,34 @@ void VulkanRenderer::initialize() {
         return;
     }
 
-    _swapchain_format = choose_surface_format(swapchain_info);
+    VkSurfaceFormatKHR swapchain_format = choose_surface_format(swapchain_info);
     VkPresentModeKHR present_mode = choose_present_mode(swapchain_info);
-    _swapchain_extent = choose_swap_extent(swapchain_info);
+    VkExtent2D swapchain_extent = choose_swap_extent(swapchain_info);
 
-    if (create_swapchain(
-        _device,
+    _swapchain.create(
+        this,
         _surface,
-        _swapchain_format,
+        swapchain_format,
         present_mode,
-        _swapchain_extent,
-        swapchain_info,
-        _queue_family_indices,
-        _swapchain
-    ) != VK_SUCCESS) {
-        return;
-    }
-
-    _image_count = get_swapchain_images(_device, _swapchain, _images);
-    _image_view_count = _image_count;
-    if (create_image_views(
-        _image_count,
-        _images.get(),
-        _swapchain_format.format,
-        _device,
-        _image_views
-    ) != VK_SUCCESS) {
-        return;
-    }
+        swapchain_extent,
+        swapchain_info
+    );
 
     vkGetPhysicalDeviceMemoryProperties(physical_device, &_memory_properties);
     vkGetDeviceQueue(_device, _queue_family_indices.graphics_family, 0, &_graphics_queue);
     vkGetDeviceQueue(_device, _queue_family_indices.present_family, 0, &_present_queue);
 
+    VkSemaphoreCreateInfo semaphore_info = {};
+    semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    vkCreateSemaphore(_device, &semaphore_info, nullptr, &_image_available_semaphore);
+    vkCreateSemaphore(_device, &semaphore_info, nullptr, &_render_finished_semaphore);
+
     _copy_command_pool.create(this);
+}
+
+RendererType VulkanRenderer::renderer_type() const {
+    return RendererType::Vulkan;
 }
 
 VertexBuffer* VulkanRenderer::make_vertex_buffer() {
@@ -166,28 +123,87 @@ Shader* VulkanRenderer::make_shader() {
     return new VulkanShader(this);
 }
 
-Texture* VulkanRenderer::make_texture(SamplerOptions options) {
-    return nullptr;
+Texture* VulkanRenderer::make_texture() {
+    return new VulkanTexture(this);
 }
 
-Framebuffer *VulkanRenderer::make_framebuffer() {
-    return nullptr;
+Framebuffer *VulkanRenderer::make_framebuffer(const FramebufferCreateParameters &parameters) {
+    return new VulkanFramebuffer(this, parameters);
 }
 
-RenderBuffer* VulkanRenderer::make_renderbuffer() {
-    return nullptr;
+RenderBuffer *VulkanRenderer::make_renderbuffer() {
+    return new VulkanRenderBuffer(this);
 }
 
-Pipeline* VulkanRenderer::make_pipeline() {
+RenderPass *VulkanRenderer::make_renderpass() {
+    return new VulkanRenderPass(this);
+}
+
+Pipeline *VulkanRenderer::make_pipeline() {
     return new VulkanPipeline(this);
 }
 
-Surface* VulkanRenderer::main_surface() {
-    return nullptr;
+CommandPool *VulkanRenderer::make_commandpool() {
+    VulkanCommandPool *pool = new VulkanCommandPool();
+    pool->create(this);
+    return pool;
+}
+
+
+void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
+
+    vkAcquireNextImageKHR(
+        _device,
+        _swapchain.handle(),
+        numeric_limits<uint64_t>::max(),
+        _image_available_semaphore,
+        nullptr,
+        &_next_swapchain_image_index
+    );
+
+    // TODO: Reallocating this buffer every frame sucks.
+    // TODO: Investigate how expensive this is to do every frame and look into a better interface
+    // for submitting command buffers.
+    unique_ptr<VkCommandBuffer[]> buffer_handles(new VkCommandBuffer[buffer_count]);
+    for (size_t i = 0; i < buffer_count; ++i) {
+        const CommandBuffer *buffer = buffers[i];
+        assert(buffer != nullptr);
+        const CommandBufferImpl *buffer_impl = buffer->impl();
+        assert(buffer_impl != nullptr);
+        assert(buffer_impl->renderer_type() == RendererType::Vulkan);
+        const auto *vulkan_buffer = reinterpret_cast<const VulkanCommandBuffer *>(buffer_impl);
+        buffer_handles[i] = vulkan_buffer->handle();
+    }
+
+    // Wait stage is TOP_OF_PIPE because the top of the pipe will transition our aqcuired image
+    // if we just wait for the image to be aqcuired before starting. This simplified things a bit.
+    // TODO: Look into this later
+    VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &_image_available_semaphore;
+    submit_info.pWaitDstStageMask = &wait_stage;
+    submit_info.commandBufferCount = static_cast<uint32_t>(buffer_count);
+    submit_info.pCommandBuffers = buffer_handles.get();
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &_render_finished_semaphore;
+
+    vkQueueSubmit(_graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
 }
 
 void VulkanRenderer::present() {
+    VkSwapchainKHR swapchain_handle = _swapchain.handle();
+    VkPresentInfoKHR present_info = {};
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = &_render_finished_semaphore;
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = &swapchain_handle;
+    present_info.pImageIndices = &_next_swapchain_image_index;
+    present_info.pResults = nullptr;
 
+    vkQueuePresentKHR(_graphics_queue, &present_info);
 }
 
 VkDevice VulkanRenderer::device() const {
@@ -198,9 +214,13 @@ const QueueFamilyIndices& VulkanRenderer::queue_family_indices() const {
     return _queue_family_indices;
 }
 
-//const VkPhysicalDeviceMemoryProperties& VulkanRenderer::memory_properties() const {
-//    return _memory_properties;
-//}
+VkCommandPool VulkanRenderer::copy_command_pool() const {
+    return _copy_command_pool.handle();
+}
+
+VkQueue VulkanRenderer::graphics_queue() const {
+    return _graphics_queue;
+}
 
 bool VulkanRenderer::find_memory_type(
     uint32_t type_filter,
@@ -243,8 +263,13 @@ VkResult VulkanRenderer::create_instance(
     create_info.enabledExtensionCount = needed_extensions_count;
     create_info.ppEnabledExtensionNames = needed_extensions;
 
+    array<const char *, 1> validation_layers = {
+        "VK_LAYER_LUNARG_standard_validation"
+    };
+
     // Validation layers
-    create_info.enabledLayerCount = 0;
+    create_info.enabledLayerCount = validation_layers.size();
+    create_info.ppEnabledLayerNames = validation_layers.data();
 
     return vkCreateInstance(&create_info, nullptr, &instance);
 }
@@ -496,119 +521,7 @@ VkExtent2D VulkanRenderer::choose_swap_extent(const SwapchainInfo &info) {
     return extent;
 }
 
-VkResult VulkanRenderer::create_swapchain(
-    VkDevice device,
-    VkSurfaceKHR surface,
-    VkSurfaceFormatKHR surface_format,
-    VkPresentModeKHR present_mode,
-    VkExtent2D extent,
-    const SwapchainInfo &info,
-    QueueFamilyIndices indices,
-    VkSwapchainKHR &swapchain
-) {
-    unsigned int image_count = info.capabilities.minImageCount + 1;
-    if (
-        info.capabilities.maxImageCount > 0 &&
-        image_count > info.capabilities.maxImageCount
-    ) {
-        image_count = info.capabilities.maxImageCount;
-    }
 
-    VkSwapchainCreateInfoKHR create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    create_info.surface = surface;
-    create_info.minImageCount = image_count;
-    create_info.imageFormat = surface_format.format;
-    create_info.imageColorSpace = surface_format.colorSpace;
-    create_info.imageExtent = extent;
-    create_info.imageArrayLayers = 1;
-    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-    if (indices.graphics_family != indices.present_family) {
-        create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        create_info.queueFamilyIndexCount = 2;
-        create_info.pQueueFamilyIndices = reinterpret_cast<unsigned int *>(&indices);
-    }
-    else {
-        create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        create_info.queueFamilyIndexCount = 0;
-        create_info.pQueueFamilyIndices = nullptr;
-    }
-
-    create_info.preTransform = info.capabilities.currentTransform;
-    create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    create_info.presentMode = present_mode;
-    create_info.clipped = VK_TRUE;
-    create_info.oldSwapchain = VK_NULL_HANDLE;
-
-    return vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain);
-}
-
-unsigned int VulkanRenderer::get_swapchain_images(
-    VkDevice device,
-    VkSwapchainKHR swapchain,
-    unique_ptr<VkImage[]> &dest
-) {
-    unsigned int count;
-    vkGetSwapchainImagesKHR(device, swapchain, &count, nullptr);
-    dest = unique_ptr<VkImage[]>(new VkImage[count]);
-    vkGetSwapchainImagesKHR(device, swapchain, &count, dest.get());
-    return count;
-}
-
-VkResult VulkanRenderer::create_image_views(
-    unsigned int count,
-    const VkImage *images,
-    VkFormat format,
-    VkDevice device,
-    unique_ptr<VkImageView[]> &views
-) {
-    views = unique_ptr<VkImageView[]>(new VkImageView[count]);
-    VkImageViewCreateInfo create_info;
-    VkResult create_result;
-
-    create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    create_info.format = format;
-    create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    create_info.subresourceRange.baseMipLevel = 0;
-    create_info.subresourceRange.levelCount = 1;
-    create_info.subresourceRange.baseArrayLayer = 0;
-    create_info.subresourceRange.layerCount = 1;
-
-    for (unsigned int i = 0; i < count; ++i){
-        views[i] = nullptr;
-    }
-    for (unsigned int i = 0; i < count; ++i) {
-        create_info.image = images[i];
-
-        create_result = vkCreateImageView(
-            device,
-            &create_info,
-            nullptr,
-            &views[i]
-        );
-        if (create_result != VK_SUCCESS) {
-            return create_result;
-        }
-    }
-    return VK_SUCCESS;
-}
-
-void VulkanRenderer::destroy_image_views(
-    unsigned int count,
-    VkImageView *views,
-    VkDevice device
-) {
-    for (unsigned int i = 0; i < count; ++i) {
-        vkDestroyImageView(device, views[i], nullptr);
-    }
-}
 
 void VulkanRenderer::create_buffer(
     VkDeviceSize size,

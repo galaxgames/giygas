@@ -18,10 +18,5 @@ namespace giygas {
         ) = 0;
 
         virtual ShaderType shader_type() const = 0;
-
-        //virtual bool is_valid() const = 0;
-        //virtual const string &get_vertex_message() const = 0;
-        //virtual const string &get_fragment_message() const = 0;
-
     };
 }

@@ -262,3 +262,20 @@ void VulkanTexture::end_command_buffer(VkCommandBuffer buffer) const {
     vkDestroyFence(device, fence, nullptr);
     vkFreeCommandBuffers(_renderer->device(), pool, 1, &buffer);
 }
+
+VkFormat VulkanTexture::translate_format(TextureFormat format) {
+    switch (format) {
+        case TextureFormat::RGB:
+            return VK_FORMAT_R8G8B8_UNORM;
+        case TextureFormat::RGBA:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case TextureFormat::Depth16:
+            return VK_FORMAT_D16_UNORM;
+        case TextureFormat::Depth24:
+            return VK_FORMAT_X8_D24_UNORM_PACK32;
+        case TextureFormat::Depth32:
+            return VK_FORMAT_UNDEFINED;
+        case TextureFormat::Depth32Float:
+            return VK_FORMAT_D32_SFLOAT;
+    }
+}

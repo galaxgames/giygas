@@ -24,6 +24,7 @@ namespace giygas {
         // RenderPass implementation
         //
 
+        RendererType renderer_type() const override;
         void create(const RenderPassCreateParameters &params) override;
 
         //

@@ -14,6 +14,5 @@ namespace giygas {
             VkInstance instance,
             VkSurfaceKHR *surface
         ) = 0;
-        virtual void present() = 0;
     };
 }

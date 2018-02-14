@@ -10,7 +10,7 @@ namespace giygas {
 
     class VulkanRenderer;
 
-    class VulkanShader : public Shader {
+    class VulkanShader final : public Shader {
         const VulkanRenderer *_renderer;
         VkShaderModule _module;
         ShaderType _type;

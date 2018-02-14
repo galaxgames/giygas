@@ -54,21 +54,21 @@ void SpriteBatch::end() {
     set_elements();
 }
 
-void SpriteBatch::draw(Surface &surface) const {
-    if (auto mat = _mat.material.lock()) {
-        for (size_t i = 0, ilen = _sprites_by_texture.size(); i < ilen; ++i) {
-            const Texture *texture = _textures[i];
-            //mat->set_textures(&texture, 1);
-            mat->set_uniform_texture(_mat.texture_location, 0);
-//            surface.draw(
-//                _vao.get(),
-//                _ebo.get(),
-//                mat.get(),
-//                _draw_call_details[i]
-//            );
-        }
-    }
-}
+//void SpriteBatch::draw(Surface &surface) const {
+//    if (auto mat = _mat.material.lock()) {
+//        for (size_t i = 0, ilen = _sprites_by_texture.size(); i < ilen; ++i) {
+//            const Texture *texture = _textures[i];
+//            //mat->set_textures(&texture, 1);
+//            mat->set_uniform_texture(_mat.texture_location, 0);
+////            surface.draw(
+////                _vao.get(),
+////                _ebo.get(),
+////                mat.get(),
+////                _draw_call_details[i]
+////            );
+//        }
+//    }
+//}
 
 void SpriteBatch::add(SpriteInfo info) {
     assert(info.texture_index >= 0 && info.texture_index < _textures.size());

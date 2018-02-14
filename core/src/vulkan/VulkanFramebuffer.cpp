@@ -13,21 +13,30 @@ VulkanFramebuffer::VulkanFramebuffer(
     const FramebufferCreateParameters &params
 ) {
     _renderer = renderer;
+    _width = params.width;
+    _height = params.height;
 
     unique_ptr<VkImageView[]> image_views(new VkImageView[params.attachment_count]);
 
     for (size_t i = 0; i < params.attachment_count; ++i) {
-        const FramebufferAttachment &attacment = params.attachments[i];
-        if (attacment.type == AttachmentType::Texture) {
-            assert(attacment.texture->renderer_type() == RendererType::Vulkan);
-            const auto *texture = reinterpret_cast<const VulkanTexture *>(attacment.texture);
-            image_views[i] = texture->image_view();
-        }
-        else {
-            assert(attacment.render_buffer->renderer_type() == RendererType::Vulkan);
-            const auto *renderbuffer
-                = reinterpret_cast<const VulkanRenderBuffer *>(attacment.render_buffer);
-            image_views[i] = renderbuffer->image_view();
+        const FramebufferAttachment &attachment = params.attachments[i];
+        switch (attachment.type)
+        {
+            case AttachmentType::Texture:
+            {
+                assert(attachment.texture->renderer_type() == RendererType::Vulkan);
+                const auto *texture = reinterpret_cast<const VulkanTexture *>(attachment.texture);
+                image_views[i] = texture->image_view();
+                break;
+            }
+            case AttachmentType::RenderBuffer:
+            {
+                assert(attachment.render_buffer->renderer_type() == RendererType::Vulkan);
+                const auto *renderbuffer
+                    = reinterpret_cast<const VulkanRenderBuffer *>(attachment.render_buffer);
+                image_views[i] = renderbuffer->image_view();
+                break;
+            }
         }
     }
 
@@ -48,6 +57,18 @@ VulkanFramebuffer::VulkanFramebuffer(
 
 VulkanFramebuffer::~VulkanFramebuffer() {
     vkDestroyFramebuffer(_renderer->device(), _framebuffer, nullptr);
+}
+
+RendererType VulkanFramebuffer::renderer_type() const {
+    return RendererType::Vulkan;
+}
+
+uint32_t VulkanFramebuffer::width() const {
+    return _width;
+}
+
+uint32_t VulkanFramebuffer::height() const {
+    return _height;
 }
 
 VkFramebuffer VulkanFramebuffer::handle() const {

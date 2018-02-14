@@ -40,6 +40,7 @@ void VulkanShader::set_code(
 
     // codeSize must be a multiple of 4
     assert(length % 4 == 0);
+    assert(length > 0);
 
     VkShaderModuleCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

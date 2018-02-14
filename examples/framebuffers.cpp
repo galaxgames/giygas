@@ -120,8 +120,8 @@ public:
         colored_shader_f = unique_ptr<Shader>(renderer->make_shader());
         textured_shader_v = unique_ptr<Shader>(renderer->make_shader());
         textured_shader_f = unique_ptr<Shader>(renderer->make_shader());
-        framebuffer = unique_ptr<Framebuffer>(renderer->make_framebuffer());
-        render_texture = unique_ptr<Texture>(renderer->make_texture(SamplerOptions()));
+        //framebuffer = unique_ptr<Framebuffer>(renderer->make_framebuffer());
+        render_texture = unique_ptr<Texture>(renderer->make_texture());
         render_depth_buffer = unique_ptr<RenderBuffer>(renderer->make_renderbuffer());
         colored_pipeline = unique_ptr<Pipeline>(renderer->make_pipeline());
         textured_pipeline = unique_ptr<Pipeline>(renderer->make_pipeline());
@@ -195,7 +195,7 @@ public:
         Matrix4x4 model_view;
         colored_material->set_uniform_matrix4x4(0, framebuffer_worldview);
 
-        renderer->main_surface()->set_clear_color(Vector4(0.5f, 0.5f, 1.0f, 1.0f));
+        //renderer->main_surface()->set_clear_color(Vector4(0.5f, 0.5f, 1.0f, 1.0f));
     }
 
     void update(float elapsed_seconds) override {
@@ -214,7 +214,7 @@ public:
         Surface *main_surface = renderer->main_surface();
         auto width = main_surface->width();
         auto height = main_surface->height();
-        main_surface->set_viewport(0, 0, width, height);
+        //main_surface->set_viewport(0, 0, width, height);
         float aspect = static_cast<float>(width) / static_cast<float>(height);
         Matrix4x4 world_view = Matrix4x4::perspective(aspect, 1.0f, 10.0f, 60.0f * (3.14159f / 180.0f));
         textured_material->set_uniform_matrix4x4(0, world_view);

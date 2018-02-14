@@ -13,6 +13,8 @@ namespace giygas {
 
         VulkanRenderer *_renderer;
         VkFramebuffer _framebuffer;
+        uint32_t _width;
+        uint32_t _height;
 
     public:
         VulkanFramebuffer(VulkanRenderer *renderer, const FramebufferCreateParameters &params);
@@ -22,6 +24,13 @@ namespace giygas {
         VulkanFramebuffer &operator=(VulkanFramebuffer &&) = delete;
         ~VulkanFramebuffer() override;
 
+        //
+        // Framebuffer implementation
+        //
+
+        RendererType renderer_type() const override;
+        uint32_t width() const override;
+        uint32_t height() const override;
 
         //
         // VulkanFramebuffer implementation

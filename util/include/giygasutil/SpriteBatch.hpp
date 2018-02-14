@@ -54,7 +54,7 @@ namespace giygas {
         void set_textures(Texture **textures, size_t count);
         void begin();
         void end();
-        void draw(Surface &surface) const;
+        //void draw(Surface &surface) const;
         void add(SpriteInfo info);
 
     };

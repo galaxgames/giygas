@@ -3,6 +3,7 @@
 #include "RendererType.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <giygas/Surface.hpp>
 
 namespace giygas {
 
