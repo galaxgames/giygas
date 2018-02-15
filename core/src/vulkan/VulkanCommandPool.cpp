@@ -29,7 +29,9 @@ VulkanCommandPool::~VulkanCommandPool() {
 }
 
 CommandBuffer VulkanCommandPool::take_static_buffer() {
-    return CommandBuffer(new VulkanCommandBuffer(_renderer, this, true));
+    auto *buffer = new VulkanCommandBuffer(_renderer, this, true);
+    buffer->create();
+    return CommandBuffer(buffer);
 }
 
 CommandBuffer VulkanCommandPool::take_dynamic_buffer() {

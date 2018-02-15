@@ -1,10 +1,11 @@
 #pragma once
-#include <giygas/Surface.hpp>
 #include <giygas/RendererType.hpp>
 #include <vulkan/vulkan.h>
 #include <memory>
 #include "SwapchainInfo.hpp"
 #include "QueueFamilyIndices.hpp"
+#include "VulkanFramebuffer.hpp"
+#include "VulkanSwapchainRenderTarget.hpp"
 
 namespace giygas {
     using namespace std;
@@ -19,6 +20,7 @@ namespace giygas {
         uint32_t _image_view_count;
         unique_ptr<VkImage[]> _images;
         unique_ptr<VkImageView[]> _image_views;
+        unique_ptr<VulkanSwapchainRenderTarget[]> _render_targets;
         VkSurfaceFormatKHR _format;
         VkExtent2D _extent;
 
@@ -70,6 +72,9 @@ namespace giygas {
         );
 
         VkSwapchainKHR handle() const;
+        uint32_t image_count() const;
+        VkImageView get_image_view(uint32_t index) const;
+        const VulkanSwapchainRenderTarget *get_render_target(uint32_t index) const;
 
     };
 

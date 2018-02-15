@@ -3,6 +3,7 @@
 #include <giygas/giygas.hpp>
 #include <giygasutil/EventLoopUpdatable.hpp>
 #include <giygasutil/EventLoopContextRunner.hpp>
+#include <iostream>
 #include "example_common.hpp"
 
 using namespace giygas;
@@ -22,6 +23,7 @@ class TriangleExampleApp : public EventLoopUpdatable {
     unique_ptr<Material> _material;
     unique_ptr<CommandPool> _command_pool;
     unique_ptr<CommandBuffer[]> _command_buffers;
+    unique_ptr<unique_ptr<Framebuffer>[]> _swapchain_framebuffers;
 
 public:
 
@@ -77,9 +79,31 @@ public:
         _pipeline->create(pipeline_params);
 
         //
-        // Setup command buffers
+        // Create swapchain framebuffers
         //
         uint32_t framebuffer_count = _renderer->swapchain_framebuffer_count();
+        _swapchain_framebuffers = unique_ptr<unique_ptr<Framebuffer>[]>(
+            new unique_ptr<Framebuffer>[framebuffer_count]
+        );
+        for (uint32_t i = 0; i < framebuffer_count; ++i) {
+            unique_ptr<Framebuffer> &framebuffer = _swapchain_framebuffers[i];
+
+            FramebufferCreateParameters fb_params = {};
+            fb_params.pass = _render_pass.get();
+            fb_params.width = _renderer->swapchain_width();
+            fb_params.height = _renderer->swapchain_height();
+            fb_params.attachment_count = 1;
+            FramebufferAttachment attachment = {};
+            attachment.purpose = AttachmentPurpose::Color;
+            attachment.target = _renderer->get_swapchain_rendertarget(i);
+            fb_params.attachments = &attachment;
+            framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer(fb_params));
+        }
+
+        //
+        // Setup command buffers
+        //
+
         _command_buffers = unique_ptr<CommandBuffer[]>(new CommandBuffer[framebuffer_count]);
         for (uint32_t i = 0; i < framebuffer_count; ++i) {
             CommandBuffer &commands = _command_buffers[i];
@@ -88,7 +112,7 @@ public:
             const VertexBuffer *vertex_buffer = _vertex_buffer.get();
             const GenericIndexBuffer *index_buffer = _index_buffer.get();
             draw_info.pipeline = _pipeline.get();
-            draw_info.framebuffer = _renderer->get_swapchain_framebuffer(i);
+            draw_info.framebuffer = _swapchain_framebuffers[i].get();
             draw_info.vertex_buffer_count = 1;
             draw_info.vertex_buffers = &vertex_buffer;
             draw_info.index_buffer = _index_buffer.get();
@@ -102,6 +126,8 @@ public:
     }
 
     void update(float elapsed_seconds) override {
+        cout << "UPDATE" << endl;
+
         const CommandBuffer *command_buffer
             = &_command_buffers[_renderer->next_swapchain_framebuffer_index()];
         _renderer->submit(&command_buffer, 1);

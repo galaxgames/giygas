@@ -17,7 +17,7 @@ namespace giygas {
         uint32_t _height;
 
     public:
-        VulkanFramebuffer(VulkanRenderer *renderer, const FramebufferCreateParameters &params);
+        explicit VulkanFramebuffer(VulkanRenderer *renderer);
         VulkanFramebuffer(const VulkanFramebuffer &) = delete;
         VulkanFramebuffer &operator=(const VulkanFramebuffer &) = delete;
         VulkanFramebuffer(VulkanFramebuffer &&) = delete;
@@ -36,6 +36,7 @@ namespace giygas {
         // VulkanFramebuffer implementation
         //
 
+        void create(const FramebufferCreateParameters &params);
         VkFramebuffer handle() const;
 
 

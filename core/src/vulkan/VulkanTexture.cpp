@@ -89,6 +89,10 @@ void VulkanTexture::create_storage(
     // TODO
 }
 
+const void* VulkanTexture::impl() const {
+    return static_cast<const VulkanRenderTarget *>(this);
+}
+
 VkImageView VulkanTexture::image_view() const {
     return _image_view;
 }

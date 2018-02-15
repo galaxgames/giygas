@@ -1,9 +1,9 @@
 #pragma once
-#include "AttachmentType.hpp"
-#include "RendererType.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <giygas/Surface.hpp>
+#include "AttachmentType.hpp"
+#include "RendererType.hpp"
+#include "RenderTarget.hpp"
 
 namespace giygas {
 
@@ -13,12 +13,8 @@ namespace giygas {
 
     class FramebufferAttachment  {
     public:
-        AttachmentType type;
         AttachmentPurpose purpose;
-        union {
-            const Texture *texture;
-            const RenderBuffer *render_buffer;
-        };
+        const RenderTarget *target;
     };
 
     class FramebufferCreateParameters {

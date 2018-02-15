@@ -4,7 +4,6 @@
 #include "IndexBuffer.hpp"
 #include "Material.hpp"
 #include "AttachmentType.hpp"
-#include "Surface.hpp"
 #include "PipelineOptions.hpp"
 #include "SamplerOptions.hpp"
 #include "Pipeline.hpp"
@@ -34,9 +33,11 @@ namespace giygas {
         virtual Pipeline *make_pipeline() = 0;
         virtual CommandPool *make_commandpool() = 0;
 
-        virtual const Framebuffer *get_swapchain_framebuffer(uint32_t index) const = 0;
+        virtual const RenderTarget *get_swapchain_rendertarget(uint32_t index) const = 0;
         virtual uint32_t swapchain_framebuffer_count() const = 0;
         virtual uint32_t next_swapchain_framebuffer_index() const = 0;
+        virtual uint32_t swapchain_width() const = 0;
+        virtual uint32_t swapchain_height() const = 0;
 
         virtual void submit(const CommandBuffer **buffers, size_t buffer_count) = 0;
         virtual void present() = 0;

@@ -19,6 +19,10 @@ void VulkanRenderBuffer::create_storage(uint32_t width, uint32_t height, Texture
 
 }
 
+const void* VulkanRenderBuffer::impl() const {
+    return static_cast<const VulkanRenderTarget *>(this);
+}
+
 VkImageView VulkanRenderBuffer::image_view() const {
     return VK_NULL_HANDLE;
 }

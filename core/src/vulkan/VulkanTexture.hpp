@@ -2,13 +2,14 @@
 #include <giygas/Texture.hpp>
 #include <vulkan/vulkan.h>
 #include <memory>
+#include "VulkanRenderTarget.hpp"
 
 namespace giygas {
     using namespace std;
 
     class VulkanRenderer;
 
-    class VulkanTexture final : public Texture {
+    class VulkanTexture final : public Texture, public VulkanRenderTarget {
 
         VulkanRenderer *_renderer;
         VkImage _image;
@@ -80,11 +81,16 @@ namespace giygas {
 
 
         //
-        // VulkanTexture implementation
+        // RenderTarget implementation
         //
 
-        VkImageView image_view() const;
+        const void *impl() const override;
 
+        //
+        // VulkanRenderTarget implementation
+        //
+
+        VkImageView image_view() const override;
 
     };
 

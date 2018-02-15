@@ -2,9 +2,10 @@
 #include <cstdint>
 #include "TextureFormat.hpp"
 #include "RendererType.hpp"
+#include "RenderTarget.hpp"
 
 namespace giygas {
-    class RenderBuffer {
+    class GIYGAS_EXPORT RenderBuffer : public RenderTarget {
     public:
         virtual ~RenderBuffer() = default;
         virtual RendererType renderer_type() const = 0;

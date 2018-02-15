@@ -6,15 +6,16 @@
 #include <giygas/TextureFormat.hpp>
 #include "RendererType.hpp"
 #include "SamplerOptions.hpp"
+#include "RenderTarget.hpp"
 
 namespace giygas {
     using namespace std;
 
-    class GIYGAS_EXPORT Texture {
+    class GIYGAS_EXPORT Texture : public RenderTarget {
     public:
         virtual ~Texture() = default;
 
-        virtual RendererType renderer_type() const = 0;
+        //virtual RendererType renderer_type() const = 0;
 
         virtual void set_data(
             unique_ptr<uint8_t[]> &&data,

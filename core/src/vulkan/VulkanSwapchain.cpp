@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cassert>
 #include "VulkanSwapchain.hpp"
 #include "VulkanRenderer.hpp"
 
@@ -55,7 +56,7 @@ bool VulkanSwapchain::create(
 
     _image_count = get_swapchain_images(device, _swapchain, _images);
     _image_view_count = _image_count;
-    return (
+    bool success = (
         create_image_views(
             _image_count,
             _images.get(),
@@ -64,11 +65,37 @@ bool VulkanSwapchain::create(
             _image_views
         ) != VK_SUCCESS
     );
+
+    _render_targets = unique_ptr<VulkanSwapchainRenderTarget[]>(
+        new VulkanSwapchainRenderTarget[_image_count]
+    );
+    for (uint32_t i = 0; i < _image_count; ++i) {
+        VulkanSwapchainRenderTarget &target = _render_targets[i];
+        target.swapchain = this;
+        target.image_index = i;
+    }
+
+    return success;
 }
 
 VkSwapchainKHR VulkanSwapchain::handle() const {
     return _swapchain;
 }
+
+uint32_t VulkanSwapchain::image_count() const {
+    return _image_count;
+}
+
+VkImageView VulkanSwapchain::get_image_view(uint32_t index) const {
+    assert(index < _image_count);
+    return _image_views[index];
+}
+
+const VulkanSwapchainRenderTarget* VulkanSwapchain::get_render_target(uint32_t index) const {
+    assert(index < _image_count);
+    return &_render_targets[index];
+}
+
 
 VkResult VulkanSwapchain::create_swapchain(
     VkDevice device,

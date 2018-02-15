@@ -1,12 +1,13 @@
 #pragma once
 #include <giygas/RenderBuffer.hpp>
 #include <vulkan/vulkan.h>
+#include "VulkanRenderTarget.hpp"
 
 namespace giygas {
 
     class VulkanRenderer;
 
-    class VulkanRenderBuffer final : public RenderBuffer {
+    class VulkanRenderBuffer final : public RenderBuffer, public VulkanRenderTarget {
 
         VulkanRenderer *_renderer;
 
@@ -32,10 +33,18 @@ namespace giygas {
 
 
         //
-        // VulkanRenderBuffer implementation
+        // RenderTarget implementation
         //
 
-        VkImageView image_view() const;
+        const void *impl() const override;
+
+
+        //
+        // VulkanRenderTarget implementation
+        //
+
+        VkImageView image_view() const override;
+
 
     };
 

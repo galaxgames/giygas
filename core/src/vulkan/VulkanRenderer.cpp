@@ -92,6 +92,15 @@ void VulkanRenderer::initialize() {
     vkCreateSemaphore(_device, &semaphore_info, nullptr, &_render_finished_semaphore);
 
     _copy_command_pool.create(this);
+
+    vkAcquireNextImageKHR(
+        _device,
+        _swapchain.handle(),
+        numeric_limits<uint64_t>::max(),
+        _image_available_semaphore,
+        nullptr,
+        &_next_swapchain_image_index
+    );
 }
 
 RendererType VulkanRenderer::renderer_type() const {
@@ -128,7 +137,9 @@ Texture* VulkanRenderer::make_texture() {
 }
 
 Framebuffer *VulkanRenderer::make_framebuffer(const FramebufferCreateParameters &parameters) {
-    return new VulkanFramebuffer(this, parameters);
+    auto *fb = new VulkanFramebuffer(this);
+    fb->create(parameters);
+    return fb;
 }
 
 RenderBuffer *VulkanRenderer::make_renderbuffer() {
@@ -149,17 +160,27 @@ CommandPool *VulkanRenderer::make_commandpool() {
     return pool;
 }
 
+const RenderTarget* VulkanRenderer::get_swapchain_rendertarget(uint32_t index) const {
+    return _swapchain.get_render_target(index);
+}
+
+uint32_t VulkanRenderer::swapchain_framebuffer_count() const {
+    return _swapchain.image_count();
+}
+
+uint32_t VulkanRenderer::next_swapchain_framebuffer_index() const {
+    return _next_swapchain_image_index;
+}
+
+uint32_t VulkanRenderer::swapchain_width() const {
+    return _swapchain.width();
+}
+
+uint32_t VulkanRenderer::swapchain_height() const {
+    return _swapchain.height();
+}
 
 void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
-
-    vkAcquireNextImageKHR(
-        _device,
-        _swapchain.handle(),
-        numeric_limits<uint64_t>::max(),
-        _image_available_semaphore,
-        nullptr,
-        &_next_swapchain_image_index
-    );
 
     // TODO: Reallocating this buffer every frame sucks.
     // TODO: Investigate how expensive this is to do every frame and look into a better interface
@@ -189,6 +210,7 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &_render_finished_semaphore;
 
+
     vkQueueSubmit(_graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
 }
 
@@ -204,6 +226,15 @@ void VulkanRenderer::present() {
     present_info.pResults = nullptr;
 
     vkQueuePresentKHR(_graphics_queue, &present_info);
+
+    vkAcquireNextImageKHR(
+        _device,
+        _swapchain.handle(),
+        numeric_limits<uint64_t>::max(),
+        _image_available_semaphore,
+        nullptr,
+        &_next_swapchain_image_index
+    );
 }
 
 VkDevice VulkanRenderer::device() const {
@@ -520,8 +551,6 @@ VkExtent2D VulkanRenderer::choose_swap_extent(const SwapchainInfo &info) {
 
     return extent;
 }
-
-
 
 void VulkanRenderer::create_buffer(
     VkDeviceSize size,

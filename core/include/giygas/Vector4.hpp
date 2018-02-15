@@ -9,8 +9,5 @@ namespace giygas  {
 
         Vector4();
         Vector4(float x, float y, float z, float w);
-
-        operator Vector3() const;
-
     };
 }

@@ -1,6 +1,5 @@
 #pragma once
 #include <giygas/export.h>
-//#include <giygas/Vector4.hpp>
 
 namespace giygas {
     class GIYGAS_EXPORT Vector3 {
