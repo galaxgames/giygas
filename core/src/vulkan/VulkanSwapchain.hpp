@@ -49,7 +49,7 @@ namespace giygas {
             unique_ptr<VkImageView[]> &views
         );
 
-        static void destroy_image_views(uint32_t count, VkImageView *views, VkDevice device);
+        //static void destroy_image_views(uint32_t count, VkImageView *views, VkDevice device);
 
     public:
         explicit VulkanSwapchain();
@@ -71,10 +71,14 @@ namespace giygas {
             const SwapchainInfo &info
         );
 
+        void destroy();
+
         VkSwapchainKHR handle() const;
         uint32_t image_count() const;
+        const VkSurfaceFormatKHR &surface_format() const;
         VkImageView get_image_view(uint32_t index) const;
         const VulkanSwapchainRenderTarget *get_render_target(uint32_t index) const;
+
 
     };
 

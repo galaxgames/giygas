@@ -32,6 +32,7 @@ namespace giygas {
         //
 
         void create(VulkanRenderer *renderer);
+        void destroy();
         void return_buffer(VulkanCommandBuffer *buffer);
         VkCommandPool handle() const;
 

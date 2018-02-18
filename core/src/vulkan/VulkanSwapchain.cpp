@@ -6,17 +6,14 @@
 using namespace giygas;
 
 VulkanSwapchain::VulkanSwapchain() {
+    _renderer = nullptr;
     _image_count = 0;
     _image_view_count = 0;
     _swapchain = VK_NULL_HANDLE;
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
-    if (_renderer == nullptr) {
-        return;
-    }
-    destroy_image_views(_image_view_count, _image_views.get(), _renderer->device());
-    vkDestroySwapchainKHR(_renderer->device(), _swapchain, nullptr);
+    destroy();
 }
 
 uint32_t VulkanSwapchain::width() const {
@@ -78,12 +75,31 @@ bool VulkanSwapchain::create(
     return success;
 }
 
+void VulkanSwapchain::destroy() {
+    if (_renderer == nullptr) {
+        return;
+    }
+    VkDevice device = _renderer->device();
+    for (unsigned int i = 0; i < _image_view_count; ++i) {
+        vkDestroyImageView(device, _image_views[i], nullptr);
+    }
+    _image_view_count = 0;
+    _image_views = nullptr;
+    vkDestroySwapchainKHR(device, _swapchain, nullptr);
+    _swapchain = VK_NULL_HANDLE;
+    _renderer = nullptr;
+}
+
 VkSwapchainKHR VulkanSwapchain::handle() const {
     return _swapchain;
 }
 
 uint32_t VulkanSwapchain::image_count() const {
     return _image_count;
+}
+
+const VkSurfaceFormatKHR& VulkanSwapchain::surface_format() const {
+    return _format;
 }
 
 VkImageView VulkanSwapchain::get_image_view(uint32_t index) const {
@@ -199,14 +215,4 @@ VkResult VulkanSwapchain::create_image_views(
         }
     }
     return VK_SUCCESS;
-}
-
-void VulkanSwapchain::destroy_image_views(
-    unsigned int count,
-    VkImageView *views,
-    VkDevice device
-) {
-    for (unsigned int i = 0; i < count; ++i) {
-        vkDestroyImageView(device, views[i], nullptr);
-    }
 }

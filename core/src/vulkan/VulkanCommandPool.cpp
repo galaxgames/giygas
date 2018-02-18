@@ -1,7 +1,6 @@
 #include "VulkanCommandPool.hpp"
 #include "VulkanRenderer.hpp"
 #include "VulkanRenderPass.hpp"
-#include "VulkanFramebuffer.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanIndexBuffer.hpp"
@@ -10,7 +9,12 @@
 using namespace giygas;
 
 VulkanCommandPool::VulkanCommandPool() {
+    _renderer = nullptr;
     _handle = VK_NULL_HANDLE;
+}
+
+VulkanCommandPool::~VulkanCommandPool() {
+    destroy();
 }
 
 void VulkanCommandPool::create(VulkanRenderer *renderer) {
@@ -24,8 +28,13 @@ void VulkanCommandPool::create(VulkanRenderer *renderer) {
     vkCreateCommandPool(renderer->device(), &create_info, nullptr, &_handle);
 }
 
-VulkanCommandPool::~VulkanCommandPool() {
+void VulkanCommandPool::destroy() {
+    if (_renderer == nullptr) {
+        return;
+    }
     vkDestroyCommandPool(_renderer->device(), _handle, nullptr);
+    _handle = VK_NULL_HANDLE;
+    _renderer = nullptr;
 }
 
 CommandBuffer VulkanCommandPool::take_static_buffer() {

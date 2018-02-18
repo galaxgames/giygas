@@ -10,6 +10,12 @@ using namespace giygas;
 using namespace std;
 using namespace giygas_examples_common;
 
+class VertexData {
+public:
+    Vector4 position;
+    Vector4 color;
+};
+
 class TriangleExampleApp : public EventLoopUpdatable {
 
     unique_ptr<Renderer> _renderer;
@@ -34,6 +40,8 @@ public:
 
     void init() {
         _renderer->initialize();
+        _vertex_buffer = unique_ptr<VertexBuffer>(_renderer->make_vertex_buffer());
+        _index_buffer = unique_ptr<IndexBuffer8>(_renderer->make_index_buffer_8());
         _vertex_shader = unique_ptr<Shader>(_renderer->make_shader());
         _fragment_shader = unique_ptr<Shader>(_renderer->make_shader());
         _render_pass = unique_ptr<RenderPass>(_renderer->make_renderpass());
@@ -45,25 +53,48 @@ public:
 
 
         //
+        // Setup mesh
+        //
+        array<VertexData, 3> verts = {
+            VertexData{ Vector4(-1, 1, 0, 1), Vector4(1, 0, 0, 1) },
+            VertexData{ Vector4(0, -1, 0, 1), Vector4(0, 1, 0, 1) },
+            VertexData{ Vector4(1,  1, 0, 1), Vector4(0, 0, 1, 1) },
+        };
+        array<uint8_t, 3> indices = {0, 1, 2};
+
+        VertexBuffer::set_data(*_vertex_buffer, 0, verts.data(), verts.size());
+        _index_buffer->set(0, indices.data(), indices.size());
+
+        //
         // Setup shaders
         //
         size_t vertex_code_size, fragment_code_size;
         unique_ptr<uint8_t[]> vertex_code, fragment_code;
-        vertex_code = _shader_loader.get_shader_code("shaders/color.vs", vertex_code_size);
-        fragment_code = _shader_loader.get_shader_code("shaders/color.fs", fragment_code_size);
+        vertex_code = _shader_loader.get_shader_code("shaders/triangle.vs", vertex_code_size);
+        fragment_code = _shader_loader.get_shader_code("shaders/triangle.fs", fragment_code_size);
         _vertex_shader->set_code(vertex_code.get(), vertex_code_size, ShaderType::Vertex);
         _fragment_shader->set_code(fragment_code.get(), fragment_code_size, ShaderType::Fragment);
 
         //
         // Setup Vertex Attribute layout
         //
-        VertexAttributeLayout layout(0, 0);
+        VertexAttributeLayout layout(0, sizeof(VertexData));
+        LayoutAttribute position_attrib = {};
+        position_attrib.component_count = 4;
+        position_attrib.component_size = sizeof(VertexData::position);
+        position_attrib.offset = offsetof(VertexData, position);
+        LayoutAttribute color_attrib = {};
+        color_attrib.component_count = 4;
+        color_attrib.component_size = sizeof(VertexData::color);
+        color_attrib.offset = offsetof(VertexData, color);
+        layout.add_attribute(position_attrib);
+        layout.add_attribute(color_attrib);
 
         //
         // Setup Render Pass
         //
         RenderPassCreateParameters pass_params = {};
-        pass_params.color_attachment.api_format = 0; // TODO;
+        pass_params.color_attachment.api_format = _renderer->swapchain_api_format();
         _render_pass->create(pass_params);
 
         //
@@ -71,6 +102,12 @@ public:
         //
         array<const Shader *, 2> shaders = {_vertex_shader.get(), _fragment_shader.get()};
         PipelineCreateParameters pipeline_params = {};
+        pipeline_params.viewport.width = _renderer->swapchain_width();
+        pipeline_params.viewport.height = _renderer->swapchain_height();
+        pipeline_params.viewport.min_depth = 0;
+        pipeline_params.viewport.min_depth = 1;
+        pipeline_params.scissor.width = _renderer->swapchain_width();
+        pipeline_params.scissor.height = _renderer->swapchain_height();
         pipeline_params.shader_count = 2;
         pipeline_params.shaders = shaders.data();
         pipeline_params.vertex_buffer_layout_count = 1;
@@ -126,7 +163,7 @@ public:
     }
 
     void update(float elapsed_seconds) override {
-        cout << "UPDATE" << endl;
+        //cout << "UPDATE" << endl;
 
         const CommandBuffer *command_buffer
             = &_command_buffers[_renderer->next_swapchain_framebuffer_index()];
@@ -138,8 +175,7 @@ public:
 };
 
 
-int main (int argc, char **argv)
-{
+int main (int argc, char **argv) {
     GLFWContext context;
     TriangleExampleApp app(context, argv[0]);
     EventLoopContextRunner runner(&context, &app);

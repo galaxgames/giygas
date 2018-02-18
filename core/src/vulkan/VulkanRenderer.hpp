@@ -26,6 +26,7 @@ namespace giygas {
         VkSemaphore _image_available_semaphore;
         VkSemaphore _render_finished_semaphore;
         uint32_t _next_swapchain_image_index;
+        VkFence _command_buffers_finished_fence;
 
         static VkResult create_instance(
             const VulkanContext *context,
@@ -104,6 +105,7 @@ namespace giygas {
         uint32_t next_swapchain_framebuffer_index() const override;
         uint32_t swapchain_width() const override;
         uint32_t swapchain_height() const override;
+        uint32_t swapchain_api_format() const override;
 
         void submit(const CommandBuffer **buffers, size_t buffer_count) override;
         void present() override;

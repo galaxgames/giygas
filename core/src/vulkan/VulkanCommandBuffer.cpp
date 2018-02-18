@@ -69,7 +69,7 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
 
     VkCommandBufferBeginInfo begin_info = {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;  // TODO
+    begin_info.flags = 0; //VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;  // TODO
     begin_info.pInheritanceInfo = nullptr;
 
     vkBeginCommandBuffer(_handle, &begin_info);
@@ -81,8 +81,9 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
     pass_begin_info.renderArea.offset = {0, 0};
     pass_begin_info.renderArea.extent.width = framebuffer->width();
     pass_begin_info.renderArea.extent.height = framebuffer->height();
-    pass_begin_info.clearValueCount = 0;
-    pass_begin_info.pClearValues = nullptr;
+    VkClearValue clear_color = { 1.0f, 0.1f, 0.1f, 0.1f };
+    pass_begin_info.clearValueCount = 1;
+    pass_begin_info.pClearValues = &clear_color;
 
     vkCmdBeginRenderPass(_handle, &pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 

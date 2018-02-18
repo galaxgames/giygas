@@ -26,9 +26,13 @@ VulkanRenderer::VulkanRenderer(VulkanContext *context) {
     _present_queue = VK_NULL_HANDLE;
     _image_available_semaphore = VK_NULL_HANDLE;
     _render_finished_semaphore = VK_NULL_HANDLE;
+    _command_buffers_finished_fence = VK_NULL_HANDLE;
 }
 
 VulkanRenderer::~VulkanRenderer() {
+    _copy_command_pool.destroy();
+    _swapchain.destroy();
+    vkDestroyFence(_device, _command_buffers_finished_fence, nullptr);
     vkDestroySemaphore(_device, _render_finished_semaphore, nullptr);
     vkDestroySemaphore(_device, _image_available_semaphore, nullptr);
     vkDestroyDevice(_device, nullptr);
@@ -101,6 +105,11 @@ void VulkanRenderer::initialize() {
         nullptr,
         &_next_swapchain_image_index
     );
+
+    VkFenceCreateInfo fence_info = {};
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_info.flags = 0;
+    vkCreateFence(_device, &fence_info, nullptr, &_command_buffers_finished_fence);
 }
 
 RendererType VulkanRenderer::renderer_type() const {
@@ -180,6 +189,10 @@ uint32_t VulkanRenderer::swapchain_height() const {
     return _swapchain.height();
 }
 
+uint32_t VulkanRenderer::swapchain_api_format() const {
+    return static_cast<uint32_t>(_swapchain.surface_format().format);
+}
+
 void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
 
     // TODO: Reallocating this buffer every frame sucks.
@@ -211,11 +224,12 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     submit_info.pSignalSemaphores = &_render_finished_semaphore;
 
 
-    vkQueueSubmit(_graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueSubmit(_graphics_queue, 1, &submit_info, _command_buffers_finished_fence);
 }
 
 void VulkanRenderer::present() {
     VkSwapchainKHR swapchain_handle = _swapchain.handle();
+    VkResult present_result;
     VkPresentInfoKHR present_info = {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 1;
@@ -223,7 +237,7 @@ void VulkanRenderer::present() {
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &swapchain_handle;
     present_info.pImageIndices = &_next_swapchain_image_index;
-    present_info.pResults = nullptr;
+    present_info.pResults = &present_result;
 
     vkQueuePresentKHR(_graphics_queue, &present_info);
 
@@ -235,6 +249,9 @@ void VulkanRenderer::present() {
         nullptr,
         &_next_swapchain_image_index
     );
+
+    vkWaitForFences(_device, 1, &_command_buffers_finished_fence, VK_TRUE, numeric_limits<uint64_t>::max());
+    vkResetFences(_device, 1, &_command_buffers_finished_fence);
 }
 
 VkDevice VulkanRenderer::device() const {
@@ -295,6 +312,7 @@ VkResult VulkanRenderer::create_instance(
     create_info.ppEnabledExtensionNames = needed_extensions;
 
     array<const char *, 1> validation_layers = {
+        //"VK_LAYER_LUNARG_vktrace",
         "VK_LAYER_LUNARG_standard_validation"
     };
 

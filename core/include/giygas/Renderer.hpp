@@ -38,6 +38,7 @@ namespace giygas {
         virtual uint32_t next_swapchain_framebuffer_index() const = 0;
         virtual uint32_t swapchain_width() const = 0;
         virtual uint32_t swapchain_height() const = 0;
+        virtual uint32_t swapchain_api_format() const = 0;
 
         virtual void submit(const CommandBuffer **buffers, size_t buffer_count) = 0;
         virtual void present() = 0;

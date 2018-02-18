@@ -151,8 +151,8 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     color_blend.blendConstants[2] = 0;
     color_blend.blendConstants[3] = 0;
 
-    array<VkDynamicState, 1> dynamic_states = {
-        VK_DYNAMIC_STATE_VIEWPORT
+    array<VkDynamicState, 0> dynamic_states = {
+        //VK_DYNAMIC_STATE_VIEWPORT
     };
 
     VkPipelineDynamicStateCreateInfo dynamic_state = {};
@@ -210,7 +210,7 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     pipeline_info.pMultisampleState = &multisample;
     pipeline_info.pDepthStencilState = nullptr;  // TODO
     pipeline_info.pColorBlendState = &color_blend;
-    pipeline_info.pDynamicState = &dynamic_state;
+    pipeline_info.pDynamicState = nullptr; //&dynamic_state;
     pipeline_info.layout = _layout;
     pipeline_info.renderPass = renderpass->handle();
     pipeline_info.subpass = 0;
