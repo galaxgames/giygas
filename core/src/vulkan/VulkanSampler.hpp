@@ -1,7 +1,8 @@
 #pragma once
 #include <giygas/Sampler.hpp>
 #include <vulkan/vulkan.h>
-#include <giygas/SamplerOptions.hpp>
+#include <giygas/SamplerParameters.hpp>
+#include <giygas/RendererType.hpp>
 
 namespace giygas {
 
@@ -17,7 +18,7 @@ namespace giygas {
         static VkSamplerMipmapMode translate_mipmap_mode(SamplerMipmapMode mode);
 
     public:
-        VulkanSampler(VulkanRenderer *renderer, const SamplerOptions &options);
+        VulkanSampler(VulkanRenderer *renderer);
         VulkanSampler(const VulkanSampler &) = delete;
         VulkanSampler &operator=(const VulkanSampler &) = delete;
         VulkanSampler(VulkanSampler &&) = delete;
@@ -25,8 +26,18 @@ namespace giygas {
         ~VulkanSampler() override;
 
         //
+        // Sampler implementation
+        //
+
+        RendererType renderer_type() const override;
+        void create(const SamplerParameters &params) override;
+
+
+        //
         // VulkanSampler implementation
         //
+
+        VkSampler handle() const;
 
 
     };

@@ -30,6 +30,7 @@ namespace giygas {
     public:
         virtual ~Framebuffer() = default;
         virtual RendererType renderer_type() const = 0;
+        virtual void create(const FramebufferCreateParameters &params) = 0;
         virtual uint32_t width() const = 0;
         virtual uint32_t height() const = 0;
     };

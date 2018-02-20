@@ -2,6 +2,7 @@
 #include "VulkanRenderer.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanRenderPass.hpp"
+#include "VulkanDescriptorSet.hpp"
 #include <cassert>
 
 using namespace giygas;
@@ -151,6 +152,18 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     color_blend.blendConstants[2] = 0;
     color_blend.blendConstants[3] = 0;
 
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_state = {};
+    depth_stencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth_stencil_state.depthTestEnable = VK_FALSE;  // todo
+    depth_stencil_state.depthWriteEnable = VK_FALSE;  // todo
+    depth_stencil_state.depthCompareOp = VK_COMPARE_OP_NEVER;  // todo
+    depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
+    depth_stencil_state.stencilTestEnable = VK_FALSE;  // todo
+    depth_stencil_state.front = {};  // todo
+    depth_stencil_state.back = {};  // todo
+    depth_stencil_state.minDepthBounds = 0;  // todo
+    depth_stencil_state.maxDepthBounds = 1;  // todo
+
     array<VkDynamicState, 0> dynamic_states = {
         //VK_DYNAMIC_STATE_VIEWPORT
     };
@@ -161,21 +174,44 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     dynamic_state.pDynamicStates = dynamic_states.data();
 
     uint32_t push_constant_range_count = 0;
-    VkPushConstantRange push_constant_range;
-    if (params.material_uniform_data_size > 0) {
-        push_constant_range_count = 1;
-        push_constant_range = {};
-        push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        push_constant_range.size = static_cast<uint32_t>(params.material_uniform_data_size);
-        push_constant_range.offset = 0;
+    array<VkPushConstantRange, 2> push_constant_ranges;
+    if (params.vertex_push_constants.size > 0) {
+        VkPushConstantRange &range = push_constant_ranges[push_constant_range_count];
+        range = {};
+        range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        range.size = static_cast<uint32_t>(params.vertex_push_constants.size);
+        range.offset = static_cast<uint32_t>(params.vertex_push_constants.offset);
+        ++push_constant_range_count;
+    }
+    if (params.fragment_push_constants.size > 0) {
+        VkPushConstantRange &range = push_constant_ranges[push_constant_range_count];
+        range = {};
+        range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        range.size = static_cast<uint32_t>(params.fragment_push_constants.size);
+        range.offset = static_cast<uint32_t>(params.fragment_push_constants.offset);
+        ++push_constant_range_count;
+    }
+
+    uint32_t set_layout_count;
+    unique_ptr<VkDescriptorSetLayout[]> descriptor_set_layout_handles;
+    if (params.descriptor_set != nullptr) {
+        set_layout_count = 1;
+        descriptor_set_layout_handles = unique_ptr<VkDescriptorSetLayout[]> (
+            new VkDescriptorSetLayout[set_layout_count]
+        );
+        assert(params.descriptor_set->renderer_type() == RendererType::Vulkan);
+        const auto *descriptor_set_impl = reinterpret_cast<const VulkanDescriptorSet *>(params.descriptor_set);
+        descriptor_set_layout_handles[0] = descriptor_set_impl->layout();
+    } else {
+        set_layout_count = 0;
     }
 
     VkPipelineLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layout_info.setLayoutCount = 0;
-    layout_info.pSetLayouts = nullptr;
+    layout_info.setLayoutCount = set_layout_count;
+    layout_info.pSetLayouts = descriptor_set_layout_handles.get();
     layout_info.pushConstantRangeCount = push_constant_range_count;
-    layout_info.pPushConstantRanges = &push_constant_range;
+    layout_info.pPushConstantRanges = push_constant_ranges.data();
     if (vkCreatePipelineLayout(device, &layout_info, nullptr, &_layout) != VK_SUCCESS) {
         return;
     }
@@ -208,7 +244,7 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     pipeline_info.pViewportState = &viewport_state;
     pipeline_info.pRasterizationState = &rasterizer;
     pipeline_info.pMultisampleState = &multisample;
-    pipeline_info.pDepthStencilState = nullptr;  // TODO
+    pipeline_info.pDepthStencilState = &depth_stencil_state;
     pipeline_info.pColorBlendState = &color_blend;
     pipeline_info.pDynamicState = nullptr; //&dynamic_state;
     pipeline_info.layout = _layout;
@@ -226,6 +262,10 @@ RendererType VulkanPipeline::renderer_type() const {
 
 VkPipeline VulkanPipeline::handle() const {
     return _handle;
+}
+
+VkPipelineLayout VulkanPipeline::layout_handle() const {
+    return _layout;
 }
 
 VkShaderStageFlagBits VulkanPipeline::shader_type_to_stage_flags(ShaderType type) {

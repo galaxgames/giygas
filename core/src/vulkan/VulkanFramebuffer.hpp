@@ -29,6 +29,7 @@ namespace giygas {
         //
 
         RendererType renderer_type() const override;
+        void create(const FramebufferCreateParameters &params) override;
         uint32_t width() const override;
         uint32_t height() const override;
 
@@ -36,7 +37,6 @@ namespace giygas {
         // VulkanFramebuffer implementation
         //
 
-        void create(const FramebufferCreateParameters &params);
         VkFramebuffer handle() const;
 
 

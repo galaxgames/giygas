@@ -18,7 +18,7 @@ namespace giygas {
         //
 
         RendererType renderer_type() const override;
-        const void *impl() const override;
+        const void *rendertarget_impl() const override;
 
 
         //

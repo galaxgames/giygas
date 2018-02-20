@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <giygas/giygas.hpp>
 #include "VulkanTexture.hpp"
 #include "VulkanRenderer.hpp"
 
@@ -12,20 +13,36 @@ VulkanTexture::VulkanTexture(VulkanRenderer *renderer) {
 }
 
 VulkanTexture::~VulkanTexture() {
-
+    VkDevice device = _renderer->device();
+    vkDestroyImageView(device, _image_view, nullptr);
+    vkDestroyImage(device, _image, nullptr);
+    vkFreeMemory(device, _image_memory, nullptr);
 }
 
 RendererType VulkanTexture::renderer_type() const {
     return RendererType::Vulkan;
 }
 
-void VulkanTexture::set_data(
+//void VulkanTexture::create(
+//    unique_ptr<uint8_t[]> &&data,
+//    size_t size,
+//    uint32_t width,
+//    uint32_t height,
+//    TextureFormat format
+//) {
+//    create(move(data), size, width, height, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+//}
+
+void VulkanTexture::create(
     unique_ptr<uint8_t[]> &&data,
     size_t size,
     uint32_t width,
     uint32_t height,
-    TextureFormat format
+    TextureFormat format,
+    TextureUsageFlags usage
 ) {
+    assert(_image == VK_NULL_HANDLE);
+
     VkDevice device = _renderer->device();
 
     _data = move(data);
@@ -34,67 +51,121 @@ void VulkanTexture::set_data(
     _height = height;
     _format = format;
 
-    VkFormat translated_format = translate_format(format);
+    // Figure out the desired layout and usage flags
+    VkImageLayout final_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageUsageFlags usage_flags = 0;
+    VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
+    if (usage & TEXTURE_USAGE_DEPTH_ATTACHMENT || usage & TEXTURE_USAGE_STENCIL_ATTACHMENT) {
+        final_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        usage_flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }
+    if (usage & TEXTURE_USAGE_COLOR_ATTACHMENT) {
+        final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        usage_flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
+    if (usage & TEXTURE_USAGE_SAMPLE) {
+        final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        usage_flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
+    _layout = final_layout;
 
-    VkBuffer staging_buffer;
-    VkDeviceMemory staging_buffer_memory;
+    // TODO: FIX THIS: We don't check VkFormatProperties::optimalTilingFeatures from physical device
+    // https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#VUID-VkImageCreateInfo-tiling-00985
 
-    _renderer->create_buffer(
-        size,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        staging_buffer,
-        staging_buffer_memory
-    );
 
-    void *mapped_data;
-    vkMapMemory(device, staging_buffer_memory, 0, size, 0, &mapped_data);
-    copy_n(data.get(), size, static_cast<uint8_t *>(mapped_data));
-    vkUnmapMemory(device, staging_buffer_memory);
+
+    VkFormat translated_format = VulkanRenderer::translate_texture_format(format);
+
+    VkImageLayout current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    if (size > 0) {
+        usage_flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
 
     create_image(
         width,
         height,
         translated_format,
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        tiling,
+        usage_flags,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         _image,
-        _image_memory
+        _image_memory,
+        current_layout
     );
+
+    if (size > 0) {
+        VkBuffer staging_buffer;
+        VkDeviceMemory staging_buffer_memory;
+
+        _renderer->create_buffer(
+            size,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            staging_buffer,
+            staging_buffer_memory
+        );
+
+        void *mapped_data;
+        vkMapMemory(device, staging_buffer_memory, 0, size, 0, &mapped_data);
+        copy_n(data.get(), size, static_cast<uint8_t *>(mapped_data));
+        vkUnmapMemory(device, staging_buffer_memory);
+
+        VkImageLayout next_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        transition_image_layout(
+            _image,
+            format,
+            current_layout,
+            next_layout
+        );
+        current_layout = next_layout;
+
+        copy_buffer_to_image(staging_buffer, _image, width, height);
+
+        vkFreeMemory(device, staging_buffer_memory, nullptr);
+        vkDestroyBuffer(device, staging_buffer, nullptr);
+    }
 
     transition_image_layout(
         _image,
-        translated_format,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+        format,
+        current_layout,
+        final_layout
     );
 
-    copy_buffer_to_image(staging_buffer, _image, width, height);
+    VkImageViewCreateInfo view_info;
+    view_info = {};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = translated_format;
+    view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    view_info.subresourceRange.aspectMask = image_aspects_from_format(format);
+    view_info.subresourceRange.baseMipLevel = 0;
+    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.baseArrayLayer = 0;
+    view_info.subresourceRange.layerCount = 1;
+    view_info.image = _image;
 
-    transition_image_layout(
-        _image,
-        translated_format,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
-
+    vkCreateImageView(device, &view_info, nullptr, &_image_view);
 }
 
-void VulkanTexture::create_storage(
-    uint32_t width,
-    uint32_t height,
-    TextureFormat format
-) {
-    // TODO
-}
-
-const void* VulkanTexture::impl() const {
+const void* VulkanTexture::rendertarget_impl() const {
     return static_cast<const VulkanRenderTarget *>(this);
+}
+
+const void * VulkanTexture::texture_impl() const {
+    return static_cast<const VulkanTexture *>(this);
 }
 
 VkImageView VulkanTexture::image_view() const {
     return _image_view;
+}
+
+VkImageLayout VulkanTexture::image_layout() const {
+    return _layout;
 }
 
 void VulkanTexture::create_image(
@@ -105,7 +176,8 @@ void VulkanTexture::create_image(
     VkImageUsageFlags usage_flags,
     VkMemoryPropertyFlags memory_properties,
     VkImage &image,
-    VkDeviceMemory &image_memory
+    VkDeviceMemory &image_memory,
+    VkImageLayout initial_layout
 ) const {
     VkDevice device = _renderer->device();
 
@@ -119,7 +191,7 @@ void VulkanTexture::create_image(
     image_create_info.arrayLayers = 1;
     image_create_info.format = format;
     image_create_info.tiling = tiling;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.initialLayout = initial_layout;
     image_create_info.usage = usage_flags;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;  // Don't need to share with other queues
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -147,7 +219,7 @@ void VulkanTexture::create_image(
 
 void VulkanTexture::transition_image_layout(
     VkImage image,
-    VkFormat format,
+    TextureFormat format,
     VkImageLayout old_layout,
     VkImageLayout new_layout
 ) const {
@@ -160,18 +232,53 @@ void VulkanTexture::transition_image_layout(
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask = image_aspects_from_format(format);
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;
-    barrier.srcAccessMask = 0;  // todo
-    barrier.dstAccessMask = 0;  // todo
+
+    VkPipelineStageFlags source_stage;
+    VkPipelineStageFlags dest_stage;
+
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+        barrier.srcAccessMask = 0;
+        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    }
+    else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+    else {
+        // Giygas bug
+        assert(false);
+    }
+
+    if (new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        dest_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+    else if (new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dest_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    }
+    else if (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        dest_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    }
+    else if (new_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+        dest_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    }
+    else {
+        // Giygas bug
+        assert(false);
+    }
 
     vkCmdPipelineBarrier(
         command_buffer,
-        0,  // src stage mask // todo
-        0,  // dst stage mask // todo
+        source_stage,
+        dest_stage,
         0,  // dependency flags
         0,  // memory barrier count
         nullptr,  // memory barriers
@@ -259,27 +366,20 @@ void VulkanTexture::end_command_buffer(VkCommandBuffer buffer) const {
 
     VkResult result = VK_TIMEOUT;
     while (result == VK_TIMEOUT) {
-        // 1e9 -> 1 second timeout
-        result = vkWaitForFences(device, 1, &fence, VK_FALSE, 1000000000);
+        result = vkWaitForFences(device, 1, &fence, VK_FALSE, numeric_limits<uint64_t>::max());
     }
 
     vkDestroyFence(device, fence, nullptr);
     vkFreeCommandBuffers(_renderer->device(), pool, 1, &buffer);
 }
 
-VkFormat VulkanTexture::translate_format(TextureFormat format) {
-    switch (format) {
-        case TextureFormat::RGB:
-            return VK_FORMAT_R8G8B8_UNORM;
-        case TextureFormat::RGBA:
-            return VK_FORMAT_R8G8B8A8_UNORM;
-        case TextureFormat::Depth16:
-            return VK_FORMAT_D16_UNORM;
-        case TextureFormat::Depth24:
-            return VK_FORMAT_X8_D24_UNORM_PACK32;
-        case TextureFormat::Depth32:
-            return VK_FORMAT_UNDEFINED;
-        case TextureFormat::Depth32Float:
-            return VK_FORMAT_D32_SFLOAT;
+VkImageAspectFlags VulkanTexture::image_aspects_from_format(TextureFormat format) {
+    switch (attachment_purpose_from_texture_format(format)) {
+        case AttachmentPurpose::Color:
+            return VK_IMAGE_ASPECT_COLOR_BIT;
+        case AttachmentPurpose::Depth:
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
+        case AttachmentPurpose::Stencil:
+            return VK_IMAGE_ASPECT_STENCIL_BIT;
     }
 }

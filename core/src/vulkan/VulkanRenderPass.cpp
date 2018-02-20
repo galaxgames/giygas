@@ -18,29 +18,42 @@ RendererType VulkanRenderPass::renderer_type() const {
 
 void VulkanRenderPass::create(const RenderPassCreateParameters &params) {
 
-    VkAttachmentDescription color_attachment = {};
-    color_attachment.format = static_cast<VkFormat>(params.color_attachment.api_format);
-    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     VkAttachmentReference color_ref = {};
-    color_ref.attachment = 0;
     color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depth_ref = {};
+    depth_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription pass = {};
     pass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    pass.colorAttachmentCount = 1;
-    pass.pColorAttachments = &color_ref;
+
+    array<VkAttachmentDescription, 2> attachments = {};
+    uint32_t attachment_count = 0;
+    if (params.color_attachment.api_format != 0) {
+        set_description_from_attachmnent_params(attachments[attachment_count], params.color_attachment);
+        pass.colorAttachmentCount = 1;
+        pass.pColorAttachments = &color_ref;
+        color_ref.attachment = attachment_count;
+        ++attachment_count;
+    }
+    if (params.depth_attachment.api_format != 0) {
+        set_description_from_attachmnent_params(attachments[attachment_count], params.depth_attachment);
+        pass.pDepthStencilAttachment = &depth_ref;
+        depth_ref.attachment = attachment_count;
+        ++attachment_count;
+    }
+
+
+    // TODO: More work is needed here to support stencil attachments.
+    // In Vulkan, I don't think seperate attachments for depth and stencil work with just 1 subpass.
+    // So, I either need to figure out how to automatically make 2 subpasses, or make the api
+    // more similar to Vulkan (like I have done with the rest of giygas)
+
 
     VkRenderPassCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    create_info.attachmentCount = 1;
-    create_info.pAttachments = &color_attachment;
+    create_info.attachmentCount = attachment_count;
+    create_info.pAttachments = attachments.data();
     create_info.subpassCount = 1;
     create_info.pSubpasses = &pass;
 
@@ -49,4 +62,18 @@ void VulkanRenderPass::create(const RenderPassCreateParameters &params) {
 
 VkRenderPass VulkanRenderPass::handle() const {
     return _handle;
+}
+
+void VulkanRenderPass::set_description_from_attachmnent_params(
+    VkAttachmentDescription &description,
+    const RenderPassAttachmentParameters &params
+) {
+    description.format = static_cast<VkFormat>(params.api_format);
+    description.samples = VK_SAMPLE_COUNT_1_BIT;
+    description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 }

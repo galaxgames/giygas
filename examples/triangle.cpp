@@ -26,9 +26,8 @@ class TriangleExampleApp : public EventLoopUpdatable {
     unique_ptr<Pipeline> _pipeline;
     unique_ptr<VertexBuffer> _vertex_buffer;
     unique_ptr<IndexBuffer8> _index_buffer;
-    unique_ptr<Material> _material;
     unique_ptr<CommandPool> _command_pool;
-    unique_ptr<CommandBuffer[]> _command_buffers;
+    unique_ptr<unique_ptr<CommandBuffer>[]> _command_buffers;
     unique_ptr<unique_ptr<Framebuffer>[]> _swapchain_framebuffers;
 
 public:
@@ -49,8 +48,6 @@ public:
         _command_pool = unique_ptr<CommandPool>(_renderer->make_commandpool());
         _vertex_buffer = unique_ptr<VertexBuffer>(_renderer->make_vertex_buffer());
         _index_buffer = unique_ptr<IndexBuffer8>(_renderer->make_index_buffer_8());
-        _material = unique_ptr<Material>(_renderer->make_material());
-
 
         //
         // Setup mesh
@@ -66,16 +63,6 @@ public:
         _index_buffer->set(0, indices.data(), indices.size());
 
         //
-        // Setup shaders
-        //
-        size_t vertex_code_size, fragment_code_size;
-        unique_ptr<uint8_t[]> vertex_code, fragment_code;
-        vertex_code = _shader_loader.get_shader_code("shaders/triangle.vs", vertex_code_size);
-        fragment_code = _shader_loader.get_shader_code("shaders/triangle.fs", fragment_code_size);
-        _vertex_shader->set_code(vertex_code.get(), vertex_code_size, ShaderType::Vertex);
-        _fragment_shader->set_code(fragment_code.get(), fragment_code_size, ShaderType::Fragment);
-
-        //
         // Setup Vertex Attribute layout
         //
         VertexAttributeLayout layout(0, sizeof(VertexData));
@@ -89,6 +76,16 @@ public:
         color_attrib.offset = offsetof(VertexData, color);
         layout.add_attribute(position_attrib);
         layout.add_attribute(color_attrib);
+
+        //
+        // Setup shaders
+        //
+        size_t vertex_code_size, fragment_code_size;
+        unique_ptr<uint8_t[]> vertex_code, fragment_code;
+        vertex_code = _shader_loader.get_shader_code("shaders/triangle.vs", vertex_code_size);
+        fragment_code = _shader_loader.get_shader_code("shaders/triangle.fs", fragment_code_size);
+        _vertex_shader->set_code(vertex_code.get(), vertex_code_size, ShaderType::Vertex);
+        _fragment_shader->set_code(fragment_code.get(), fragment_code_size, ShaderType::Fragment);
 
         //
         // Setup Render Pass
@@ -134,17 +131,19 @@ public:
             attachment.purpose = AttachmentPurpose::Color;
             attachment.target = _renderer->get_swapchain_rendertarget(i);
             fb_params.attachments = &attachment;
-            framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer(fb_params));
+            framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
+            framebuffer->create(fb_params);
         }
 
         //
         // Setup command buffers
         //
-
-        _command_buffers = unique_ptr<CommandBuffer[]>(new CommandBuffer[framebuffer_count]);
+        _command_buffers = unique_ptr<unique_ptr<CommandBuffer>[]>(
+            new unique_ptr<CommandBuffer>[framebuffer_count]
+        );
         for (uint32_t i = 0; i < framebuffer_count; ++i) {
-            CommandBuffer &commands = _command_buffers[i];
-            commands = _command_pool->take_static_buffer();
+            unique_ptr<CommandBuffer> &commands = _command_buffers[i];
+            commands = unique_ptr<CommandBuffer>(_command_pool->make_buffer());
             DrawInfo draw_info = {};
             const VertexBuffer *vertex_buffer = _vertex_buffer.get();
             const GenericIndexBuffer *index_buffer = _index_buffer.get();
@@ -156,8 +155,7 @@ public:
             draw_info.pass = _render_pass.get();
             draw_info.index_range.offset = 0;
             draw_info.index_range.count = 3;
-            draw_info.material = _material.get();
-            commands.record(draw_info);
+            commands->record(draw_info);
         }
 
     }
@@ -166,7 +164,7 @@ public:
         //cout << "UPDATE" << endl;
 
         const CommandBuffer *command_buffer
-            = &_command_buffers[_renderer->next_swapchain_framebuffer_index()];
+            = _command_buffers[_renderer->next_swapchain_framebuffer_index()].get();
         _renderer->submit(&command_buffer, 1);
 
         _renderer->present();

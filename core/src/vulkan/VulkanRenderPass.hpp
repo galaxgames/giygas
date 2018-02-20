@@ -12,6 +12,11 @@ namespace giygas {
         VulkanRenderer *_renderer;
         VkRenderPass _handle;
 
+        static void set_description_from_attachmnent_params(
+            VkAttachmentDescription &description,
+            const RenderPassAttachmentParameters &params
+        );
+
     public:
         explicit VulkanRenderPass(VulkanRenderer *renderer);
         VulkanRenderPass(const VulkanRenderPass &) = delete;

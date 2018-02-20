@@ -1,22 +1,20 @@
 #pragma once
 #include <giygas/CommandBuffer.hpp>
 #include <vulkan/vulkan.h>
-#include "../CommandBufferImpl.hpp"
 
 namespace giygas {
 
     class VulkanRenderer;
     class VulkanCommandPool;
 
-    class VulkanCommandBuffer final : public CommandBufferImpl {
+    class VulkanCommandBuffer final : public CommandBuffer {
 
         VulkanRenderer *_renderer;
         VulkanCommandPool *_pool;
-        bool _is_static;
         VkCommandBuffer _handle;
 
     public:
-        VulkanCommandBuffer(VulkanRenderer *renderer, VulkanCommandPool *pool, bool is_static);
+        VulkanCommandBuffer(VulkanRenderer *renderer, VulkanCommandPool *pool /*, bool is_static */);
         ~VulkanCommandBuffer() override;
 
         //
@@ -24,7 +22,6 @@ namespace giygas {
         //
 
         RendererType renderer_type() const override;
-        void release() override;
         void record(const DrawInfo &info) override;
 
 
@@ -33,7 +30,6 @@ namespace giygas {
         //
 
         void create();
-        bool is_static() const;
         VkCommandBuffer handle() const;
 
     };

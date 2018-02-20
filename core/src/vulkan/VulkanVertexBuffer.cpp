@@ -31,35 +31,15 @@ void VulkanVertexBuffer::set_data(size_t offset, const uint8_t *data, size_t siz
     VkDevice device = _renderer->device();
 
     if (previous_size <= required_size) {
+        vkFreeMemory(device, _device_memory, nullptr);
         vkDestroyBuffer(device, _handle, nullptr);
-        VkBufferCreateInfo create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        create_info.size = sizeof(uint8_t) * required_size;
-        create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        if (vkCreateBuffer(device, &create_info, nullptr, &_handle) != VK_SUCCESS) {
-            return;
-        }
-
-        VkMemoryRequirements memory_requirements;
-        vkGetBufferMemoryRequirements(device, _handle, &memory_requirements);
-        uint32_t memory_type_index;
-        if (!_renderer->find_memory_type(
-            memory_requirements.memoryTypeBits,
+        _renderer->create_buffer(
+            static_cast<VkDeviceSize>(required_size),
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            memory_type_index
-        )) {
-            return;
-        }
-
-        VkMemoryAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        alloc_info.allocationSize = required_size;
-        alloc_info.memoryTypeIndex = memory_type_index;
-        if (vkAllocateMemory(device, &alloc_info, nullptr, &_device_memory) != VK_SUCCESS) {
-            return;
-        }
-        vkBindBufferMemory(device, _handle, _device_memory, 0);
+            _handle,
+            _device_memory
+        );
     }
 
     void *mapped_buffer;

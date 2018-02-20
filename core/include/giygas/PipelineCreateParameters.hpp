@@ -4,8 +4,15 @@
 #include "ScissorRange.hpp"
 #include "RenderPass.hpp"
 #include "Shader.hpp"
+#include "DescriptorSet.hpp"
 
 namespace giygas {
+
+    class PushConstantsRange {
+    public:
+        size_t size;
+        size_t offset;
+    };
 
     class PipelineCreateParameters {
     public:
@@ -16,7 +23,9 @@ namespace giygas {
         const RenderPass *render_pass;
         const Shader **shaders;
         size_t shader_count;
-        size_t material_uniform_data_size;
+        PushConstantsRange vertex_push_constants;
+        PushConstantsRange fragment_push_constants;
+        const DescriptorSet *descriptor_set;
     };
 
 }

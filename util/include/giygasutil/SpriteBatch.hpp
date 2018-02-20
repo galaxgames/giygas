@@ -9,16 +9,15 @@
 #include <giygas/VertexBuffer.hpp>
 #include <giygas/IndexBuffer.hpp>
 #include <giygas/Renderer.hpp>
-#include <giygas/Material.hpp>
 #include <giygas/IndexRange.hpp>
 
 namespace giygas {
 
-    class SpriteBatchMaterial {
-    public:
-        std::weak_ptr<Material> material;
-        size_t texture_location;
-    };
+//    class SpriteBatchMaterial {
+//    public:
+//        std::weak_ptr<Material> material;
+//        size_t texture_location;
+//    };
 
     class SpriteBatch {
         std::vector<SpriteInfo> _sprites;
@@ -27,7 +26,7 @@ namespace giygas {
         std::vector<IndexRange> _draw_call_details;
         std::unique_ptr<VertexBuffer> _vbo;
         std::unique_ptr<IndexBuffer32> _ebo;
-        SpriteBatchMaterial _mat;
+        //SpriteBatchMaterial _mat;
         unsigned int _count;
 
         static const size_t COMPONENTS_PER_VERT = 8;
@@ -50,7 +49,7 @@ namespace giygas {
         SpriteBatch &operator=(SpriteBatch &&) noexcept;
         virtual ~SpriteBatch();
 
-        void set_material(SpriteBatchMaterial mat);
+        //void set_material(SpriteBatchMaterial mat);
         void set_textures(Texture **textures, size_t count);
         void begin();
         void end();

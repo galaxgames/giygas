@@ -37,23 +37,14 @@ void VulkanCommandPool::destroy() {
     _renderer = nullptr;
 }
 
-CommandBuffer VulkanCommandPool::take_static_buffer() {
-    auto *buffer = new VulkanCommandBuffer(_renderer, this, true);
+CommandBuffer* VulkanCommandPool::make_buffer() {
+    auto *buffer = new VulkanCommandBuffer(_renderer, this);
     buffer->create();
-    return CommandBuffer(buffer);
+    return buffer;
 }
 
-CommandBuffer VulkanCommandPool::take_dynamic_buffer() {
-    return CommandBuffer(nullptr); // TODO
-}
-
-void VulkanCommandPool::return_buffer(VulkanCommandBuffer *buffer) {
-    if (buffer->is_static()) {
-        delete buffer;
-    }
-    else {
-        // TODO
-    }
+void VulkanCommandPool::reset_buffers() {
+    vkResetCommandPool(_renderer->device(), _handle, 0);
 }
 
 VkCommandPool VulkanCommandPool::handle() const {

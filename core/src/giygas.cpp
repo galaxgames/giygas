@@ -45,3 +45,15 @@ Renderer* giygas::make_renderer(Context *context, RendererType type) {
     return nullptr;
 }
 
+AttachmentPurpose giygas::attachment_purpose_from_texture_format(TextureFormat format) {
+    switch (format) {
+        case TextureFormat::RGB:
+        case TextureFormat::RGBA:
+            return AttachmentPurpose::Color;
+        case TextureFormat::Depth16:
+        case TextureFormat::Depth24:
+        case TextureFormat::Depth32:
+        case TextureFormat::Depth32Float:
+            return AttachmentPurpose::Depth;
+    }
+}

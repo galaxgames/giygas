@@ -2,14 +2,15 @@
 #include <giygas/export.h>
 #include "VertexBuffer.hpp"
 #include "IndexBuffer.hpp"
-#include "Material.hpp"
 #include "AttachmentType.hpp"
 #include "PipelineOptions.hpp"
-#include "SamplerOptions.hpp"
+#include "SamplerParameters.hpp"
 #include "Pipeline.hpp"
 #include "Framebuffer.hpp"
 #include "RenderBuffer.hpp"
 #include "CommandPool.hpp"
+#include "UniformBuffer.hpp"
+#include "Sampler.hpp"
 
 namespace giygas {
 
@@ -22,13 +23,14 @@ namespace giygas {
         virtual IndexBuffer<uint32_t> *make_index_buffer_32() = 0;
         virtual IndexBuffer<uint16_t > *make_index_buffer_16() = 0;
         virtual IndexBuffer<uint8_t> *make_index_buffer_8() = 0;
-        virtual Material *make_material() = 0;
+        virtual UniformBuffer *make_uniform_buffer() = 0;
         virtual Shader *make_shader() = 0;
         virtual Texture *make_texture() = 0;
-        virtual Framebuffer *make_framebuffer(
-            const FramebufferCreateParameters &create_parameters
-        ) = 0;
-        virtual RenderBuffer *make_renderbuffer() = 0;
+        virtual Sampler *make_sampler() = 0;
+        virtual DescriptorPool *make_descriptor_pool() = 0;
+        virtual DescriptorSet *make_descriptor_set() = 0;
+        virtual Framebuffer *make_framebuffer() = 0;
+        //virtual RenderBuffer *make_renderbuffer() = 0;
         virtual RenderPass *make_renderpass() = 0;
         virtual Pipeline *make_pipeline() = 0;
         virtual CommandPool *make_commandpool() = 0;
@@ -39,6 +41,8 @@ namespace giygas {
         virtual uint32_t swapchain_width() const = 0;
         virtual uint32_t swapchain_height() const = 0;
         virtual uint32_t swapchain_api_format() const = 0;
+
+        virtual uint32_t get_api_texture_format(TextureFormat format) const = 0;
 
         virtual void submit(const CommandBuffer **buffers, size_t buffer_count) = 0;
         virtual void present() = 0;

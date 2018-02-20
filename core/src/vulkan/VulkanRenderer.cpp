@@ -5,14 +5,16 @@
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanIndexBuffer.hpp"
-#include "VulkanMaterial.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanTexture.hpp"
 #include "VulkanFramebuffer.hpp"
 #include "VulkanRenderBuffer.hpp"
 #include "VulkanRenderPass.hpp"
 #include "VulkanCommandBuffer.hpp"
-#include "../CommandBufferImpl.hpp"
+#include "VulkanUniformBuffer.hpp"
+#include "VulkanSampler.hpp"
+#include "VulkanDescriptorPool.hpp"
+#include "VulkanDescriptorSet.hpp"
 
 using namespace giygas;
 using namespace std;
@@ -133,8 +135,8 @@ IndexBuffer<uint8_t>* VulkanRenderer::make_index_buffer_8() {
     return new VulkanIndexBuffer<uint8_t, uint16_t>(this);
 }
 
-Material* VulkanRenderer::make_material() {
-    return new VulkanMaterial(this);
+UniformBuffer* VulkanRenderer::make_uniform_buffer() {
+    return new VulkanUniformBuffer(this);
 }
 
 Shader* VulkanRenderer::make_shader() {
@@ -145,15 +147,25 @@ Texture* VulkanRenderer::make_texture() {
     return new VulkanTexture(this);
 }
 
-Framebuffer *VulkanRenderer::make_framebuffer(const FramebufferCreateParameters &parameters) {
-    auto *fb = new VulkanFramebuffer(this);
-    fb->create(parameters);
-    return fb;
+Sampler* VulkanRenderer::make_sampler() {
+    return new VulkanSampler(this);
 }
 
-RenderBuffer *VulkanRenderer::make_renderbuffer() {
-    return new VulkanRenderBuffer(this);
+DescriptorPool* VulkanRenderer::make_descriptor_pool() {
+    return new VulkanDescriptorPool(this);
 }
+
+DescriptorSet* VulkanRenderer::make_descriptor_set() {
+    return new VulkanDescriptorSet(this);
+}
+
+Framebuffer *VulkanRenderer::make_framebuffer() {
+    return new VulkanFramebuffer(this);
+}
+
+//RenderBuffer *VulkanRenderer::make_renderbuffer() {
+//    return new VulkanRenderBuffer(this);
+//}
 
 RenderPass *VulkanRenderer::make_renderpass() {
     return new VulkanRenderPass(this);
@@ -193,6 +205,10 @@ uint32_t VulkanRenderer::swapchain_api_format() const {
     return static_cast<uint32_t>(_swapchain.surface_format().format);
 }
 
+uint32_t VulkanRenderer::get_api_texture_format(TextureFormat format) const {
+    return static_cast<uint32_t>(translate_texture_format(format));
+}
+
 void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
 
     // TODO: Reallocating this buffer every frame sucks.
@@ -202,10 +218,8 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     for (size_t i = 0; i < buffer_count; ++i) {
         const CommandBuffer *buffer = buffers[i];
         assert(buffer != nullptr);
-        const CommandBufferImpl *buffer_impl = buffer->impl();
-        assert(buffer_impl != nullptr);
-        assert(buffer_impl->renderer_type() == RendererType::Vulkan);
-        const auto *vulkan_buffer = reinterpret_cast<const VulkanCommandBuffer *>(buffer_impl);
+        assert(buffer->renderer_type() == RendererType::Vulkan);
+        const auto *vulkan_buffer = reinterpret_cast<const VulkanCommandBuffer *>(buffer);
         buffer_handles[i] = vulkan_buffer->handle();
     }
 
@@ -660,4 +674,21 @@ VkResult VulkanRenderer::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize s
     vkFreeCommandBuffers(_device, _copy_command_pool.handle(), 1, &command_buffer);
 
     return result;
+}
+
+VkFormat VulkanRenderer::translate_texture_format(TextureFormat format) {
+    switch (format) {
+        case TextureFormat::RGB:
+            return VK_FORMAT_R8G8B8_UNORM;
+        case TextureFormat::RGBA:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case TextureFormat::Depth16:
+            return VK_FORMAT_D16_UNORM;
+        case TextureFormat::Depth24:
+            return VK_FORMAT_X8_D24_UNORM_PACK32;
+        case TextureFormat::Depth32:
+            return VK_FORMAT_UNDEFINED;
+        case TextureFormat::Depth32Float:
+            return VK_FORMAT_D32_SFLOAT;
+    }
 }

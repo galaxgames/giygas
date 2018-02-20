@@ -3,8 +3,9 @@
 #include <giygas/Framebuffer.hpp>
 #include <giygas/VertexBuffer.hpp>
 #include <giygas/IndexBuffer.hpp>
-#include <giygas/Material.hpp>
 #include "IndexRange.hpp"
+#include "UniformBuffer.hpp"
+#include "DescriptorSet.hpp"
 
 namespace giygas {
 
@@ -13,28 +14,21 @@ namespace giygas {
         const Pipeline *pipeline;
         const RenderPass *pass;
         const Framebuffer *framebuffer;
-        const VertexBuffer * const *vertex_buffers;
         size_t vertex_buffer_count;
+        const VertexBuffer * const *vertex_buffers;
         const GenericIndexBuffer *index_buffer;
-        const Material *material;
+        const DescriptorSet *descriptor_set;
         IndexRange index_range;
+        size_t push_constants_offset;
+        size_t push_constants_size;
+        const uint8_t *push_constants;
     };
 
-
-    class CommandBufferImpl;
-
-    class CommandBuffer final {
-        CommandBufferImpl *_impl;
+    class CommandBuffer {
     public:
-        CommandBuffer();
-        explicit CommandBuffer(CommandBufferImpl *impl);
-        CommandBuffer(const CommandBuffer &) = delete;
-        CommandBuffer &operator=(const CommandBuffer &) = delete;
-        CommandBuffer(CommandBuffer &&) noexcept;
-        CommandBuffer &operator=(CommandBuffer &&) noexcept;
-        ~CommandBuffer();
-        void record(const DrawInfo &info);
-        const CommandBufferImpl *impl() const;
+        virtual ~CommandBuffer() = default;
+        virtual RendererType renderer_type() const = 0;
+        virtual void record(const DrawInfo &info) = 0;
     };
 
 }

@@ -38,7 +38,7 @@ void VulkanFramebuffer::create(const FramebufferCreateParameters &params) {
     for (size_t i = 0; i < params.attachment_count; ++i) {
         const FramebufferAttachment &attachment = params.attachments[i];
         assert(attachment.target->renderer_type() == RendererType::Vulkan);
-        const auto *target = static_cast<const VulkanRenderTarget *>(attachment.target->impl());
+        const auto *target = static_cast<const VulkanRenderTarget *>(attachment.target->rendertarget_impl());
         image_views[i] = target->image_view();
     }
 

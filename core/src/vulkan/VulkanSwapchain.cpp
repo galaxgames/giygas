@@ -80,7 +80,7 @@ void VulkanSwapchain::destroy() {
         return;
     }
     VkDevice device = _renderer->device();
-    for (unsigned int i = 0; i < _image_view_count; ++i) {
+    for (uint32_t i = 0; i < _image_view_count; ++i) {
         vkDestroyImageView(device, _image_views[i], nullptr);
     }
     _image_view_count = 0;
@@ -123,7 +123,7 @@ VkResult VulkanSwapchain::create_swapchain(
     QueueFamilyIndices indices,
     VkSwapchainKHR &swapchain
 ) {
-    unsigned int image_count = info.capabilities.minImageCount + 1;
+    uint32_t image_count = info.capabilities.minImageCount + 1;
     if (
         info.capabilities.maxImageCount > 0 &&
         image_count > info.capabilities.maxImageCount
@@ -144,7 +144,7 @@ VkResult VulkanSwapchain::create_swapchain(
     if (indices.graphics_family != indices.present_family) {
         create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         create_info.queueFamilyIndexCount = 2;
-        create_info.pQueueFamilyIndices = reinterpret_cast<unsigned int *>(&indices);
+        create_info.pQueueFamilyIndices = reinterpret_cast<uint32_t *>(&indices);
     }
     else {
         create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -161,12 +161,12 @@ VkResult VulkanSwapchain::create_swapchain(
     return vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain);
 }
 
-unsigned int VulkanSwapchain::get_swapchain_images(
+uint32_t VulkanSwapchain::get_swapchain_images(
     VkDevice device,
     VkSwapchainKHR swapchain,
     unique_ptr<VkImage[]> &dest
 ) {
-    unsigned int count;
+    uint32_t count;
     vkGetSwapchainImagesKHR(device, swapchain, &count, nullptr);
     dest = unique_ptr<VkImage[]>(new VkImage[count]);
     vkGetSwapchainImagesKHR(device, swapchain, &count, dest.get());
@@ -174,7 +174,7 @@ unsigned int VulkanSwapchain::get_swapchain_images(
 }
 
 VkResult VulkanSwapchain::create_image_views(
-    unsigned int count,
+    uint32_t count,
     const VkImage *images,
     VkFormat format,
     VkDevice device,
@@ -198,10 +198,10 @@ VkResult VulkanSwapchain::create_image_views(
     create_info.subresourceRange.baseArrayLayer = 0;
     create_info.subresourceRange.layerCount = 1;
 
-    for (unsigned int i = 0; i < count; ++i){
+    for (size_t i = 0; i < count; ++i){
         views[i] = nullptr;
     }
-    for (unsigned int i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; ++i) {
         create_info.image = images[i];
 
         create_result = vkCreateImageView(

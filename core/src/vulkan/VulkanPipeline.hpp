@@ -43,6 +43,7 @@ namespace giygas {
         //
 
         VkPipeline handle() const;
+        VkPipelineLayout layout_handle() const;
     };
 
 }

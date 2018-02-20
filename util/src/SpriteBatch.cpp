@@ -22,9 +22,9 @@ SpriteBatch& SpriteBatch::operator=(SpriteBatch &&) noexcept = default;
 
 SpriteBatch::~SpriteBatch() = default;
 
-void SpriteBatch::set_material(SpriteBatchMaterial mat) {
-    _mat = mat;
-}
+//void SpriteBatch::set_material(SpriteBatchMaterial mat) {
+//    _mat = mat;
+//}
 
 void SpriteBatch::set_textures(Texture **textures, size_t count) {
     assert(_sprites.size() == 0);

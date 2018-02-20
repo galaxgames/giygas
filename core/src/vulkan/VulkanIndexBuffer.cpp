@@ -42,6 +42,7 @@ void VulkanIndexBuffer<T, DeviceT>::set(size_t offset, const T *indices, size_t 
     VkDevice device = _renderer->device();
 
     if (needs_new_buffer) {
+        vkFreeMemory(device, _device_memory, nullptr);
         vkDestroyBuffer(device, _buffer, nullptr);
         _renderer->create_buffer(
             static_cast<VkDeviceSize>(required_device_size),

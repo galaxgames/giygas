@@ -20,8 +20,7 @@ namespace giygas {
         uint32_t _width;
         uint32_t _height;
         TextureFormat _format;
-
-        static VkFormat translate_format(TextureFormat format);
+        VkImageLayout _layout;
 
         void create_image(
             uint32_t width,
@@ -31,12 +30,13 @@ namespace giygas {
             VkImageUsageFlags usage_flags,
             VkMemoryPropertyFlags memory_properties,
             VkImage &image,
-            VkDeviceMemory &image_memory
+            VkDeviceMemory &image_memory,
+            VkImageLayout initial_layout
         ) const;
 
         void transition_image_layout(
             VkImage image,
-            VkFormat format,
+            TextureFormat format,
             VkImageLayout old_layout,
             VkImageLayout new_layout
         ) const;
@@ -50,6 +50,8 @@ namespace giygas {
 
         VkCommandBuffer begin_command_buffer() const;
         void end_command_buffer(VkCommandBuffer buffer) const;
+
+        static VkImageAspectFlags image_aspects_from_format(TextureFormat format);
 
     public:
         explicit VulkanTexture(VulkanRenderer *renderer);
@@ -65,32 +67,47 @@ namespace giygas {
 
         RendererType renderer_type() const override;
 
-        void set_data(
+        void create(
             unique_ptr<uint8_t[]> &&data,
             size_t size,
             uint32_t width,
             uint32_t height,
-            TextureFormat format
+            TextureFormat format,
+            TextureUsageFlags flags
         ) override;
 
-        void create_storage(
-            uint32_t width,
-            uint32_t height,
-            TextureFormat format
-        ) override;
+        const void *texture_impl() const override;
 
 
         //
         // RenderTarget implementation
         //
 
-        const void *impl() const override;
+        const void *rendertarget_impl() const override;
+
 
         //
         // VulkanRenderTarget implementation
         //
 
         VkImageView image_view() const override;
+
+
+        //
+        // VulkanTexture implementation
+        //
+
+        VkImageLayout image_layout() const;
+
+//        void create(
+//            unique_ptr<uint8_t[]> &&data,
+//            size_t size,
+//            uint32_t width,
+//            uint32_t height,
+//            TextureFormat format,
+//            VkImageUsageFlags usage_flags,
+//            VkImageLayout final_layout
+//        );
 
     };
 

@@ -22,9 +22,8 @@ namespace giygas {
         // CommandPool implementation
         //
 
-        //void draw(const DrawInfo &info) override;
-        CommandBuffer take_static_buffer() override;
-        CommandBuffer take_dynamic_buffer() override;
+        CommandBuffer *make_buffer() override;
+        void reset_buffers() override;
 
 
         //
@@ -33,7 +32,6 @@ namespace giygas {
 
         void create(VulkanRenderer *renderer);
         void destroy();
-        void return_buffer(VulkanCommandBuffer *buffer);
         VkCommandPool handle() const;
 
     };

@@ -1,145 +1,87 @@
 #include <giygas/giygas.hpp>
 #include <giygas/GLFWContext.hpp>
-#include <iostream>
 #include <giygasutil/EventLoopUpdatable.hpp>
 #include <giygasutil/EventLoopContextRunner.hpp>
-#include <giygas/Pipeline.hpp>
+#include <giygas/Sampler.hpp>
+#include <giygas/Texture.hpp>
+#include <giygas/Matrix4x4.hpp>
+#include "example_common.hpp"
 
 using namespace giygas;
 using namespace std;
+using namespace giygas_examples_common;
 
-class FramebufferExample : public EventLoopUpdatable
-{
+class VertexData {
 public:
-    Renderer *renderer;
-    unique_ptr<VertexBuffer> vbo;
-    unique_ptr<IndexBuffer8> ebo;
-    unique_ptr<Material> colored_material;
-    unique_ptr<Material> textured_material;
-    unique_ptr<Shader> colored_shader_v;
-    unique_ptr<Shader> colored_shader_f;
-    unique_ptr<Shader> textured_shader_v;
-    unique_ptr<Shader> textured_shader_f;
-    unique_ptr<Framebuffer> framebuffer;
-    unique_ptr<Texture> render_texture;
-    unique_ptr<RenderBuffer> render_depth_buffer;
-    unique_ptr<Pipeline> colored_pipeline;
-    unique_ptr<Pipeline> textured_pipeline;
+    Vector3 position;
+    Vector3 color;
+    Vector2 uv;
+};
+
+class UniformData {
+public:
+    Matrix4x4 model_tf;
+    Matrix4x4 view_tf;
+    Matrix4x4 projection_tf;
+};
+
+class FramebufferExampleApp : public EventLoopUpdatable  {
+
+    unique_ptr<Renderer> _renderer;
+    ShaderLoader _shader_loader;
+    unique_ptr<VertexBuffer> _vertex_buffer;
+    unique_ptr<IndexBuffer8> _index_buffer;
+    unique_ptr<UniformBuffer> _offscreen_uniforms;
+    unique_ptr<UniformBuffer> _onscreen_uniforms;
+    unique_ptr<Sampler> _sampler;
+    unique_ptr<DescriptorPool> _descriptor_pool;
+    unique_ptr<DescriptorSet> _offscreen_descriptors;
+    unique_ptr<DescriptorSet> _onscreen_descriptors;
+    unique_ptr<Shader> _colored_shader_v;
+    unique_ptr<Shader> _colored_shader_f;
+    unique_ptr<Shader> _textured_shader_v;
+    unique_ptr<Shader> _textured_shader_f;
+    unique_ptr<RenderPass> _offscreen_pass;
+    unique_ptr<RenderPass> _onscreen_pass;
+    unique_ptr<Texture> _render_texture;
+    unique_ptr<Texture> _render_depth_buffer;
+    unique_ptr<Framebuffer> _offscreen_framebuffer;
+    unique_ptr<Pipeline> _colored_pipeline;
+    unique_ptr<Pipeline> _textured_pipeline;
+    unique_ptr<CommandPool> _command_pool;
+    unique_ptr<CommandBuffer> _offscreen_command_buffer;
+    unique_ptr<CommandBuffer> _onscreen_command_buffer;
+    unique_ptr<unique_ptr<Framebuffer>[]> _swapchain_framebuffers;
 
     float current_rotation;
 
-    explicit FramebufferExample(Renderer *renderer)
-        : renderer(renderer)
-    {
+public:
+
+    FramebufferExampleApp(GLFWContext &context, const char *arg0) {
+        _renderer = unique_ptr<Renderer>(giygas::make_renderer(&context));
+        _shader_loader = ShaderLoader(arg0, _renderer->renderer_type());
         current_rotation = 0;
     }
 
-    void setup_shader(
-            Shader &shader,
-            const char *vertex_source,
-            const char *fragment_source,
-            const char *shader_name
-    ) {
-//        shader.set_from_source(vertex_source, fragment_source);
-//        if (!shader.is_valid()) {
-//            cout << "Shader \"" << shader_name << "\" is invalid." << endl
-//                 << "Vertex message: " << shader.get_vertex_message() << endl
-//                 << "Fragment message: " << shader.get_fragment_message() << endl;
-//        }
-    }
-
-    void setup_colored_shader(Shader *vs, Shader *fs) {
-//        const char *vertex_source =
-//            "#version 330\n"
-//            "layout(location = 0)in vec3 pos;\n"
-//            "layout(location = 2)in vec3 vertexColor;\n"
-//            "out vec4 color;\n"
-//            "uniform mat4 modelView;\n"
-//            "uniform mat4 worldView;\n"
-//            "void main()\n"
-//            "{\n"
-//            "    gl_Position = worldView * modelView * vec4(pos, 1);\n"
-//            "    color = vec4(vertexColor, 1);\n"
-//            "}\n";
-//
-//        const char *fragment_source =
-//            "#version 330\n"
-//            "in vec4 color;\n"
-//            "out vec4 fragColor;\n"
-//            "void main()\n"
-//            "{\n"
-//            "    fragColor = color;\n"
-//            "}\n";
-//
-//        setup_shader(shader, vertex_source, fragment_source, "colored");
-    }
-
-    void setup_textured_shader(Shader *vs, Shader *fs) {
-//        const char *vertex_source =
-//            "#version 330\n"
-//            "layout(location = 0)in vec3 pos;\n"
-//            "layout(location = 1)in vec2 vertexUV;\n"
-//            "out vec2 uv;\n"
-//            "uniform mat4 modelView;\n"
-//            "uniform mat4 worldView;\n"
-//            "void main()\n"
-//            "{\n"
-//            "    gl_Position = worldView * modelView * vec4(pos, 1);\n"
-//            "    uv = vertexUV;\n"
-//            "}\n";
-//
-//        const char *fragment_source =
-//            "#version 330\n"
-//            "uniform sampler2D tex;\n"
-//            "in vec2 uv;\n"
-//            "out vec4 fragColor;\n"
-//            "void main()\n"
-//            "{\n"
-//            "    fragColor = texture(tex, uv);\n"
-//            "}\n";
-//
-//        setup_shader(shader, vertex_source, fragment_source, "textured");
-    }
-
-    void draw_cube(Surface *surface, Material *material) {
-        //surface->clear(AttachmentType::Color | AttachmentType::Depth);
-        //surface->draw(vao.get(), ebo.get(), material, IndexRange{0, 6 * 6});
-    }
-
     void setup() {
-//        renderer->initialize(PipelineOptions(
-//            PolygonCullingOptions(true),
-//            DepthBufferOptions(true, true, DepthFunction::PassGreater, 0, 1))
-//        );
-        renderer->initialize();
-        vbo = unique_ptr<VertexBuffer>(renderer->make_vertex_buffer());
-        ebo = unique_ptr<IndexBuffer8>(renderer->make_index_buffer_8());
-        colored_material = unique_ptr<Material>(renderer->make_material());
-        textured_material = unique_ptr<Material>(renderer->make_material());
-        colored_shader_v = unique_ptr<Shader>(renderer->make_shader());
-        colored_shader_f = unique_ptr<Shader>(renderer->make_shader());
-        textured_shader_v = unique_ptr<Shader>(renderer->make_shader());
-        textured_shader_f = unique_ptr<Shader>(renderer->make_shader());
-        //framebuffer = unique_ptr<Framebuffer>(renderer->make_framebuffer());
-        render_texture = unique_ptr<Texture>(renderer->make_texture());
-        render_depth_buffer = unique_ptr<RenderBuffer>(renderer->make_renderbuffer());
-        colored_pipeline = unique_ptr<Pipeline>(renderer->make_pipeline());
-        textured_pipeline = unique_ptr<Pipeline>(renderer->make_pipeline());
+        _renderer->initialize();
 
-        float vertices[8 * 8] = {
-            // x,y,z, u,v, r,g,v
-            0, 0, 1,  0, 0,  0, 0, 1,
-            1, 0, 1,  1, 0,  1, 0, 1,
-            0, 0, 0,  1, 0,  0, 0, 0,
-            1, 0, 0,  0, 0,  1, 0, 0,
-
-            0, 1, 1,  0, 1,  0, 1, 1,
-            1, 1, 1,  1, 1,  1, 1, 1,
-            0, 1, 0,  1, 1,  0, 1, 0,
-            1, 1, 0,  0, 1,  1, 1, 0,
+        //
+        // Setup mesh
+        //
+        array<VertexData, 8> vertices = {
+            // pos, color, uv
+            VertexData { Vector3(0, 0, 1), Vector3(0, 0, 1), Vector2(0, 0) },
+            VertexData { Vector3(1, 0, 1), Vector3(1, 0, 1), Vector2(1, 0) },
+            VertexData { Vector3(0, 0, 0), Vector3(0, 0, 0), Vector2(1, 0) },
+            VertexData { Vector3(1, 0, 0), Vector3(1, 0, 0), Vector2(0, 0) },
+            VertexData { Vector3(0, 1, 1), Vector3(0, 1, 1), Vector2(0, 1) },
+            VertexData { Vector3(1, 1, 1), Vector3(1, 1, 1), Vector2(1, 1) },
+            VertexData { Vector3(0, 1, 0), Vector3(0, 1, 0), Vector2(1, 1) },
+            VertexData { Vector3(1, 1, 0), Vector3(1, 1, 0), Vector2(0, 1) }
         };
 
-        unsigned char elements[12 * 3] = {
+        array<uint8_t, 12 * 3> indices = {
             1, 0, 3, 3, 0, 2,  // bottom
             4, 5, 6, 6, 5, 7,  // top
             0, 1, 4, 4, 1, 5,  // front side
@@ -148,90 +90,297 @@ public:
             1, 3, 5, 5, 3, 7,  // right side
         };
 
-        vbo->set_data(0, reinterpret_cast<uint8_t *>(vertices), 8 * 8 * sizeof(float));
-        VertexAttributeLayout layout(3, 8 * sizeof(float));
-        layout.add_attribute(3, sizeof(float), 0);
-        layout.add_attribute(2, sizeof(float), 3 * sizeof(float));
-        layout.add_attribute(3, sizeof(float), 5 * sizeof(float));
+        _vertex_buffer = unique_ptr<VertexBuffer>(_renderer->make_vertex_buffer());
+        VertexBuffer::set_data(*_vertex_buffer, 0, vertices.data(),vertices.size());
 
-        ebo->set(0, elements, 6 * 6);
+        _index_buffer = unique_ptr<IndexBuffer8>(_renderer->make_index_buffer_8());
+        _index_buffer->set(0, indices.data(), indices.size());
 
-        setup_colored_shader(colored_shader_v.get(), colored_shader_f.get());
-        setup_textured_shader(textured_shader_v.get(), textured_shader_f.get());
+        //
+        // Setup Vertex Attribute layout
+        //
+        VertexAttributeLayout layout(0, sizeof(VertexData));
+        LayoutAttribute position_attrib = {};
+        position_attrib.component_count = 3;
+        position_attrib.component_size = sizeof(Vector3);
+        position_attrib.offset = offsetof(VertexData, position);
+        LayoutAttribute color_attrib = {};
+        color_attrib.component_count = 3;
+        color_attrib.component_size = sizeof(Vector3);
+        color_attrib.offset = offsetof(VertexData, color);
+        LayoutAttribute uv_attrib = {};
+        uv_attrib.component_count = 2;
+        uv_attrib.component_size = sizeof(Vector2);
+        uv_attrib.offset = offsetof(VertexData, uv);
+        layout.add_attribute(position_attrib);
+        layout.add_attribute(color_attrib);
+        layout.add_attribute(uv_attrib);
 
-        array<const Shader *, 2> colored_shaders = {
-            colored_shader_v.get(), colored_shader_f.get()
-        };
-        array<const Shader *, 2> textured_shaders = {
-            textured_shader_v.get(), textured_shader_f.get()
-        };
+        //
+        // Setup uniform buffer
+        //
+        UniformData data = {};
+        _onscreen_uniforms = unique_ptr<UniformBuffer>(_renderer->make_uniform_buffer());
+        _offscreen_uniforms = unique_ptr<UniformBuffer>(_renderer->make_uniform_buffer());
+        _onscreen_uniforms->set_data(0, reinterpret_cast<const uint8_t *>(&data), sizeof(data));
+        _offscreen_uniforms->set_data(0, reinterpret_cast<const uint8_t *>(&data), sizeof(data));
 
+        //
+        // Create our textures and render buffers that we will render to
+        //
+        _render_texture = unique_ptr<Texture>(_renderer->make_texture());
+        _render_depth_buffer = unique_ptr<Texture>(_renderer->make_texture());
+        _render_texture->create(nullptr, 0, 512, 512, TextureFormat::RGBA, static_cast<TextureUsageFlags>(TEXTURE_USAGE_COLOR_ATTACHMENT | TEXTURE_USAGE_SAMPLE));
+        _render_depth_buffer->create(nullptr, 0, 512, 512, TextureFormat::Depth16, TEXTURE_USAGE_DEPTH_ATTACHMENT);
+
+        //
+        // Setup sampler
+        //
+        SamplerParameters sampler_params = {};
+        sampler_params.wrap_mode_u = SamplerWrapMode::Repeat;
+        sampler_params.wrap_mode_v = SamplerWrapMode::Repeat;
+        sampler_params.minify_filter_mode = SamplerFilterMode::Nearest;
+        sampler_params.magnify_filter_mode = SamplerFilterMode::Nearest;
+        sampler_params.mipmap_mode = SamplerMipmapMode::Nearest;
+        _sampler = unique_ptr<Sampler>(_renderer->make_sampler());
+        _sampler->create(sampler_params);
+
+        //
+        // Setup descriptor pool and set
+        //
+        DescriptorPoolParameters descriptor_pool_params = {};
+        descriptor_pool_params.max_sets = 2;
+        descriptor_pool_params.uniform_buffer_descriptors = 2;
+        descriptor_pool_params.sampler_descriptors = 1;
+        _descriptor_pool = unique_ptr<DescriptorPool>(_renderer->make_descriptor_pool());
+        _descriptor_pool->create(descriptor_pool_params);
+
+        DescriptorSetParameters offscreen_set_parameters = {};
+        const UniformBuffer *offscreen_uniform_buffer = _offscreen_uniforms.get();
+        offscreen_set_parameters.pool = _descriptor_pool.get();
+        offscreen_set_parameters.uniform_buffer_count = 1;
+        offscreen_set_parameters.uniform_buffers = &offscreen_uniform_buffer;
+        _offscreen_descriptors = unique_ptr<DescriptorSet>(_renderer->make_descriptor_set());
+        _offscreen_descriptors->create(offscreen_set_parameters);
+
+        DescriptorSetParameters onscreen_set_parameters = {};
+        const UniformBuffer *onscreen_uniform_buffer = _onscreen_uniforms.get();
+        const Sampler *sampler = _sampler.get();
+        const Texture *texture = _render_texture.get();
+        onscreen_set_parameters.pool = _descriptor_pool.get();
+        onscreen_set_parameters.uniform_buffer_count = 1;
+        onscreen_set_parameters.uniform_buffers = &offscreen_uniform_buffer;
+        onscreen_set_parameters.sampler_count = 1;
+        onscreen_set_parameters.samplers = &sampler;
+        onscreen_set_parameters.textures = &texture;
+        _onscreen_descriptors = unique_ptr<DescriptorSet>(_renderer->make_descriptor_set());
+        _onscreen_descriptors->create(onscreen_set_parameters);
+
+        //
+        // Setup shaders
+        //
+        size_t colored_v_size, colored_f_size, textured_v_size, textured_f_size;
+        unique_ptr<uint8_t[]> colored_v_code, colored_f_code, textured_v_code, textured_f_code;
+        colored_v_code = _shader_loader.get_shader_code("shaders/color.vs", colored_v_size);
+        colored_f_code = _shader_loader.get_shader_code("shaders/color.fs", colored_f_size);
+        textured_v_code = _shader_loader.get_shader_code("shaders/textured.vs", textured_v_size);
+        textured_f_code = _shader_loader.get_shader_code("shaders/textured.fs", textured_f_size);
+        _colored_shader_v = unique_ptr<Shader>(_renderer->make_shader());
+        _colored_shader_f = unique_ptr<Shader>(_renderer->make_shader());
+        _textured_shader_v = unique_ptr<Shader>(_renderer->make_shader());
+        _textured_shader_f = unique_ptr<Shader>(_renderer->make_shader());
+        _colored_shader_v->set_code(colored_v_code.get(), colored_v_size, ShaderType::Vertex);
+        _colored_shader_f->set_code(colored_f_code.get(), colored_f_size, ShaderType::Fragment);
+        _textured_shader_v->set_code(textured_v_code.get(), textured_v_size, ShaderType::Vertex);
+        _textured_shader_f->set_code(textured_f_code.get(), textured_f_size, ShaderType::Fragment);
+
+        //
+        // Setup render passes
+        //
+        RenderPassCreateParameters offscreen_params = {};
+        offscreen_params.color_attachment.api_format = _renderer->get_api_texture_format(TextureFormat::RGBA);
+        offscreen_params.depth_attachment.api_format = _renderer->get_api_texture_format(TextureFormat::Depth16);
+        RenderPassCreateParameters onscreen_params = {};
+        onscreen_params.color_attachment.api_format = _renderer->swapchain_api_format();
+        _offscreen_pass = unique_ptr<RenderPass>(_renderer->make_renderpass());
+        _onscreen_pass = unique_ptr<RenderPass>(_renderer->make_renderpass());
+        _offscreen_pass->create(offscreen_params);
+        _onscreen_pass->create(onscreen_params);
+
+        //
+        // Setup pipelines
+        //
         PipelineCreateParameters colored_pipeline_params = {};
+        array<const Shader *, 2> colored_shaders = {_colored_shader_v.get(), _colored_shader_f.get()};
+        colored_pipeline_params.viewport.width = _renderer->swapchain_width();
+        colored_pipeline_params.viewport.height = _renderer->swapchain_height();
+        colored_pipeline_params.viewport.min_depth = 0;
+        colored_pipeline_params.viewport.min_depth = 1;
+        colored_pipeline_params.scissor.width = _renderer->swapchain_width();
+        colored_pipeline_params.scissor.height = _renderer->swapchain_height();
+        colored_pipeline_params.shader_count = 2;
         colored_pipeline_params.shaders = colored_shaders.data();
-        colored_pipeline_params.shader_count = colored_shaders.size();
         colored_pipeline_params.vertex_buffer_layout_count = 1;
         colored_pipeline_params.vertex_buffer_layouts = &layout;
+        colored_pipeline_params.render_pass = _offscreen_pass.get();
+        //colored_pipeline_params.vertex_push_constants = {sizeof(UniformData), 0};
+        colored_pipeline_params.descriptor_set = _offscreen_descriptors.get();
+        _colored_pipeline = unique_ptr<Pipeline>(_renderer->make_pipeline());
+        _colored_pipeline->create(colored_pipeline_params);
 
         PipelineCreateParameters textured_pipeline_params = {};
+        array<const Shader *, 2> textured_shaders = {_textured_shader_v.get(), _textured_shader_f.get()};
+        textured_pipeline_params.viewport.width = _renderer->swapchain_width();
+        textured_pipeline_params.viewport.height = _renderer->swapchain_height();
+        textured_pipeline_params.viewport.min_depth = 0;
+        textured_pipeline_params.viewport.min_depth = 1;
+        textured_pipeline_params.scissor.width = _renderer->swapchain_width();
+        textured_pipeline_params.scissor.height = _renderer->swapchain_height();
+        textured_pipeline_params.shader_count = 2;
         textured_pipeline_params.shaders = textured_shaders.data();
-        textured_pipeline_params.shader_count = textured_shaders.size();
         textured_pipeline_params.vertex_buffer_layout_count = 1;
         textured_pipeline_params.vertex_buffer_layouts = &layout;
+        textured_pipeline_params.render_pass = _onscreen_pass.get();
+        //textured_pipeline_params.vertex_push_constants = {sizeof(UniformData), 0};
+        textured_pipeline_params.descriptor_set = _onscreen_descriptors.get();
+        _textured_pipeline = unique_ptr<Pipeline>(_renderer->make_pipeline());
+        _textured_pipeline->create(textured_pipeline_params);
 
+        //
+        // Setup offscreen framebuffer
+        //
+        FramebufferCreateParameters offscreen_fb_params = {};
+        array<FramebufferAttachment, 2> fb_attachments = {};
+        fb_attachments[0].target = _render_texture.get();
+        fb_attachments[0].purpose = AttachmentPurpose::Color;
+        fb_attachments[1].target = _render_depth_buffer.get();
+        fb_attachments[1].purpose = AttachmentPurpose::Depth;
+        offscreen_fb_params.width = 512;
+        offscreen_fb_params.height = 512;
+        offscreen_fb_params.attachment_count = fb_attachments.size();
+        offscreen_fb_params.attachments = fb_attachments.data();
+        offscreen_fb_params.pass = _offscreen_pass.get();
+        _offscreen_framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
+        _offscreen_framebuffer->create(offscreen_fb_params);
 
-        const Texture *textured_material_texture = render_texture.get();
-        //textured_material->set_textures(&textured_material_texture, 1);
-        textured_material->set_uniform_texture(0, 0);
+        //
+        // Create swapchain framebuffers
+        // TODO: Make this part of giygasutil
+        //
+        uint32_t framebuffer_count = _renderer->swapchain_framebuffer_count();
+        _swapchain_framebuffers = unique_ptr<unique_ptr<Framebuffer>[]>(
+            new unique_ptr<Framebuffer>[framebuffer_count]
+        );
+        for (uint32_t i = 0; i < framebuffer_count; ++i) {
+            unique_ptr<Framebuffer> &framebuffer = _swapchain_framebuffers[i];
+            FramebufferCreateParameters fb_params = {};
+            fb_params.pass = _onscreen_pass.get();
+            fb_params.width = _renderer->swapchain_width();
+            fb_params.height = _renderer->swapchain_height();
+            fb_params.attachment_count = 1;
+            FramebufferAttachment attachment = {};
+            attachment.purpose = AttachmentPurpose::Color;
+            attachment.target = _renderer->get_swapchain_rendertarget(i);
+            fb_params.attachments = &attachment;
+            framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
+            framebuffer->create(fb_params);
+        }
 
-        // Setup framebuffer
-        render_texture->create_storage(512, 512, TextureFormat::RGB);
-        render_depth_buffer->create_storage(512, 512, TextureFormat::Depth16);
-        //framebuffer->attach_texture(render_texture.get(), AttachmentType::Color);
-        //framebuffer->attach_renderbuffer(render_depth_buffer.get(), AttachmentType::Depth);
-        //framebuffer->set_viewport(0, 0, 512, 512);
-
-        Matrix4x4 framebuffer_worldview = Matrix4x4::perspective(1, 1.0f, 10.0f, 60 * (3.14159f / 180.0f));
-        Matrix4x4 world_view;
-        Matrix4x4 model_view;
-        colored_material->set_uniform_matrix4x4(0, framebuffer_worldview);
-
-        //renderer->main_surface()->set_clear_color(Vector4(0.5f, 0.5f, 1.0f, 1.0f));
+        //
+        // Make command buffers
+        //
+        _command_pool = unique_ptr<CommandPool>(_renderer->make_commandpool());
+        _offscreen_command_buffer = unique_ptr<CommandBuffer>(_command_pool->make_buffer());
+        _onscreen_command_buffer = unique_ptr<CommandBuffer>(_command_pool->make_buffer());
     }
 
     void update(float elapsed_seconds) override {
-        // Update shared model view rotation
+        // Update game logic
         current_rotation += elapsed_seconds;
-        Matrix4x4 model_view =
-            Matrix4x4::translate(Vector4(0, 0, -2.0f, 1))
-            * Matrix4x4::rotation_y(current_rotation)
-            * Matrix4x4::translate(Vector4(-0.5f, -0.5f, -0.5f, 1));
 
-        // Draw cube on framebuffer
-        colored_material->set_uniform_matrix4x4(0, model_view);
-        //draw_cube(framebuffer.get(), colored_material.get());
+        //
+        // Setup uniform data
+        //
+        UniformData offscreen_uniforms = {};
+        float aspect = 512.0f / 512.0f;
+        offscreen_uniforms.model_tf =
+            Matrix4x4::scale(Vector4(1,1,1,1));
+        offscreen_uniforms.view_tf =
+            Matrix4x4::translate(Vector4(0, 0, -2.0f, 1)) *
+            Matrix4x4::rotation_y(current_rotation) *
+            Matrix4x4::translate(Vector4(-0.5f, -0.5f, -0.5f, 1));
+        offscreen_uniforms.projection_tf =
+            Matrix4x4::perspective(aspect, 1.0f, 10.0f, 60.0f * (3.14159f / 180.0f));
+        _offscreen_uniforms->set_data(0, reinterpret_cast<const uint8_t *>(&offscreen_uniforms), sizeof(offscreen_uniforms));
 
-        // Draw cube on main surface
-        Surface *main_surface = renderer->main_surface();
-        auto width = main_surface->width();
-        auto height = main_surface->height();
-        //main_surface->set_viewport(0, 0, width, height);
-        float aspect = static_cast<float>(width) / static_cast<float>(height);
-        Matrix4x4 world_view = Matrix4x4::perspective(aspect, 1.0f, 10.0f, 60.0f * (3.14159f / 180.0f));
-        textured_material->set_uniform_matrix4x4(0, world_view);
-        textured_material->set_uniform_matrix4x4(1, model_view);
-        draw_cube(renderer->main_surface(), textured_material.get());
-        renderer->present();
+        UniformData onscreen_uniforms = {};
+        aspect =
+            static_cast<float>(_renderer->swapchain_width()) /
+            static_cast<float>(_renderer->swapchain_height());
+        onscreen_uniforms.model_tf =
+            Matrix4x4::scale(Vector4(1,1,1,1));
+        onscreen_uniforms.view_tf =
+            Matrix4x4::translate(Vector4(0, 0, -2.0f, 1)) *
+            Matrix4x4::rotation_y(current_rotation) *
+            Matrix4x4::translate(Vector4(-0.5f, -0.5f, -0.5f, 1));
+        onscreen_uniforms.projection_tf =
+            Matrix4x4::perspective(aspect, 1.0f, 10.0f, 60.0f * (3.14159f / 180.0f));
+        _onscreen_uniforms->set_data(0, reinterpret_cast<const uint8_t *>(&onscreen_uniforms), sizeof(offscreen_uniforms));
+
+        //
+        // Reset and record command buffers
+        //
+        _command_pool->reset_buffers();
+
+        const VertexBuffer *vertex_buffer = _vertex_buffer.get();
+
+        DrawInfo offscreen_cube_info = {};
+        offscreen_cube_info.pipeline = _colored_pipeline.get();
+        offscreen_cube_info.framebuffer = _offscreen_framebuffer.get();
+        offscreen_cube_info.vertex_buffer_count = 1;
+        offscreen_cube_info.vertex_buffers = &vertex_buffer;
+        offscreen_cube_info.index_buffer = _index_buffer.get();
+        offscreen_cube_info.pass = _offscreen_pass.get();
+        offscreen_cube_info.index_range.offset = 0;
+        offscreen_cube_info.index_range.count = 12 * 3;
+        offscreen_cube_info.push_constants_offset = 0;
+        //offscreen_cube_info.push_constants_size = sizeof(offscreen_uniforms);
+        //offscreen_cube_info.push_constants = reinterpret_cast<const uint8_t *>(&offscreen_uniforms);
+        offscreen_cube_info.descriptor_set = _offscreen_descriptors.get();
+
+        DrawInfo onscreen_cube_info = {};
+        onscreen_cube_info.pipeline = _textured_pipeline.get();
+        onscreen_cube_info.framebuffer = _swapchain_framebuffers[_renderer->next_swapchain_framebuffer_index()].get();
+        onscreen_cube_info.vertex_buffer_count = 1;
+        onscreen_cube_info.vertex_buffers = &vertex_buffer;
+        onscreen_cube_info.index_buffer = _index_buffer.get();
+        onscreen_cube_info.pass = _onscreen_pass.get();
+        onscreen_cube_info.index_range.offset = 0;
+        onscreen_cube_info.index_range.count = 12 * 3;
+        onscreen_cube_info.push_constants_offset = 0;
+//        onscreen_cube_info.push_constants_size = sizeof(onscreen_uniforms);
+//        onscreen_cube_info.push_constants = reinterpret_cast<const uint8_t *>(&onscreen_uniforms);
+        offscreen_cube_info.descriptor_set = _onscreen_descriptors.get();
+
+        _offscreen_command_buffer->record(offscreen_cube_info);
+        _onscreen_command_buffer->record(onscreen_cube_info);
+
+        array<const CommandBuffer *, 2> buffers_to_submit = {
+            _offscreen_command_buffer.get(), _onscreen_command_buffer.get()
+        };
+        _renderer->submit(buffers_to_submit.data(), buffers_to_submit.size());
+
+        _renderer->present();
     }
 
 };
 
 int main(int argc, char **argv) {
-    unique_ptr<GLFWContext> window(new GLFWContext(GLFWWindowInitOptions()));
-    unique_ptr<Renderer> renderer(giygas::make_renderer(window.get()));
-    FramebufferExample app(renderer.get());
+    GLFWContext context;
+    FramebufferExampleApp app(context, argv[0]);
+    EventLoopContextRunner runner(&context, &app);
     app.setup();
-    EventLoopContextRunner runner(window.get(), &app);
-    window->show();
+    context.show();
     runner.run();
-	return 0;
+    return 0;
 }

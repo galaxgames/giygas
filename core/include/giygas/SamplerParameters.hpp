@@ -20,7 +20,7 @@ namespace giygas {
         Linear
     };
 
-    class GIYGAS_EXPORT SamplerOptions {
+    class GIYGAS_EXPORT SamplerParameters {
     public:
         SamplerWrapMode wrap_mode_u;
         SamplerWrapMode wrap_mode_v;

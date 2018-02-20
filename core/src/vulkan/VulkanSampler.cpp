@@ -3,15 +3,26 @@
 
 using namespace giygas;
 
-VulkanSampler::VulkanSampler(VulkanRenderer *renderer, const SamplerOptions &options) {
+VulkanSampler::VulkanSampler(VulkanRenderer *renderer) {
     _renderer = renderer;
+    _handle = VK_NULL_HANDLE;
+}
 
+VulkanSampler::~VulkanSampler() {
+    vkDestroySampler(_renderer->device(), _handle, nullptr);
+}
+
+RendererType VulkanSampler::renderer_type() const {
+    return RendererType::Vulkan;
+}
+
+void VulkanSampler::create(const SamplerParameters &params) {
     VkSamplerCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    create_info.minFilter = translate_filter(options.minify_filter_mode);
-    create_info.magFilter = translate_filter(options.magnify_filter_mode);
-    create_info.addressModeU = wrap_to_address_mode(options.wrap_mode_u);
-    create_info.addressModeV = wrap_to_address_mode(options.wrap_mode_v);
+    create_info.minFilter = translate_filter(params.minify_filter_mode);
+    create_info.magFilter = translate_filter(params.magnify_filter_mode);
+    create_info.addressModeU = wrap_to_address_mode(params.wrap_mode_u);
+    create_info.addressModeV = wrap_to_address_mode(params.wrap_mode_v);
     create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     create_info.anisotropyEnable = VK_FALSE;
     create_info.maxAnisotropy = 1;
@@ -19,16 +30,16 @@ VulkanSampler::VulkanSampler(VulkanRenderer *renderer, const SamplerOptions &opt
     create_info.unnormalizedCoordinates = VK_FALSE;
     create_info.compareEnable = VK_FALSE;
     create_info.compareOp = VK_COMPARE_OP_ALWAYS;
-    create_info.mipmapMode = translate_mipmap_mode(options.mipmap_mode);
+    create_info.mipmapMode = translate_mipmap_mode(params.mipmap_mode);
     create_info.mipLodBias = 0;
     create_info.minLod = 0;
     create_info.maxLod = 0;
 
-    vkCreateSampler(renderer->device(), &create_info, nullptr, &_handle);
+    vkCreateSampler(_renderer->device(), &create_info, nullptr, &_handle);
 }
 
-VulkanSampler::~VulkanSampler() {
-    vkDestroySampler(_renderer->device(), _handle, nullptr);
+VkSampler VulkanSampler::handle() const {
+    return _handle;
 }
 
 VkFilter VulkanSampler::translate_filter(SamplerFilterMode mode) {
@@ -50,5 +61,14 @@ VkSamplerAddressMode VulkanSampler::wrap_to_address_mode(SamplerWrapMode mode) {
             return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
         case SamplerWrapMode::Repeat:
             return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    }
+}
+
+VkSamplerMipmapMode VulkanSampler::translate_mipmap_mode(SamplerMipmapMode mode) {
+    switch (mode) {
+        case SamplerMipmapMode::Nearest:
+            return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        case SamplerMipmapMode::Linear:
+            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
     }
 }

@@ -8,7 +8,7 @@ RendererType VulkanSwapchainRenderTarget::renderer_type() const {
     return RendererType::Vulkan;
 }
 
-const void* VulkanSwapchainRenderTarget::impl() const {
+const void* VulkanSwapchainRenderTarget::rendertarget_impl() const {
     return static_cast<const VulkanRenderTarget *>(this);
 }
 

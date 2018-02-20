@@ -27,6 +27,7 @@ namespace giygas {
         VkSemaphore _render_finished_semaphore;
         uint32_t _next_swapchain_image_index;
         VkFence _command_buffers_finished_fence;
+        VkDescriptorPool _shared_descriptor_pool;
 
         static VkResult create_instance(
             const VulkanContext *context,
@@ -91,11 +92,14 @@ namespace giygas {
         IndexBuffer<uint32_t> *make_index_buffer_32() override;
         IndexBuffer<uint16_t> *make_index_buffer_16() override;
         IndexBuffer<uint8_t> *make_index_buffer_8() override;
-        Material *make_material() override;
+        UniformBuffer *make_uniform_buffer() override;
         Shader *make_shader() override;
         Texture *make_texture() override;
-        Framebuffer *make_framebuffer(const FramebufferCreateParameters &parameters) override;
-        RenderBuffer *make_renderbuffer() override;
+        Sampler *make_sampler() override;
+        DescriptorPool *make_descriptor_pool() override;
+        DescriptorSet *make_descriptor_set() override;
+        Framebuffer *make_framebuffer() override;
+        //RenderBuffer *make_renderbuffer() override;
         RenderPass *make_renderpass() override;
         Pipeline *make_pipeline() override;
         CommandPool *make_commandpool() override;
@@ -106,6 +110,8 @@ namespace giygas {
         uint32_t swapchain_width() const override;
         uint32_t swapchain_height() const override;
         uint32_t swapchain_api_format() const override;
+
+        uint32_t get_api_texture_format(TextureFormat format) const override;
 
         void submit(const CommandBuffer **buffers, size_t buffer_count) override;
         void present() override;
@@ -140,6 +146,7 @@ namespace giygas {
             VkDeviceSize size
         ) const;
 
+        static VkFormat translate_texture_format(TextureFormat format);
     };
 
 }

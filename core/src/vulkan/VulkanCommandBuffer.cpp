@@ -12,12 +12,10 @@ using namespace giygas;
 
 VulkanCommandBuffer::VulkanCommandBuffer(
     VulkanRenderer *renderer,
-    VulkanCommandPool *pool,
-    bool is_static
+    VulkanCommandPool *pool
 ) {
     _renderer = renderer;
     _pool = pool;
-    _is_static = is_static;
     _handle = VK_NULL_HANDLE;
 }
 
@@ -27,10 +25,6 @@ VulkanCommandBuffer::~VulkanCommandBuffer() {
 
 RendererType VulkanCommandBuffer::renderer_type() const {
     return RendererType::Vulkan;
-}
-
-void VulkanCommandBuffer::release() {
-    _pool->return_buffer(this);
 }
 
 void VulkanCommandBuffer::create() {
@@ -108,6 +102,17 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
 
     vkCmdBindIndexBuffer(_handle, index_buffer->handle(), 0, index_buffer->index_type());
 
+    if (info.push_constants_size > 0) {
+        vkCmdPushConstants(
+            _handle,
+            pipeline->layout_handle(),
+            VK_SHADER_STAGE_ALL,
+            static_cast<uint32_t>(info.push_constants_offset * sizeof(uint8_t)),
+            static_cast<uint32_t>(info.push_constants_size * sizeof(uint8_t)),
+            info.push_constants
+        );
+    }
+
     vkCmdDrawIndexed(
         _handle,
         info.index_range.count,
@@ -121,10 +126,6 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
 
     vkEndCommandBuffer(_handle);
 
-}
-
-bool VulkanCommandBuffer::is_static() const {
-    return _is_static;
 }
 
 VkCommandBuffer VulkanCommandBuffer::handle() const {
