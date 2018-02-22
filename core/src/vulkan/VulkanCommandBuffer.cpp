@@ -3,10 +3,10 @@
 #include "VulkanCommandPool.hpp"
 #include "VulkanRenderer.hpp"
 #include "VulkanPipeline.hpp"
-#include "VulkanRenderPass.hpp"
 #include "VulkanFramebuffer.hpp"
 #include "VulkanIndexBuffer.hpp"
 #include "VulkanVertexBuffer.hpp"
+#include "VulkanDescriptorSet.hpp"
 
 using namespace giygas;
 
@@ -43,8 +43,8 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
 #ifndef NDEBUG
     assert(info.pipeline != nullptr);
     assert(info.pipeline->renderer_type() == RendererType::Vulkan);
-    assert(info.pass != nullptr);
-    assert(info.pass->renderer_type() == RendererType::Vulkan);
+    //assert(info.pass != nullptr);
+    //assert(info.pass->renderer_type() == RendererType::Vulkan);
     assert(info.framebuffer != nullptr);
     assert(info.framebuffer->renderer_type() == RendererType::Vulkan);
     for (size_t i = 0; i < info.vertex_buffer_count; ++i) {
@@ -53,13 +53,19 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
     }
     assert(info.index_buffer != nullptr);
     assert(info.index_buffer->renderer_type() == RendererType::Vulkan);
+    if (info.descriptor_set != nullptr) {
+        assert(info.descriptor_set->renderer_type() == RendererType::Vulkan);
+    }
 #endif
 
     const auto *pipeline = reinterpret_cast<const VulkanPipeline *>(info.pipeline);
-    const auto *pass = reinterpret_cast<const VulkanRenderPass *>(info.pass);
+    //const auto *pass = reinterpret_cast<const VulkanRenderPass *>(info.pass);
     const auto *framebuffer = reinterpret_cast<const VulkanFramebuffer *>(info.framebuffer);
     const auto *index_buffer
         = reinterpret_cast<const VulkanGenericIndexBuffer *>(info.index_buffer->cast_to_specific());
+    const auto *descriptor_set = reinterpret_cast<const VulkanDescriptorSet *>(info.descriptor_set);
+
+    size_t attachment_count = framebuffer->attachment_count();
 
     VkCommandBufferBeginInfo begin_info = {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -68,21 +74,43 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
 
     vkBeginCommandBuffer(_handle, &begin_info);
 
+    // TODO: Reduce frequency of allocation.
+    unique_ptr<VkClearValue[]> clear_values(new VkClearValue[attachment_count]);
+    const AttachmentPurpose *purposes = framebuffer->purposes();
+    for (size_t i = 0; i < attachment_count; ++i) {
+        const ClearValue &clear_value = info.clear_values[i];
+        VkClearValue &api_clear_val = clear_values[i];
+        AttachmentPurpose purpose = clear_value.purpose;
+        assert(purposes[i] == purpose);
+        if (purpose == AttachmentPurpose::Color) {
+            api_clear_val = {
+                clear_value.color_value.x,
+                clear_value.color_value.y,
+                clear_value.color_value.z,
+                clear_value.color_value.w
+            };
+        }
+        else {
+            api_clear_val.depthStencil.depth = clear_value.depth_stencil.depth;
+            api_clear_val.depthStencil.stencil = clear_value.depth_stencil.stencil;
+        }
+    }
+
     VkRenderPassBeginInfo pass_begin_info = {};
     pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    pass_begin_info.renderPass = pass->handle();
+    pass_begin_info.renderPass = framebuffer->renderpass();
     pass_begin_info.framebuffer = framebuffer->handle();
     pass_begin_info.renderArea.offset = {0, 0};
     pass_begin_info.renderArea.extent.width = framebuffer->width();
     pass_begin_info.renderArea.extent.height = framebuffer->height();
-    VkClearValue clear_color = { 1.0f, 0.1f, 0.1f, 0.1f };
-    pass_begin_info.clearValueCount = 1;
-    pass_begin_info.pClearValues = &clear_color;
+    pass_begin_info.clearValueCount = static_cast<uint32_t>(attachment_count);
+    pass_begin_info.pClearValues = clear_values.get();
 
     vkCmdBeginRenderPass(_handle, &pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->handle());
 
+    // TODO: Reduce frequency of allocation.
     unique_ptr<VkBuffer[]> buffers(new VkBuffer[info.vertex_buffer_count]);
     unique_ptr<VkDeviceSize[]> offsets(new VkDeviceSize[info.vertex_buffer_count]);
     for (size_t i = 0; i < info.vertex_buffer_count; ++i) {
@@ -112,6 +140,21 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
             info.push_constants
         );
     }
+
+    if (info.descriptor_set != nullptr) {
+        VkDescriptorSet descriptor_set_handle = descriptor_set->handle();
+        vkCmdBindDescriptorSets(
+            _handle,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipeline->layout_handle(),
+            0,
+            1,
+            &descriptor_set_handle,
+            0,
+            nullptr
+        );
+    }
+
 
     vkCmdDrawIndexed(
         _handle,

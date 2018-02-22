@@ -15,3 +15,12 @@ const void* VulkanSwapchainRenderTarget::rendertarget_impl() const {
 VkImageView VulkanSwapchainRenderTarget::image_view() const {
     return swapchain->get_image_view(image_index);
 }
+
+VkImageLayout VulkanSwapchainRenderTarget::layout() const {
+    // TODO: Get (and cache) actual layout instead of guessing!
+    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+}
+
+VkFormat VulkanSwapchainRenderTarget::api_format() const {
+    return swapchain->surface_format().format;
+}

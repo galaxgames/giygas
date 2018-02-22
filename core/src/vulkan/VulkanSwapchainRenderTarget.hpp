@@ -26,6 +26,8 @@ namespace giygas {
         //
 
         VkImageView image_view() const override;
+        VkImageLayout layout() const override;
+        VkFormat api_format() const override;
 
     };
 

@@ -38,12 +38,15 @@ void VulkanTexture::create(
     size_t size,
     uint32_t width,
     uint32_t height,
-    TextureFormat format,
+    TextureFormat input_format,
+    TextureFormat desired_format,
     TextureUsageFlags usage
 ) {
     assert(_image == VK_NULL_HANDLE);
 
     VkDevice device = _renderer->device();
+
+    TextureFormat format = input_format; // TODO
 
     _data = move(data);
     _size = size;
@@ -55,6 +58,10 @@ void VulkanTexture::create(
     VkImageLayout final_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageUsageFlags usage_flags = 0;
     VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
+    if (usage & TEXTURE_USAGE_SAMPLE) {
+        final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        usage_flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
     if (usage & TEXTURE_USAGE_DEPTH_ATTACHMENT || usage & TEXTURE_USAGE_STENCIL_ATTACHMENT) {
         final_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         usage_flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -62,10 +69,6 @@ void VulkanTexture::create(
     if (usage & TEXTURE_USAGE_COLOR_ATTACHMENT) {
         final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         usage_flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    }
-    if (usage & TEXTURE_USAGE_SAMPLE) {
-        final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        usage_flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
     }
     _layout = final_layout;
 
@@ -75,6 +78,7 @@ void VulkanTexture::create(
 
 
     VkFormat translated_format = VulkanRenderer::translate_texture_format(format);
+    _api_format = translated_format;
 
     VkImageLayout current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -152,6 +156,10 @@ void VulkanTexture::create(
     vkCreateImageView(device, &view_info, nullptr, &_image_view);
 }
 
+TextureFormat VulkanTexture::format() const {
+    return _format;
+}
+
 const void* VulkanTexture::rendertarget_impl() const {
     return static_cast<const VulkanRenderTarget *>(this);
 }
@@ -164,8 +172,12 @@ VkImageView VulkanTexture::image_view() const {
     return _image_view;
 }
 
-VkImageLayout VulkanTexture::image_layout() const {
+VkImageLayout VulkanTexture::layout() const {
     return _layout;
+}
+
+VkFormat VulkanTexture::api_format() const {
+    return _api_format;
 }
 
 void VulkanTexture::create_image(
@@ -377,9 +389,10 @@ VkImageAspectFlags VulkanTexture::image_aspects_from_format(TextureFormat format
     switch (attachment_purpose_from_texture_format(format)) {
         case AttachmentPurpose::Color:
             return VK_IMAGE_ASPECT_COLOR_BIT;
-        case AttachmentPurpose::Depth:
-            return VK_IMAGE_ASPECT_DEPTH_BIT;
-        case AttachmentPurpose::Stencil:
+        case AttachmentPurpose::DepthStencil:
+            if (is_depth_format(format)) {
+                return VK_IMAGE_ASPECT_DEPTH_BIT;
+            }
             return VK_IMAGE_ASPECT_STENCIL_BIT;
     }
 }

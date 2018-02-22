@@ -2,7 +2,7 @@
 #include <giygas/Vector4.hpp>
 #include <glad/glad.h>
 #include <giygas/Primitive.hpp>
-#include <giygas/AttachmentType.hpp>
+#include <giygas/AttachmentPurpose.hpp>
 #include <giygas/VertexArray.hpp>
 #include <giygas/Material.hpp>
 #include <giygas/Surface.hpp>

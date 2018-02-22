@@ -9,7 +9,6 @@
 #include "VulkanTexture.hpp"
 #include "VulkanFramebuffer.hpp"
 #include "VulkanRenderBuffer.hpp"
-#include "VulkanRenderPass.hpp"
 #include "VulkanCommandBuffer.hpp"
 #include "VulkanUniformBuffer.hpp"
 #include "VulkanSampler.hpp"
@@ -163,14 +162,6 @@ Framebuffer *VulkanRenderer::make_framebuffer() {
     return new VulkanFramebuffer(this);
 }
 
-//RenderBuffer *VulkanRenderer::make_renderbuffer() {
-//    return new VulkanRenderBuffer(this);
-//}
-
-RenderPass *VulkanRenderer::make_renderpass() {
-    return new VulkanRenderPass(this);
-}
-
 Pipeline *VulkanRenderer::make_pipeline() {
     return new VulkanPipeline(this);
 }
@@ -199,10 +190,6 @@ uint32_t VulkanRenderer::swapchain_width() const {
 
 uint32_t VulkanRenderer::swapchain_height() const {
     return _swapchain.height();
-}
-
-uint32_t VulkanRenderer::swapchain_api_format() const {
-    return static_cast<uint32_t>(_swapchain.surface_format().format);
 }
 
 uint32_t VulkanRenderer::get_api_texture_format(TextureFormat format) const {
@@ -325,9 +312,9 @@ VkResult VulkanRenderer::create_instance(
     create_info.enabledExtensionCount = needed_extensions_count;
     create_info.ppEnabledExtensionNames = needed_extensions;
 
-    array<const char *, 1> validation_layers = {
+    array<const char *, 0/*1*/> validation_layers = {
         //"VK_LAYER_LUNARG_vktrace",
-        "VK_LAYER_LUNARG_standard_validation"
+        //"VK_LAYER_LUNARG_standard_validation"
     };
 
     // Validation layers
@@ -664,10 +651,9 @@ VkResult VulkanRenderer::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize s
 
     vkQueueSubmit(_graphics_queue, 1, &submit_info, fence);
 
-    // 1e9 -> 1 second timeout
     result = VK_TIMEOUT;
     while (result == VK_TIMEOUT) {
-        result = vkWaitForFences(_device, 1, &fence, VK_FALSE, 1000000000);
+        result = vkWaitForFences(_device, 1, &fence, VK_FALSE, numeric_limits<uint64_t>::max());
     }
 
     vkDestroyFence(_device, fence, nullptr);

@@ -1,6 +1,5 @@
 #include "VulkanCommandPool.hpp"
 #include "VulkanRenderer.hpp"
-#include "VulkanRenderPass.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanIndexBuffer.hpp"

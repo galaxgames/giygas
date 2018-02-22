@@ -5,7 +5,6 @@ namespace giygas {
     class GIYGAS_EXPORT Vector3 {
     public:
         float x, y, z;
-        float _padding;
 
         Vector3();
         Vector3(float x, float y, float z);

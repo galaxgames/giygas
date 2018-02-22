@@ -2,9 +2,9 @@
 #include "Viewport.hpp"
 #include "VertexAttributeLayout.hpp"
 #include "ScissorRange.hpp"
-#include "RenderPass.hpp"
 #include "Shader.hpp"
 #include "DescriptorSet.hpp"
+#include "Framebuffer.hpp"
 
 namespace giygas {
 
@@ -20,7 +20,7 @@ namespace giygas {
         ScissorRange scissor;
         const VertexAttributeLayout* vertex_buffer_layouts;
         size_t vertex_buffer_layout_count;
-        const RenderPass *render_pass;
+        const Framebuffer *framebuffer;
         const Shader **shaders;
         size_t shader_count;
         PushConstantsRange vertex_push_constants;

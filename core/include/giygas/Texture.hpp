@@ -29,10 +29,12 @@ namespace giygas {
             size_t size,
             uint32_t width,
             uint32_t height,
-            TextureFormat format,
+            TextureFormat input_format,
+            TextureFormat desired_format,
             TextureUsageFlags flags
         ) = 0;
 
+        virtual TextureFormat format() const = 0;
         virtual const void *texture_impl() const = 0;
 
     };

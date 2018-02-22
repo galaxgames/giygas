@@ -1,15 +1,11 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
-#include "AttachmentType.hpp"
+#include "AttachmentPurpose.hpp"
 #include "RendererType.hpp"
 #include "RenderTarget.hpp"
 
 namespace giygas {
-
-    class Texture;
-    class RenderBuffer;
-    class RenderPass;
 
     class FramebufferAttachment  {
     public:
@@ -21,7 +17,6 @@ namespace giygas {
     public:
         const FramebufferAttachment *attachments;
         size_t attachment_count;
-        const RenderPass *pass;
         uint32_t width;
         uint32_t height;
     };
@@ -33,6 +28,7 @@ namespace giygas {
         virtual void create(const FramebufferCreateParameters &params) = 0;
         virtual uint32_t width() const = 0;
         virtual uint32_t height() const = 0;
+        virtual size_t attachment_count() const = 0;
     };
 
 }

@@ -22,7 +22,7 @@ class TriangleExampleApp : public EventLoopUpdatable {
     ShaderLoader _shader_loader;
     unique_ptr<Shader> _vertex_shader;
     unique_ptr<Shader> _fragment_shader;
-    unique_ptr<RenderPass> _render_pass;
+    //unique_ptr<RenderPass> _render_pass;
     unique_ptr<Pipeline> _pipeline;
     unique_ptr<VertexBuffer> _vertex_buffer;
     unique_ptr<IndexBuffer8> _index_buffer;
@@ -43,7 +43,7 @@ public:
         _index_buffer = unique_ptr<IndexBuffer8>(_renderer->make_index_buffer_8());
         _vertex_shader = unique_ptr<Shader>(_renderer->make_shader());
         _fragment_shader = unique_ptr<Shader>(_renderer->make_shader());
-        _render_pass = unique_ptr<RenderPass>(_renderer->make_renderpass());
+        //_render_pass = unique_ptr<RenderPass>(_renderer->make_renderpass());
         _pipeline = unique_ptr<Pipeline>(_renderer->make_pipeline());
         _command_pool = unique_ptr<CommandPool>(_renderer->make_commandpool());
         _vertex_buffer = unique_ptr<VertexBuffer>(_renderer->make_vertex_buffer());
@@ -90,9 +90,33 @@ public:
         //
         // Setup Render Pass
         //
-        RenderPassCreateParameters pass_params = {};
-        pass_params.color_attachment.api_format = _renderer->swapchain_api_format();
-        _render_pass->create(pass_params);
+//        RenderPassCreateParameters pass_params = {};
+//        pass_params.color_attachment.api_format = _renderer->swapchain_api_format();
+//        _render_pass->create(pass_params);
+
+
+        //
+        // Create swapchain framebuffers
+        //
+        uint32_t framebuffer_count = _renderer->swapchain_framebuffer_count();
+        _swapchain_framebuffers = unique_ptr<unique_ptr<Framebuffer>[]>(
+            new unique_ptr<Framebuffer>[framebuffer_count]
+        );
+        for (uint32_t i = 0; i < framebuffer_count; ++i) {
+            unique_ptr<Framebuffer> &framebuffer = _swapchain_framebuffers[i];
+
+            FramebufferCreateParameters fb_params = {};
+            //fb_params.pass = _render_pass.get();
+            fb_params.width = _renderer->swapchain_width();
+            fb_params.height = _renderer->swapchain_height();
+            fb_params.attachment_count = 1;
+            FramebufferAttachment attachment = {};
+            attachment.purpose = AttachmentPurpose::Color;
+            attachment.target = _renderer->get_swapchain_rendertarget(i);
+            fb_params.attachments = &attachment;
+            framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
+            framebuffer->create(fb_params);
+        }
 
         //
         // Setup pipeline 
@@ -109,31 +133,14 @@ public:
         pipeline_params.shaders = shaders.data();
         pipeline_params.vertex_buffer_layout_count = 1;
         pipeline_params.vertex_buffer_layouts = &layout;
-        pipeline_params.render_pass = _render_pass.get();
+        pipeline_params.framebuffer = _swapchain_framebuffers[0].get();
+        //pipeline_params.render_pass = _render_pass.get();
         _pipeline->create(pipeline_params);
 
-        //
-        // Create swapchain framebuffers
-        //
-        uint32_t framebuffer_count = _renderer->swapchain_framebuffer_count();
-        _swapchain_framebuffers = unique_ptr<unique_ptr<Framebuffer>[]>(
-            new unique_ptr<Framebuffer>[framebuffer_count]
-        );
-        for (uint32_t i = 0; i < framebuffer_count; ++i) {
-            unique_ptr<Framebuffer> &framebuffer = _swapchain_framebuffers[i];
 
-            FramebufferCreateParameters fb_params = {};
-            fb_params.pass = _render_pass.get();
-            fb_params.width = _renderer->swapchain_width();
-            fb_params.height = _renderer->swapchain_height();
-            fb_params.attachment_count = 1;
-            FramebufferAttachment attachment = {};
-            attachment.purpose = AttachmentPurpose::Color;
-            attachment.target = _renderer->get_swapchain_rendertarget(i);
-            fb_params.attachments = &attachment;
-            framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
-            framebuffer->create(fb_params);
-        }
+        ClearValue clear_value = {};
+        clear_value.purpose = AttachmentPurpose::Color;
+        clear_value.color_value = Vector4(0.5f, 0.5f, 1.0f, 1.0f);
 
         //
         // Setup command buffers
@@ -152,9 +159,10 @@ public:
             draw_info.vertex_buffer_count = 1;
             draw_info.vertex_buffers = &vertex_buffer;
             draw_info.index_buffer = _index_buffer.get();
-            draw_info.pass = _render_pass.get();
+            //draw_info.pass = _render_pass.get();
             draw_info.index_range.offset = 0;
             draw_info.index_range.count = 3;
+            draw_info.clear_values = &clear_value;
             commands->record(draw_info);
         }
 

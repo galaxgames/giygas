@@ -99,8 +99,6 @@ namespace giygas {
         DescriptorPool *make_descriptor_pool() override;
         DescriptorSet *make_descriptor_set() override;
         Framebuffer *make_framebuffer() override;
-        //RenderBuffer *make_renderbuffer() override;
-        RenderPass *make_renderpass() override;
         Pipeline *make_pipeline() override;
         CommandPool *make_commandpool() override;
 
@@ -109,7 +107,6 @@ namespace giygas {
         uint32_t next_swapchain_framebuffer_index() const override;
         uint32_t swapchain_width() const override;
         uint32_t swapchain_height() const override;
-        uint32_t swapchain_api_format() const override;
 
         uint32_t get_api_texture_format(TextureFormat format) const override;
 

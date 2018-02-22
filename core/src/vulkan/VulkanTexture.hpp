@@ -20,6 +20,7 @@ namespace giygas {
         uint32_t _width;
         uint32_t _height;
         TextureFormat _format;
+        VkFormat _api_format;
         VkImageLayout _layout;
 
         void create_image(
@@ -72,10 +73,12 @@ namespace giygas {
             size_t size,
             uint32_t width,
             uint32_t height,
-            TextureFormat format,
+            TextureFormat input_format,
+            TextureFormat desired_format,
             TextureUsageFlags flags
         ) override;
 
+        TextureFormat format() const override;
         const void *texture_impl() const override;
 
 
@@ -91,13 +94,13 @@ namespace giygas {
         //
 
         VkImageView image_view() const override;
-
+        VkImageLayout layout() const override;
+        VkFormat api_format() const override;
 
         //
         // VulkanTexture implementation
         //
 
-        VkImageLayout image_layout() const;
 
 //        void create(
 //            unique_ptr<uint8_t[]> &&data,

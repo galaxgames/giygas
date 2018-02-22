@@ -9,10 +9,24 @@
 
 namespace giygas {
 
+    class DepthStencilClearValue {
+    public:
+        float depth;
+        uint32_t stencil;
+    };
+
+    class ClearValue {
+    public:
+        AttachmentPurpose purpose;
+        union {
+            Vector4 color_value;
+            DepthStencilClearValue depth_stencil;
+        };
+    };
+
     class DrawInfo {
     public:
         const Pipeline *pipeline;
-        const RenderPass *pass;
         const Framebuffer *framebuffer;
         size_t vertex_buffer_count;
         const VertexBuffer * const *vertex_buffers;
@@ -22,6 +36,7 @@ namespace giygas {
         size_t push_constants_offset;
         size_t push_constants_size;
         const uint8_t *push_constants;
+        const ClearValue *clear_values;
     };
 
     class CommandBuffer {

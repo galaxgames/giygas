@@ -15,7 +15,11 @@ VulkanDescriptorSet::VulkanDescriptorSet(VulkanRenderer *renderer) {
 
 VulkanDescriptorSet::~VulkanDescriptorSet() {
     VkDevice device = _renderer->device();
-    vkFreeDescriptorSets(device, _pool, 1, &_handle);
+
+    // Don't need to and shouldn't free descriptor set since we haven't told the pool we want to
+    // be able to do that. Instead the pool will take care of freeing the descriptor sets.
+    //vkFreeDescriptorSets(device, _pool, 1, &_handle);
+
     vkDestroyDescriptorSetLayout(device, _layout, nullptr);
 }
 
@@ -109,7 +113,7 @@ void VulkanDescriptorSet::create(
         assert(texture->renderer_type() == RendererType::Vulkan);
         const auto *texture_impl = static_cast<const VulkanTexture *>(texture->texture_impl());
         assert(texture_impl->image_view() != VK_NULL_HANDLE);
-        image_info.imageLayout = texture_impl->image_layout();
+        image_info.imageLayout = texture_impl->layout();
         image_info.sampler = sampler_handles[i];
         image_info.imageView = texture_impl->image_view();
     }

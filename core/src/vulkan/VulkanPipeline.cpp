@@ -1,7 +1,6 @@
 #include "VulkanPipeline.hpp"
 #include "VulkanRenderer.hpp"
 #include "VulkanShader.hpp"
-#include "VulkanRenderPass.hpp"
 #include "VulkanDescriptorSet.hpp"
 #include <cassert>
 
@@ -231,9 +230,13 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
         stage.pName = "main";
     }
 
-    const RenderPass *public_renderpass = params.render_pass;
-    assert(public_renderpass->renderer_type() == RendererType::Vulkan);
-    const auto *renderpass = reinterpret_cast<const VulkanRenderPass *>(public_renderpass);
+    //const RenderPass *public_renderpass = params.render_pass;
+    //assert(public_renderpass->renderer_type() == RendererType::Vulkan);
+    //const auto *renderpass = reinterpret_cast<const VulkanRenderPass *>(public_renderpass);
+
+    assert(params.framebuffer != nullptr);
+    assert(params.framebuffer->renderer_type() == RendererType::Vulkan);
+    const auto *framebuffer = reinterpret_cast<const VulkanFramebuffer *>(params.framebuffer);
 
     VkGraphicsPipelineCreateInfo pipeline_info = {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -248,7 +251,7 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     pipeline_info.pColorBlendState = &color_blend;
     pipeline_info.pDynamicState = nullptr; //&dynamic_state;
     pipeline_info.layout = _layout;
-    pipeline_info.renderPass = renderpass->handle();
+    pipeline_info.renderPass = framebuffer->renderpass();
     pipeline_info.subpass = 0;
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_info.basePipelineIndex = -1;

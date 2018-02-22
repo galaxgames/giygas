@@ -2,12 +2,11 @@
 #include <giygas/export.h>
 #include "VertexBuffer.hpp"
 #include "IndexBuffer.hpp"
-#include "AttachmentType.hpp"
+#include "AttachmentPurpose.hpp"
 #include "PipelineOptions.hpp"
 #include "SamplerParameters.hpp"
 #include "Pipeline.hpp"
 #include "Framebuffer.hpp"
-#include "RenderBuffer.hpp"
 #include "CommandPool.hpp"
 #include "UniformBuffer.hpp"
 #include "Sampler.hpp"
@@ -30,8 +29,6 @@ namespace giygas {
         virtual DescriptorPool *make_descriptor_pool() = 0;
         virtual DescriptorSet *make_descriptor_set() = 0;
         virtual Framebuffer *make_framebuffer() = 0;
-        //virtual RenderBuffer *make_renderbuffer() = 0;
-        virtual RenderPass *make_renderpass() = 0;
         virtual Pipeline *make_pipeline() = 0;
         virtual CommandPool *make_commandpool() = 0;
 
@@ -40,7 +37,6 @@ namespace giygas {
         virtual uint32_t next_swapchain_framebuffer_index() const = 0;
         virtual uint32_t swapchain_width() const = 0;
         virtual uint32_t swapchain_height() const = 0;
-        virtual uint32_t swapchain_api_format() const = 0;
 
         virtual uint32_t get_api_texture_format(TextureFormat format) const = 0;
 
