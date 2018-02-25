@@ -53,9 +53,17 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
     }
     assert(info.index_buffer != nullptr);
     assert(info.index_buffer->renderer_type() == RendererType::Vulkan);
-    if (info.descriptor_set != nullptr) {
+
+    // Validate descriptor set
+    if (info.pipeline->descriptor_set_count() > 0) {
+        assert(info.descriptor_set != nullptr);
         assert(info.descriptor_set->renderer_type() == RendererType::Vulkan);
+        assert(info.pipeline->is_descriptor_set_compatible(info.descriptor_set));
     }
+    else {
+        assert(info.descriptor_set == nullptr);
+    }
+
 #endif
 
     const auto *pipeline = reinterpret_cast<const VulkanPipeline *>(info.pipeline);

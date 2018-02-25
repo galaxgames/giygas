@@ -76,7 +76,6 @@ void VulkanTexture::create(
     // https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#VUID-VkImageCreateInfo-tiling-00985
 
 
-
     VkFormat translated_format = VulkanRenderer::translate_texture_format(format);
     _api_format = translated_format;
 
@@ -112,7 +111,7 @@ void VulkanTexture::create(
 
         void *mapped_data;
         vkMapMemory(device, staging_buffer_memory, 0, size, 0, &mapped_data);
-        copy_n(data.get(), size, static_cast<uint8_t *>(mapped_data));
+        copy_n(_data.get(), size, static_cast<uint8_t *>(mapped_data));
         vkUnmapMemory(device, staging_buffer_memory);
 
         VkImageLayout next_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;

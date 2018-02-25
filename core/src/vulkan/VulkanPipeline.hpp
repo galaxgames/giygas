@@ -12,6 +12,7 @@ namespace giygas {
         VulkanRenderer *_renderer;
         VkPipelineLayout _layout;
         VkPipeline _handle;
+        VkDescriptorSetLayout _descriptor_set_layout;
 
         static VkShaderStageFlagBits shader_type_to_stage_flags(ShaderType type);
 
@@ -21,6 +22,8 @@ namespace giygas {
         );
 
         static VkFormat get_attrib_format(size_t component_count);
+        static VkBlendOp translate_blend_op(BlendOperation op);
+        static VkBlendFactor translate_blend_factor(BlendFactor factor);
 
     public:
         explicit VulkanPipeline(VulkanRenderer *renderer);
@@ -34,8 +37,10 @@ namespace giygas {
         // Pipeline implementation
         //
 
-        void create(const PipelineCreateParameters &params) override;
         RendererType renderer_type() const override;
+        void create(const PipelineCreateParameters &params) override;
+        uint8_t descriptor_set_count() const override;
+        bool is_descriptor_set_compatible(const DescriptorSet *descriptor_set) const override;
 
 
         //

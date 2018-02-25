@@ -11,6 +11,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer *renderer) {
     _renderer = renderer;
     _layout = VK_NULL_HANDLE;
     _handle = VK_NULL_HANDLE;
+    _descriptor_set_layout = VK_NULL_HANDLE;
 }
 
 VulkanPipeline::~VulkanPipeline() {
@@ -117,28 +118,30 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     multisample.alphaToOneEnable = VK_FALSE;
 
 
-    // COLOR BLENDING CHEATSHEET
-    // if (blendEnable) {
-    //     finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
-    //     finalColor.a = (srcAlphaBlendFactor * newColor.a) <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a);
-    // } else {
-    //     finalColor = newColor;
-    // }
-    //
-    // finalColor = finalColor & colorWriteMask;
+
+    VkColorComponentFlags write_mask = 0;
+    if ((params.blend.mask_channels & GIYGAS_COLOR_CHANNELS_RED) == 0) {
+        write_mask |= VK_COLOR_COMPONENT_R_BIT;
+    }
+    if ((params.blend.mask_channels & GIYGAS_COLOR_CHANNELS_GREEN) == 0) {
+        write_mask |= VK_COLOR_COMPONENT_G_BIT;
+    }
+    if ((params.blend.mask_channels & GIYGAS_COLOR_CHANNELS_BLUE)== 0) {
+        write_mask |= VK_COLOR_COMPONENT_B_BIT;
+    }
+    if ((params.blend.mask_channels & GIYGAS_COLOR_CHANNELS_ALPHA) == 0) {
+        write_mask |= VK_COLOR_COMPONENT_A_BIT;
+    }
 
     VkPipelineColorBlendAttachmentState blend_attachment = {};
-    blend_attachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT
-        | VK_COLOR_COMPONENT_G_BIT
-        | VK_COLOR_COMPONENT_B_BIT;
-    blend_attachment.blendEnable = VK_FALSE;
-    blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-    blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
-    blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    blend_attachment.colorWriteMask = write_mask;
+    blend_attachment.blendEnable = params.blend.enabled ? VK_TRUE : VK_FALSE;
+    blend_attachment.srcColorBlendFactor = translate_blend_factor(params.blend.src_color_factor);
+    blend_attachment.dstColorBlendFactor = translate_blend_factor(params.blend.dst_color_factor);
+    blend_attachment.colorBlendOp = translate_blend_op(params.blend.color_op);
+    blend_attachment.srcAlphaBlendFactor = translate_blend_factor(params.blend.src_alpha_factor);
+    blend_attachment.dstAlphaBlendFactor = translate_blend_factor(params.blend.dst_alpha_factor);
+    blend_attachment.alphaBlendOp = translate_blend_op(params.blend.alpha_op);
 
     VkPipelineColorBlendStateCreateInfo color_blend = {};
     color_blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -201,6 +204,7 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
         assert(params.descriptor_set->renderer_type() == RendererType::Vulkan);
         const auto *descriptor_set_impl = reinterpret_cast<const VulkanDescriptorSet *>(params.descriptor_set);
         descriptor_set_layout_handles[0] = descriptor_set_impl->layout();
+        _descriptor_set_layout = descriptor_set_impl->layout();
     } else {
         set_layout_count = 0;
     }
@@ -230,10 +234,6 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
         stage.pName = "main";
     }
 
-    //const RenderPass *public_renderpass = params.render_pass;
-    //assert(public_renderpass->renderer_type() == RendererType::Vulkan);
-    //const auto *renderpass = reinterpret_cast<const VulkanRenderPass *>(public_renderpass);
-
     assert(params.framebuffer != nullptr);
     assert(params.framebuffer->renderer_type() == RendererType::Vulkan);
     const auto *framebuffer = reinterpret_cast<const VulkanFramebuffer *>(params.framebuffer);
@@ -257,6 +257,17 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     pipeline_info.basePipelineIndex = -1;
 
     vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &_handle);
+}
+
+uint8_t VulkanPipeline::descriptor_set_count() const {
+    return _descriptor_set_layout == VK_NULL_HANDLE ? uint8_t(0) : uint8_t(1);
+}
+
+bool VulkanPipeline::is_descriptor_set_compatible(const DescriptorSet *descriptor_set) const {
+    assert(descriptor_set != nullptr);
+    assert(descriptor_set->renderer_type() == RendererType::Vulkan);
+    const auto *set_impl = reinterpret_cast<const VulkanDescriptorSet *>(descriptor_set);
+    return _descriptor_set_layout == set_impl->layout();
 }
 
 RendererType VulkanPipeline::renderer_type() const {
@@ -303,5 +314,63 @@ VkFormat VulkanPipeline::get_attrib_format(size_t component_count) {
             return VK_FORMAT_R32G32B32A32_SFLOAT;
         default:
             return VK_FORMAT_UNDEFINED;
+    }
+}
+
+VkBlendOp VulkanPipeline::translate_blend_op(BlendOperation op) {
+    switch (op) {
+        case BlendOperation::ADD:
+            return VK_BLEND_OP_ADD;
+        case BlendOperation::SUBTRACT:
+            return VK_BLEND_OP_SUBTRACT;
+        case BlendOperation::REVERSE_SUBTRACT:
+            return VK_BLEND_OP_REVERSE_SUBTRACT;
+        case BlendOperation::MIN:
+            return VK_BLEND_OP_MIN;
+        case BlendOperation::MAX:
+            return VK_BLEND_OP_MAX;
+    }
+}
+
+VkBlendFactor VulkanPipeline::translate_blend_factor(BlendFactor factor) {
+    switch (factor) {
+        case BlendFactor::ZERO:
+            return VK_BLEND_FACTOR_ZERO;
+        case BlendFactor::ONE:
+            return VK_BLEND_FACTOR_ONE;
+        case BlendFactor::SRC_COLOR:
+            return VK_BLEND_FACTOR_SRC_COLOR;
+        case BlendFactor::ONE_MINUS_SRC_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        case BlendFactor::DST_COLOR:
+            return VK_BLEND_FACTOR_DST_COLOR;
+        case BlendFactor::ONE_MINUS_DST_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+        case BlendFactor::SRC_ALPHA:
+            return VK_BLEND_FACTOR_SRC_ALPHA;
+        case BlendFactor::ONE_MINUS_SRC_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        case BlendFactor::DST_ALPHA:
+            return VK_BLEND_FACTOR_DST_ALPHA;
+        case BlendFactor::ONE_MINUS_DST_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+        case BlendFactor::CONSTANT_COLOR:
+            return VK_BLEND_FACTOR_CONSTANT_COLOR;
+        case BlendFactor::ONE_MINUS_CONSTANT_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+        case BlendFactor::CONSTANT_ALPHA:
+            return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+        case BlendFactor::ONE_MINUS_CONSTANT_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+        case BlendFactor::SRC_ALPHA_SATURATE:
+            return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+        case BlendFactor::SRC1_COLOR:
+            return VK_BLEND_FACTOR_SRC1_COLOR;
+        case BlendFactor::ONE_MINUS_SRC1_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+        case BlendFactor::SRC1_ALPHA:
+            return VK_BLEND_FACTOR_SRC1_ALPHA;
+        case BlendFactor::ONE_MINUS_SRC1_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
     }
 }

@@ -25,7 +25,6 @@ namespace giygas {
         RendererType renderer_type() const override;
         void create(const DescriptorSetParameters &params) override;
 
-
         //
         // VulkanDescriptorSet implementation
         //

@@ -15,10 +15,18 @@ namespace giygas_examples_common {
 
     public:
         ShaderLoader() = default;
-        ShaderLoader(const char *arg0, RendererType renderer_type);
+        ShaderLoader(const char *contentDir, RendererType renderer_type);
         unique_ptr<uint8_t[]> get_shader_code(const char *name, size_t &size) const;
     };
 
+    string get_content_dir(const char *arg0);
 
+    uint8_t *load_targa(
+        istream &input,
+        size_t &size,
+        uint8_t &bytes_per_pixel,
+        uint32_t &width,
+        uint32_t &height
+    );
 
 }

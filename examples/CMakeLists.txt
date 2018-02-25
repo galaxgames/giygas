@@ -5,10 +5,12 @@ project(examples LANGUAGES CXX VERSION 0.1)
 # Framebuffers Example
 add_executable(example_framebuffers "example_common.cpp" "example_common.hpp" "framebuffers.cpp")
 add_executable(example_triangle "example_common.cpp" "example_common.hpp" "triangle.cpp")
+add_executable(example_texture "example_common.cpp" "example_common.hpp" "texture.cpp")
 target_link_libraries(example_framebuffers giygas giygasutil)
 target_link_libraries(example_triangle giygas giygasutil)
+target_link_libraries(example_texture giygas giygasutil)
 
-set_target_properties(example_framebuffers example_triangle
+set_target_properties(example_framebuffers example_triangle example_texture
     PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED ON
@@ -52,3 +54,4 @@ endforeach()
 
 add_dependencies(example_framebuffers example_content)
 add_dependencies(example_triangle example_content)
+add_dependencies(example_texture example_content)

@@ -57,7 +57,7 @@ public:
 
     FramebufferExampleApp(GLFWContext &context, const char *arg0) {
         _renderer = unique_ptr<Renderer>(giygas::make_renderer(&context));
-        _shader_loader = ShaderLoader(arg0, _renderer->renderer_type());
+        _shader_loader = ShaderLoader(get_content_dir(arg0).c_str(), _renderer->renderer_type());
         current_rotation = 0;
     }
 

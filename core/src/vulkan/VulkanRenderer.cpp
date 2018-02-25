@@ -312,9 +312,9 @@ VkResult VulkanRenderer::create_instance(
     create_info.enabledExtensionCount = needed_extensions_count;
     create_info.ppEnabledExtensionNames = needed_extensions;
 
-    array<const char *, 0/*1*/> validation_layers = {
+    array<const char *, 1> validation_layers = {
         //"VK_LAYER_LUNARG_vktrace",
-        //"VK_LAYER_LUNARG_standard_validation"
+        "VK_LAYER_LUNARG_standard_validation"
     };
 
     // Validation layers

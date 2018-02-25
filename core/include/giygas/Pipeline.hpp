@@ -6,8 +6,10 @@ namespace giygas {
     class Pipeline {
     public:
         virtual ~Pipeline() = default;
-        virtual void create(const PipelineCreateParameters &params) = 0;
         virtual RendererType renderer_type() const = 0;
+        virtual void create(const PipelineCreateParameters &params) = 0;
+        virtual uint8_t descriptor_set_count() const = 0;
+        virtual bool is_descriptor_set_compatible(const DescriptorSet *descriptor_set) const = 0;
     };
 
 }

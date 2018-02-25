@@ -19,9 +19,9 @@ RendererType VulkanDescriptorPool::renderer_type() const {
 void VulkanDescriptorPool::create(const DescriptorPoolParameters &params) {
     array<VkDescriptorPoolSize, 2> sizes = {};
     sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    sizes[0].descriptorCount = params.uniform_buffer_descriptors;
+    sizes[0].descriptorCount = max<uint32_t>(params.uniform_buffer_descriptors, 1);
     sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    sizes[1].descriptorCount = params.sampler_descriptors;
+    sizes[1].descriptorCount = max<uint32_t>(params.sampler_descriptors, 1);
 
     VkDescriptorPoolCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
