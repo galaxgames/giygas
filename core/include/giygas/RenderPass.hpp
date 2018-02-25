@@ -1,0 +1,27 @@
+#pragma once
+#include <cstddef>
+#include "AttachmentPurpose.hpp"
+#include "RenderTarget.hpp"
+
+namespace giygas {
+
+    class RenderPassAttachment  {
+    public:
+        AttachmentPurpose purpose;
+        const RenderTarget *target;
+    };
+
+    class RenderPassCreateParameters {
+    public:
+        size_t attachment_count;
+        const RenderPassAttachment *attachments;
+    };
+
+    class RenderPass {
+    public:
+        virtual ~RenderPass() = default;
+        virtual RendererType renderer_type() const = 0;
+        virtual void create(const RenderPassCreateParameters &params) = 0;
+    };
+
+}

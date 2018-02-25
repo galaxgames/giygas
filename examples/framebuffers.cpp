@@ -2,9 +2,8 @@
 #include <giygas/GLFWContext.hpp>
 #include <giygasutil/EventLoopUpdatable.hpp>
 #include <giygasutil/EventLoopContextRunner.hpp>
-#include <giygas/Sampler.hpp>
-#include <giygas/Texture.hpp>
 #include <giygas/Matrix4x4.hpp>
+#include <giygasutil/util.hpp>
 #include "example_common.hpp"
 
 using namespace giygas;
@@ -43,6 +42,8 @@ class FramebufferExampleApp : public EventLoopUpdatable  {
     unique_ptr<Shader> _textured_shader_f;
     unique_ptr<Texture> _render_texture;
     unique_ptr<Texture> _render_depth_buffer;
+    unique_ptr<RenderPass> _offscreen_pass;
+    unique_ptr<RenderPass> _onscreen_pass;
     unique_ptr<Framebuffer> _offscreen_framebuffer;
     unique_ptr<Pipeline> _colored_pipeline;
     unique_ptr<Pipeline> _textured_pipeline;
@@ -193,17 +194,28 @@ public:
         _textured_shader_f->set_code(textured_f_code.get(), textured_f_size, ShaderType::Fragment);
 
         //
-        // Setup render passes
+        // Setup renderpasses
         //
-//        RenderPassCreateParameters offscreen_params = {};
-//        offscreen_params.color_attachment.api_format = _renderer->get_api_texture_format(TextureFormat::RGBA);
-//        offscreen_params.depth_attachment.api_format = _renderer->get_api_texture_format(TextureFormat::Depth16);
-//        RenderPassCreateParameters onscreen_params = {};
-//        onscreen_params.color_attachment.api_format = _renderer->swapchain_api_format();
-//        _offscreen_pass = unique_ptr<RenderPass>(_renderer->make_renderpass());
-//        _onscreen_pass = unique_ptr<RenderPass>(_renderer->make_renderpass());
-//        _offscreen_pass->create(offscreen_params);
-//        _onscreen_pass->create(onscreen_params);
+
+        RenderPassCreateParameters offscreen_pass_params = {};
+        array<RenderPassAttachment, 2> offscreen_attachments = {};
+        offscreen_attachments[0].purpose = AttachmentPurpose::Color;
+        offscreen_attachments[0].target = _render_texture.get();
+        offscreen_attachments[1].purpose = AttachmentPurpose::DepthStencil;
+        offscreen_attachments[1].target = _render_depth_buffer.get();
+        offscreen_pass_params.attachment_count = offscreen_attachments.size();
+        offscreen_pass_params.attachments = offscreen_attachments.data();
+        _offscreen_pass = unique_ptr<RenderPass>(_renderer->make_render_pass());
+        _offscreen_pass->create(offscreen_pass_params);
+
+        RenderPassCreateParameters onscreen_pass_params = {};
+        RenderPassAttachment onscreen_attachment = {};
+        onscreen_attachment.purpose = AttachmentPurpose::Color;
+        onscreen_attachment.target = _renderer->get_swapchain_rendertarget(0);
+        onscreen_pass_params.attachment_count = 1;
+        onscreen_pass_params.attachments = &onscreen_attachment;
+        _onscreen_pass = unique_ptr<RenderPass>(_renderer->make_render_pass());
+        _onscreen_pass->create(onscreen_pass_params);
 
         //
         // Setup offscreen framebuffer
@@ -218,31 +230,20 @@ public:
         offscreen_fb_params.height = 512;
         offscreen_fb_params.attachment_count = fb_attachments.size();
         offscreen_fb_params.attachments = fb_attachments.data();
-        //offscreen_fb_params.pass = _offscreen_pass.get();
+        offscreen_fb_params.pass = _offscreen_pass.get();
         _offscreen_framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
         _offscreen_framebuffer->create(offscreen_fb_params);
 
         //
         // Create swapchain framebuffers
-        // TODO: Make this part of giygasutil
         //
-        uint32_t framebuffer_count = _renderer->swapchain_framebuffer_count();
+        size_t framebuffer_count = _renderer->swapchain_framebuffer_count();
         _swapchain_framebuffers = unique_ptr<unique_ptr<Framebuffer>[]>(
-            new unique_ptr<Framebuffer>[framebuffer_count]
+            giygasutil::util::create_swapchain_framebuffers<unique_ptr<Framebuffer>>(
+                _renderer.get(),
+                _onscreen_pass.get()
+            )
         );
-        for (uint32_t i = 0; i < framebuffer_count; ++i) {
-            unique_ptr<Framebuffer> &framebuffer = _swapchain_framebuffers[i];
-            FramebufferCreateParameters fb_params = {};
-            fb_params.width = _renderer->swapchain_width();
-            fb_params.height = _renderer->swapchain_height();
-            fb_params.attachment_count = 1;
-            FramebufferAttachment attachment = {};
-            attachment.purpose = AttachmentPurpose::Color;
-            attachment.target = _renderer->get_swapchain_rendertarget(i);
-            fb_params.attachments = &attachment;
-            framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
-            framebuffer->create(fb_params);
-        }
 
         //
         // Setup pipelines
@@ -259,7 +260,7 @@ public:
         colored_pipeline_params.shaders = colored_shaders.data();
         colored_pipeline_params.vertex_buffer_layout_count = 1;
         colored_pipeline_params.vertex_buffer_layouts = &layout;
-        colored_pipeline_params.framebuffer = _offscreen_framebuffer.get();
+        colored_pipeline_params.pass = _offscreen_pass.get();
         colored_pipeline_params.descriptor_set = _offscreen_descriptors.get();
         _colored_pipeline = unique_ptr<Pipeline>(_renderer->make_pipeline());
         _colored_pipeline->create(colored_pipeline_params);
@@ -276,7 +277,7 @@ public:
         textured_pipeline_params.shaders = textured_shaders.data();
         textured_pipeline_params.vertex_buffer_layout_count = 1;
         textured_pipeline_params.vertex_buffer_layouts = &layout;
-        textured_pipeline_params.framebuffer = _swapchain_framebuffers[0].get();
+        textured_pipeline_params.pass = _onscreen_pass.get();
         textured_pipeline_params.descriptor_set = _onscreen_descriptors.get();
         _textured_pipeline = unique_ptr<Pipeline>(_renderer->make_pipeline());
         _textured_pipeline->create(textured_pipeline_params);
@@ -284,7 +285,7 @@ public:
         //
         // Make command buffers
         //
-        _command_pool = unique_ptr<CommandPool>(_renderer->make_commandpool());
+        _command_pool = unique_ptr<CommandPool>(_renderer->make_command_pool());
         _offscreen_command_buffer = unique_ptr<CommandBuffer>(_command_pool->make_buffer());
         _onscreen_command_buffer = unique_ptr<CommandBuffer>(_command_pool->make_buffer());
     }
@@ -336,6 +337,26 @@ public:
         offscreen_clear_values[1].depth_stencil.depth = 0;
         offscreen_clear_values[1].depth_stencil.stencil = 0;
 
+        DrawInfo offscreen_draw_info = {};
+        offscreen_draw_info.pipeline = _colored_pipeline.get();
+        offscreen_draw_info.vertex_buffer_count = 1;
+        offscreen_draw_info.vertex_buffers = &vertex_buffer;
+        offscreen_draw_info.index_buffer = _index_buffer.get();
+        offscreen_draw_info.index_range.offset = 0;
+        offscreen_draw_info.index_range.count = 12 * 3;
+        offscreen_draw_info.descriptor_set = _offscreen_descriptors.get();
+
+        SingleBufferPassInfo offscreen_record_info = {};
+        offscreen_record_info.draw_count = 1;
+        offscreen_record_info.draws = &offscreen_draw_info;
+        offscreen_record_info.pass_info.pass = _offscreen_pass.get();
+        offscreen_record_info.pass_info.framebuffer = _offscreen_framebuffer.get();
+        offscreen_record_info.pass_info.clear_value_count = 2;
+        offscreen_record_info.pass_info.clear_values = offscreen_clear_values.data();
+
+        _offscreen_command_buffer->record_pass(offscreen_record_info);
+
+
         array<ClearValue, 2> onscreen_clear_values = {};
         onscreen_clear_values[0].purpose = AttachmentPurpose::Color;
         onscreen_clear_values[0].color_value = Vector4(0.5f, 0.5f, 1.0f, 1.0f);
@@ -343,30 +364,28 @@ public:
         onscreen_clear_values[1].depth_stencil.depth = 0;
         onscreen_clear_values[1].depth_stencil.stencil = 0;
 
-        DrawInfo offscreen_cube_info = {};
-        offscreen_cube_info.pipeline = _colored_pipeline.get();
-        offscreen_cube_info.framebuffer = _offscreen_framebuffer.get();
-        offscreen_cube_info.vertex_buffer_count = 1;
-        offscreen_cube_info.vertex_buffers = &vertex_buffer;
-        offscreen_cube_info.index_buffer = _index_buffer.get();
-        offscreen_cube_info.index_range.offset = 0;
-        offscreen_cube_info.index_range.count = 12 * 3;
-        offscreen_cube_info.clear_values = offscreen_clear_values.data();
-        offscreen_cube_info.descriptor_set = _offscreen_descriptors.get();
-
         DrawInfo onscreen_cube_info = {};
         onscreen_cube_info.pipeline = _textured_pipeline.get();
-        onscreen_cube_info.framebuffer = _swapchain_framebuffers[_renderer->next_swapchain_framebuffer_index()].get();
         onscreen_cube_info.vertex_buffer_count = 1;
         onscreen_cube_info.vertex_buffers = &vertex_buffer;
         onscreen_cube_info.index_buffer = _index_buffer.get();
         onscreen_cube_info.index_range.offset = 0;
         onscreen_cube_info.index_range.count = 12 * 3;
         onscreen_cube_info.descriptor_set = _onscreen_descriptors.get();
-        onscreen_cube_info.clear_values = onscreen_clear_values.data();
 
-        _offscreen_command_buffer->record(offscreen_cube_info);
-        _onscreen_command_buffer->record(onscreen_cube_info);
+        SingleBufferPassInfo onscreen_record_info = {};
+        onscreen_record_info.draw_count = 1;
+        onscreen_record_info.draws = &onscreen_cube_info;
+        onscreen_record_info.pass_info.pass = _onscreen_pass.get();
+        onscreen_record_info.pass_info.framebuffer = _swapchain_framebuffers[_renderer->next_swapchain_framebuffer_index()].get();
+        onscreen_record_info.pass_info.clear_value_count = 2;
+        onscreen_record_info.pass_info.clear_values = onscreen_clear_values.data();
+
+        _onscreen_command_buffer->record_pass(onscreen_record_info);
+
+        //
+        // Submit buffers
+        //
 
         array<const CommandBuffer *, 2> buffers_to_submit = {
             _offscreen_command_buffer.get(), _onscreen_command_buffer.get()

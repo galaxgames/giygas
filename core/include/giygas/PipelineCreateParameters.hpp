@@ -77,7 +77,7 @@ namespace giygas {
         BlendParameters blend;
         const VertexAttributeLayout* vertex_buffer_layouts;
         size_t vertex_buffer_layout_count;
-        const Framebuffer *framebuffer;
+        const RenderPass *pass;
         const Shader **shaders;
         size_t shader_count;
         PushConstantsRange vertex_push_constants;

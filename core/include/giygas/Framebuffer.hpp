@@ -4,6 +4,7 @@
 #include "AttachmentPurpose.hpp"
 #include "RendererType.hpp"
 #include "RenderTarget.hpp"
+#include "RenderPass.hpp"
 
 namespace giygas {
 
@@ -15,6 +16,7 @@ namespace giygas {
 
     class FramebufferCreateParameters {
     public:
+        const RenderPass *pass;
         const FramebufferAttachment *attachments;
         size_t attachment_count;
         uint32_t width;

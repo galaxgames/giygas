@@ -14,6 +14,7 @@
 #include "VulkanSampler.hpp"
 #include "VulkanDescriptorPool.hpp"
 #include "VulkanDescriptorSet.hpp"
+#include "VulkanRenderPass.hpp"
 
 using namespace giygas;
 using namespace std;
@@ -158,6 +159,10 @@ DescriptorSet* VulkanRenderer::make_descriptor_set() {
     return new VulkanDescriptorSet(this);
 }
 
+RenderPass* VulkanRenderer::make_render_pass() {
+    return new VulkanRenderPass(this);
+}
+
 Framebuffer *VulkanRenderer::make_framebuffer() {
     return new VulkanFramebuffer(this);
 }
@@ -166,7 +171,7 @@ Pipeline *VulkanRenderer::make_pipeline() {
     return new VulkanPipeline(this);
 }
 
-CommandPool *VulkanRenderer::make_commandpool() {
+CommandPool *VulkanRenderer::make_command_pool() {
     VulkanCommandPool *pool = new VulkanCommandPool();
     pool->create(this);
     return pool;

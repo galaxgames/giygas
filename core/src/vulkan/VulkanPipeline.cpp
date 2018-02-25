@@ -2,6 +2,7 @@
 #include "VulkanRenderer.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanDescriptorSet.hpp"
+#include "VulkanRenderPass.hpp"
 #include <cassert>
 
 using namespace giygas;
@@ -116,8 +117,6 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     multisample.pSampleMask = nullptr;
     multisample.alphaToCoverageEnable = VK_FALSE;
     multisample.alphaToOneEnable = VK_FALSE;
-
-
 
     VkColorComponentFlags write_mask = 0;
     if ((params.blend.mask_channels & GIYGAS_COLOR_CHANNELS_RED) == 0) {
@@ -234,9 +233,9 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
         stage.pName = "main";
     }
 
-    assert(params.framebuffer != nullptr);
-    assert(params.framebuffer->renderer_type() == RendererType::Vulkan);
-    const auto *framebuffer = reinterpret_cast<const VulkanFramebuffer *>(params.framebuffer);
+    assert(params.pass != nullptr);
+    assert(params.pass->renderer_type() == RendererType::Vulkan);
+    const auto *pass_impl = reinterpret_cast<const VulkanRenderPass *>(params.pass);
 
     VkGraphicsPipelineCreateInfo pipeline_info = {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -251,7 +250,7 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     pipeline_info.pColorBlendState = &color_blend;
     pipeline_info.pDynamicState = nullptr; //&dynamic_state;
     pipeline_info.layout = _layout;
-    pipeline_info.renderPass = framebuffer->renderpass();
+    pipeline_info.renderPass = pass_impl->handle();
     pipeline_info.subpass = 0;
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_info.basePipelineIndex = -1;

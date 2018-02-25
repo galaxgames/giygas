@@ -24,10 +24,17 @@ namespace giygas {
         };
     };
 
+    class PassExecutionInfo {
+    public:
+        const RenderPass *pass;
+        const Framebuffer *framebuffer;
+        size_t clear_value_count;
+        const ClearValue *clear_values;
+    };
+
     class DrawInfo {
     public:
         const Pipeline *pipeline;
-        const Framebuffer *framebuffer;
         size_t vertex_buffer_count;
         const VertexBuffer * const *vertex_buffers;
         const GenericIndexBuffer *index_buffer;
@@ -36,14 +43,20 @@ namespace giygas {
         size_t push_constants_offset;
         size_t push_constants_size;
         const uint8_t *push_constants;
-        const ClearValue *clear_values;
+    };
+
+    class SingleBufferPassInfo {
+    public:
+        PassExecutionInfo pass_info;
+        size_t draw_count;
+        const DrawInfo *draws;
     };
 
     class CommandBuffer {
     public:
         virtual ~CommandBuffer() = default;
         virtual RendererType renderer_type() const = 0;
-        virtual void record(const DrawInfo &info) = 0;
+        virtual void record_pass(const SingleBufferPassInfo &info) = 0;
     };
 
 }

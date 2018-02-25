@@ -3,10 +3,10 @@
 #include "VulkanCommandPool.hpp"
 #include "VulkanRenderer.hpp"
 #include "VulkanPipeline.hpp"
-#include "VulkanFramebuffer.hpp"
 #include "VulkanIndexBuffer.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanDescriptorSet.hpp"
+#include "VulkanRenderPass.hpp"
 
 using namespace giygas;
 
@@ -37,43 +37,23 @@ void VulkanCommandBuffer::create() {
     vkAllocateCommandBuffers(_renderer->device(), &alloc_info, &_handle);
 }
 
-void VulkanCommandBuffer::record(const DrawInfo &info) {
+void VulkanCommandBuffer::record_pass(const SingleBufferPassInfo &info) {
     VkDevice device = _renderer->device();
 
 #ifndef NDEBUG
-    assert(info.pipeline != nullptr);
-    assert(info.pipeline->renderer_type() == RendererType::Vulkan);
-    //assert(info.pass != nullptr);
-    //assert(info.pass->renderer_type() == RendererType::Vulkan);
-    assert(info.framebuffer != nullptr);
-    assert(info.framebuffer->renderer_type() == RendererType::Vulkan);
-    for (size_t i = 0; i < info.vertex_buffer_count; ++i) {
-        const VertexBuffer *vertex_buffer = info.vertex_buffers[i];
-        assert(vertex_buffer->renderer_type() == RendererType::Vulkan);
-    }
-    assert(info.index_buffer != nullptr);
-    assert(info.index_buffer->renderer_type() == RendererType::Vulkan);
-
-    // Validate descriptor set
-    if (info.pipeline->descriptor_set_count() > 0) {
-        assert(info.descriptor_set != nullptr);
-        assert(info.descriptor_set->renderer_type() == RendererType::Vulkan);
-        assert(info.pipeline->is_descriptor_set_compatible(info.descriptor_set));
-    }
-    else {
-        assert(info.descriptor_set == nullptr);
+    if (info.draw_count > 0) {
+        assert(info.draws != nullptr);
     }
 
+    assert(info.pass_info.pass != nullptr);
+    assert(info.pass_info.framebuffer != nullptr);
+    assert(info.pass_info.pass->renderer_type() == RendererType::Vulkan);
+    assert(info.pass_info.framebuffer->renderer_type() == RendererType::Vulkan);
 #endif
 
-    const auto *pipeline = reinterpret_cast<const VulkanPipeline *>(info.pipeline);
-    //const auto *pass = reinterpret_cast<const VulkanRenderPass *>(info.pass);
-    const auto *framebuffer = reinterpret_cast<const VulkanFramebuffer *>(info.framebuffer);
-    const auto *index_buffer
-        = reinterpret_cast<const VulkanGenericIndexBuffer *>(info.index_buffer->cast_to_specific());
-    const auto *descriptor_set = reinterpret_cast<const VulkanDescriptorSet *>(info.descriptor_set);
+    const auto *pass_impl = reinterpret_cast<const VulkanRenderPass *>(info.pass_info.pass);
+    const auto *framebuffer_impl = reinterpret_cast<const VulkanFramebuffer *>(info.pass_info.framebuffer);
 
-    size_t attachment_count = framebuffer->attachment_count();
 
     VkCommandBufferBeginInfo begin_info = {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -82,11 +62,17 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
 
     vkBeginCommandBuffer(_handle, &begin_info);
 
+    // TODO: Assert framebuffer and renderpass are compatible!
+
+    size_t attachment_count = framebuffer_impl->attachment_count();
+
+    assert(info.pass_info.clear_value_count >= attachment_count);
+
     // TODO: Reduce frequency of allocation.
     unique_ptr<VkClearValue[]> clear_values(new VkClearValue[attachment_count]);
-    const AttachmentPurpose *purposes = framebuffer->purposes();
+    const AttachmentPurpose *purposes = pass_impl->purposes();
     for (size_t i = 0; i < attachment_count; ++i) {
-        const ClearValue &clear_value = info.clear_values[i];
+        const ClearValue &clear_value = info.pass_info.clear_values[i];
         VkClearValue &api_clear_val = clear_values[i];
         AttachmentPurpose purpose = clear_value.purpose;
         assert(purposes[i] == purpose);
@@ -106,15 +92,53 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
 
     VkRenderPassBeginInfo pass_begin_info = {};
     pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    pass_begin_info.renderPass = framebuffer->renderpass();
-    pass_begin_info.framebuffer = framebuffer->handle();
+    pass_begin_info.renderPass = pass_impl->handle();
+    pass_begin_info.framebuffer = framebuffer_impl->handle();
     pass_begin_info.renderArea.offset = {0, 0};
-    pass_begin_info.renderArea.extent.width = framebuffer->width();
-    pass_begin_info.renderArea.extent.height = framebuffer->height();
+    pass_begin_info.renderArea.extent.width = framebuffer_impl->width();
+    pass_begin_info.renderArea.extent.height = framebuffer_impl->height();
     pass_begin_info.clearValueCount = static_cast<uint32_t>(attachment_count);
     pass_begin_info.pClearValues = clear_values.get();
 
     vkCmdBeginRenderPass(_handle, &pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    for (size_t i = 0; i < info.draw_count; ++i) {
+        record_draw(info.draws[i]);
+    }
+
+    vkCmdEndRenderPass(_handle);
+
+    vkEndCommandBuffer(_handle);
+
+}
+
+void VulkanCommandBuffer::record_draw(const DrawInfo &info) const {
+#ifndef NDEBUG
+    assert(info.pipeline != nullptr);
+    assert(info.pipeline->renderer_type() == RendererType::Vulkan);
+    for (size_t i = 0; i < info.vertex_buffer_count; ++i) {
+        const VertexBuffer *vertex_buffer = info.vertex_buffers[i];
+        assert(vertex_buffer->renderer_type() == RendererType::Vulkan);
+    }
+    assert(info.index_buffer != nullptr);
+    assert(info.index_buffer->renderer_type() == RendererType::Vulkan);
+
+    // Validate descriptor set
+    if (info.pipeline->descriptor_set_count() > 0) {
+        assert(info.descriptor_set != nullptr);
+        assert(info.descriptor_set->renderer_type() == RendererType::Vulkan);
+        assert(info.pipeline->is_descriptor_set_compatible(info.descriptor_set));
+    }
+    else {
+        assert(info.descriptor_set == nullptr);
+    }
+#endif
+
+    const auto *pipeline = reinterpret_cast<const VulkanPipeline *>(info.pipeline);
+    const auto *index_buffer
+        = reinterpret_cast<const VulkanGenericIndexBuffer *>(info.index_buffer->cast_to_specific());
+    const auto *descriptor_set = reinterpret_cast<const VulkanDescriptorSet *>(info.descriptor_set);
+
 
     vkCmdBindPipeline(_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->handle());
 
@@ -163,7 +187,6 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
         );
     }
 
-
     vkCmdDrawIndexed(
         _handle,
         info.index_range.count,
@@ -172,10 +195,6 @@ void VulkanCommandBuffer::record(const DrawInfo &info) {
         0,  // vertex offset
         0   // first instance
     );
-
-    vkCmdEndRenderPass(_handle);
-
-    vkEndCommandBuffer(_handle);
 
 }
 
