@@ -19,7 +19,9 @@
 using namespace giygas;
 using namespace std;
 
-VulkanRenderer::VulkanRenderer(VulkanContext *context) {
+VulkanRenderer::VulkanRenderer(VulkanContext *context)
+    : _copy_command_pool(this)
+{
     _context = context;
     _instance = VK_NULL_HANDLE;
     _surface = VK_NULL_HANDLE;
@@ -97,7 +99,7 @@ void VulkanRenderer::initialize() {
     vkCreateSemaphore(_device, &semaphore_info, nullptr, &_image_available_semaphore);
     vkCreateSemaphore(_device, &semaphore_info, nullptr, &_render_finished_semaphore);
 
-    _copy_command_pool.create(this);
+    _copy_command_pool.create();
 
     vkAcquireNextImageKHR(
         _device,
@@ -172,9 +174,11 @@ Pipeline *VulkanRenderer::make_pipeline() {
 }
 
 CommandPool *VulkanRenderer::make_command_pool() {
-    VulkanCommandPool *pool = new VulkanCommandPool();
-    pool->create(this);
-    return pool;
+    return new VulkanCommandPool(this);
+}
+
+CommandBuffer* VulkanRenderer::make_command_buffer() {
+    return new VulkanCommandBuffer(this);
 }
 
 const RenderTarget* VulkanRenderer::get_swapchain_rendertarget(uint32_t index) const {

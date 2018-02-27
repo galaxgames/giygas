@@ -61,17 +61,19 @@ public:
         //
         // Setup Vertex Attribute layout
         //
-        VertexAttributeLayout layout(0, sizeof(VertexData));
-        LayoutAttribute position_attrib = {};
+        array<VertexAttribute, 2> vertex_attribs = {};
+        VertexAttribute &position_attrib = vertex_attribs[0];
+        VertexAttribute &color_attrib = vertex_attribs[1];
         position_attrib.component_count = 4;
         position_attrib.component_size = sizeof(VertexData::position);
         position_attrib.offset = offsetof(VertexData, position);
-        LayoutAttribute color_attrib = {};
         color_attrib.component_count = 4;
         color_attrib.component_size = sizeof(VertexData::color);
         color_attrib.offset = offsetof(VertexData, color);
-        layout.add_attribute(position_attrib);
-        layout.add_attribute(color_attrib);
+        VertexAttributeLayout layout = {};
+        layout.stride = sizeof(VertexData);
+        layout.attribute_count = vertex_attribs.size();
+        layout.attributes = vertex_attribs.data();
 
         //
         // Setup shaders
@@ -133,6 +135,7 @@ public:
         //
 
         _command_pool = unique_ptr<CommandPool>(_renderer->make_command_pool());
+        _command_pool->create();
         _command_buffers = unique_ptr<unique_ptr<CommandBuffer>[]>(
             new unique_ptr<CommandBuffer>[framebuffer_count]
         );
@@ -153,7 +156,8 @@ public:
 
         for (uint32_t i = 0; i < framebuffer_count; ++i) {
             unique_ptr<CommandBuffer> &commands = _command_buffers[i];
-            commands = unique_ptr<CommandBuffer>(_command_pool->make_buffer());
+            commands = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
+            commands->create(_command_pool.get());
 
             SingleBufferPassInfo record_info = {};
             record_info.draw_count = 1;

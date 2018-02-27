@@ -7,8 +7,8 @@
 
 using namespace giygas;
 
-VulkanCommandPool::VulkanCommandPool() {
-    _renderer = nullptr;
+VulkanCommandPool::VulkanCommandPool(VulkanRenderer *renderer) {
+    _renderer = renderer;
     _handle = VK_NULL_HANDLE;
 }
 
@@ -16,15 +16,17 @@ VulkanCommandPool::~VulkanCommandPool() {
     destroy();
 }
 
-void VulkanCommandPool::create(VulkanRenderer *renderer) {
-    _renderer = renderer;
+RendererType VulkanCommandPool::renderer_type() const {
+    return RendererType::Vulkan;
+}
 
+void VulkanCommandPool::create() {
     VkCommandPoolCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    create_info.queueFamilyIndex = renderer->queue_family_indices().graphics_family;
+    create_info.queueFamilyIndex = _renderer->queue_family_indices().graphics_family;
     create_info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
-    vkCreateCommandPool(renderer->device(), &create_info, nullptr, &_handle);
+    vkCreateCommandPool(_renderer->device(), &create_info, nullptr, &_handle);
 }
 
 void VulkanCommandPool::destroy() {
@@ -36,14 +38,12 @@ void VulkanCommandPool::destroy() {
     _renderer = nullptr;
 }
 
-CommandBuffer* VulkanCommandPool::make_buffer() {
-    auto *buffer = new VulkanCommandBuffer(_renderer, this);
-    buffer->create();
-    return buffer;
-}
-
 void VulkanCommandPool::reset_buffers() {
     vkResetCommandPool(_renderer->device(), _handle, 0);
+}
+
+bool VulkanCommandPool::is_valid() const {
+    return _handle != VK_NULL_HANDLE;
 }
 
 VkCommandPool VulkanCommandPool::handle() const {

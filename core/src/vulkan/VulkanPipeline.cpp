@@ -4,8 +4,10 @@
 #include "VulkanDescriptorSet.hpp"
 #include "VulkanRenderPass.hpp"
 #include <cassert>
+#include <giygas/validation/pipeline_validation.hpp>
 
 using namespace giygas;
+using namespace giygas::validation;
 using namespace std;
 
 VulkanPipeline::VulkanPipeline(VulkanRenderer *renderer) {
@@ -22,6 +24,8 @@ VulkanPipeline::~VulkanPipeline() {
 }
 
 void VulkanPipeline::create(const PipelineCreateParameters &params) {
+    assert(validate_pipeline_create(this, params));
+
     VkDevice device = _renderer->device();
 
     unique_ptr<VkVertexInputBindingDescription[]> input_bindings(
@@ -50,7 +54,8 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
         binding.stride = static_cast<uint32_t>(layout.stride);
         binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-        for (const LayoutAttribute &attrib : layout.attributes()) {
+        for (size_t i = 0; i < layout.attribute_count; ++i) {
+            const VertexAttribute &attrib = layout.attributes[i];
             VkVertexInputAttributeDescription &attrib_desc = attribute_descriptions[attrib_index];
             VkFormat format = get_attrib_format(attrib.component_count);
             assert(format != VK_FORMAT_UNDEFINED);
@@ -200,7 +205,6 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
         descriptor_set_layout_handles = unique_ptr<VkDescriptorSetLayout[]> (
             new VkDescriptorSetLayout[set_layout_count]
         );
-        assert(params.descriptor_set->renderer_type() == RendererType::Vulkan);
         const auto *descriptor_set_impl = reinterpret_cast<const VulkanDescriptorSet *>(params.descriptor_set);
         descriptor_set_layout_handles[0] = descriptor_set_impl->layout();
         _descriptor_set_layout = descriptor_set_impl->layout();
@@ -223,18 +227,14 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     );
     for (size_t i = 0; i < params.shader_count; ++i) {
         VkPipelineShaderStageCreateInfo &stage = shader_stages[i];
-        const Shader *public_shader = params.shaders[i];
-        assert(public_shader->renderer_type() == RendererType::Vulkan);
-
-        const auto *shader = reinterpret_cast<const VulkanShader *>(public_shader);
+        const Shader *shader = params.shaders[i];
+        const auto *shader_impl = reinterpret_cast<const VulkanShader *>(shader);
         stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stage.stage = shader_type_to_stage_flags(shader->shader_type());
-        stage.module = shader->module();
+        stage.module = shader_impl->module();
         stage.pName = "main";
     }
 
-    assert(params.pass != nullptr);
-    assert(params.pass->renderer_type() == RendererType::Vulkan);
     const auto *pass_impl = reinterpret_cast<const VulkanRenderPass *>(params.pass);
 
     VkGraphicsPipelineCreateInfo pipeline_info = {};
@@ -256,6 +256,10 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
     pipeline_info.basePipelineIndex = -1;
 
     vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &_handle);
+}
+
+bool VulkanPipeline::is_valid() const {
+    return _handle != VK_NULL_HANDLE;
 }
 
 uint8_t VulkanPipeline::descriptor_set_count() const {
@@ -296,7 +300,7 @@ uint32_t VulkanPipeline::count_total_attributes(
 ) {
     uint32_t count = 0;
     for (size_t i = 0; i < layout_count; ++i) {
-        count += layouts[i].attributes().size();
+        count += layouts[i].attribute_count;
     }
     return count;
 }

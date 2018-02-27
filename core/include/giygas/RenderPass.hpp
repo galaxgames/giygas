@@ -22,6 +22,9 @@ namespace giygas {
         virtual ~RenderPass() = default;
         virtual RendererType renderer_type() const = 0;
         virtual void create(const RenderPassCreateParameters &params) = 0;
+        virtual bool is_valid() const = 0;
+        virtual size_t attachment_count() const = 0;
+        virtual const AttachmentPurpose *attachment_purposes() const = 0;
     };
 
 }

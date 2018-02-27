@@ -78,7 +78,7 @@ namespace giygas {
         const VertexAttributeLayout* vertex_buffer_layouts;
         size_t vertex_buffer_layout_count;
         const RenderPass *pass;
-        const Shader **shaders;
+        const Shader * const *shaders;
         size_t shader_count;
         PushConstantsRange vertex_push_constants;
         PushConstantsRange fragment_push_constants;

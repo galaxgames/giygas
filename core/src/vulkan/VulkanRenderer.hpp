@@ -102,6 +102,7 @@ namespace giygas {
         Framebuffer *make_framebuffer() override;
         Pipeline *make_pipeline() override;
         CommandPool *make_command_pool() override;
+        CommandBuffer *make_command_buffer() override;
 
         const RenderTarget *get_swapchain_rendertarget(uint32_t index) const override;
         uint32_t swapchain_framebuffer_count() const override;

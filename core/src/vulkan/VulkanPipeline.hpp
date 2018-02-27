@@ -39,6 +39,7 @@ namespace giygas {
 
         RendererType renderer_type() const override;
         void create(const PipelineCreateParameters &params) override;
+        bool is_valid() const override;
         uint8_t descriptor_set_count() const override;
         bool is_descriptor_set_compatible(const DescriptorSet *descriptor_set) const override;
 

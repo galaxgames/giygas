@@ -6,6 +6,7 @@
 #include "IndexRange.hpp"
 #include "UniformBuffer.hpp"
 #include "DescriptorSet.hpp"
+#include "CommandPool.hpp"
 
 namespace giygas {
 
@@ -56,7 +57,9 @@ namespace giygas {
     public:
         virtual ~CommandBuffer() = default;
         virtual RendererType renderer_type() const = 0;
+        virtual void create(CommandPool *pool) = 0;
         virtual void record_pass(const SingleBufferPassInfo &info) = 0;
+        virtual bool is_valid() const = 0;
     };
 
 }

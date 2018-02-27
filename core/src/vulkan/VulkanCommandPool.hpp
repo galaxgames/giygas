@@ -13,24 +13,21 @@ namespace giygas {
         VkCommandPool _handle;
 
     public:
-
-        VulkanCommandPool();
-
+        explicit VulkanCommandPool(VulkanRenderer *renderer);
         ~VulkanCommandPool() override;
 
         //
         // CommandPool implementation
         //
-
-        CommandBuffer *make_buffer() override;
+        RendererType renderer_type() const override;
+        void create() override;
         void reset_buffers() override;
-
+        bool is_valid() const override;
 
         //
         // VulkanCommandPool implementation
         //
 
-        void create(VulkanRenderer *renderer);
         void destroy();
         VkCommandPool handle() const;
 

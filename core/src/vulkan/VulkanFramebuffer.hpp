@@ -12,12 +12,11 @@ namespace giygas {
     class VulkanFramebuffer : public Framebuffer {
 
         VulkanRenderer *_renderer;
-        VkFramebuffer _framebuffer;
-        //VkRenderPass _pass;
+        VkFramebuffer _handle;
         uint32_t _width;
         uint32_t _height;
         size_t _attachment_count;
-
+        unique_ptr<AttachmentPurpose[]> _purposes;
 
     public:
         explicit VulkanFramebuffer(VulkanRenderer *renderer);
@@ -33,16 +32,18 @@ namespace giygas {
 
         RendererType renderer_type() const override;
         void create(const FramebufferCreateParameters &params) override;
+        bool is_valid() const override;
         uint32_t width() const override;
         uint32_t height() const override;
         size_t attachment_count() const override;
+        const AttachmentPurpose *attachment_purposes() const override;
 
         //
         // VulkanFramebuffer implementation
         //
 
         VkFramebuffer handle() const;
-        //const AttachmentPurpose *purposes() const;
+        //const AttachmentPurpose *attachment_purposes() const;
 
 
     };

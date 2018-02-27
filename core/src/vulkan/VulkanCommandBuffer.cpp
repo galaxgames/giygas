@@ -7,15 +7,14 @@
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanDescriptorSet.hpp"
 #include "VulkanRenderPass.hpp"
+#include <giygas/validation/command_buffer_validation.hpp>
 
 using namespace giygas;
+using namespace giygas::validation;
 
-VulkanCommandBuffer::VulkanCommandBuffer(
-    VulkanRenderer *renderer,
-    VulkanCommandPool *pool
-) {
+VulkanCommandBuffer::VulkanCommandBuffer(VulkanRenderer *renderer) {
     _renderer = renderer;
-    _pool = pool;
+    _pool = nullptr;
     _handle = VK_NULL_HANDLE;
 }
 
@@ -27,7 +26,11 @@ RendererType VulkanCommandBuffer::renderer_type() const {
     return RendererType::Vulkan;
 }
 
-void VulkanCommandBuffer::create() {
+void VulkanCommandBuffer::create(CommandPool *pool) {
+    assert(validate_command_buffer_create(this, pool));
+
+    _pool = reinterpret_cast<const VulkanCommandPool *>(pool);
+
     VkCommandBufferAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.commandPool = _pool->handle();
@@ -38,18 +41,9 @@ void VulkanCommandBuffer::create() {
 }
 
 void VulkanCommandBuffer::record_pass(const SingleBufferPassInfo &info) {
+    assert(validate_command_buffer_record_pass(this, info));
+
     VkDevice device = _renderer->device();
-
-#ifndef NDEBUG
-    if (info.draw_count > 0) {
-        assert(info.draws != nullptr);
-    }
-
-    assert(info.pass_info.pass != nullptr);
-    assert(info.pass_info.framebuffer != nullptr);
-    assert(info.pass_info.pass->renderer_type() == RendererType::Vulkan);
-    assert(info.pass_info.framebuffer->renderer_type() == RendererType::Vulkan);
-#endif
 
     const auto *pass_impl = reinterpret_cast<const VulkanRenderPass *>(info.pass_info.pass);
     const auto *framebuffer_impl = reinterpret_cast<const VulkanFramebuffer *>(info.pass_info.framebuffer);
@@ -66,16 +60,13 @@ void VulkanCommandBuffer::record_pass(const SingleBufferPassInfo &info) {
 
     size_t attachment_count = framebuffer_impl->attachment_count();
 
-    assert(info.pass_info.clear_value_count >= attachment_count);
-
     // TODO: Reduce frequency of allocation.
     unique_ptr<VkClearValue[]> clear_values(new VkClearValue[attachment_count]);
-    const AttachmentPurpose *purposes = pass_impl->purposes();
+    const AttachmentPurpose *purposes = pass_impl->attachment_purposes();
     for (size_t i = 0; i < attachment_count; ++i) {
         const ClearValue &clear_value = info.pass_info.clear_values[i];
         VkClearValue &api_clear_val = clear_values[i];
         AttachmentPurpose purpose = clear_value.purpose;
-        assert(purposes[i] == purpose);
         if (purpose == AttachmentPurpose::Color) {
             api_clear_val = {
                 clear_value.color_value.x,
@@ -113,27 +104,6 @@ void VulkanCommandBuffer::record_pass(const SingleBufferPassInfo &info) {
 }
 
 void VulkanCommandBuffer::record_draw(const DrawInfo &info) const {
-#ifndef NDEBUG
-    assert(info.pipeline != nullptr);
-    assert(info.pipeline->renderer_type() == RendererType::Vulkan);
-    for (size_t i = 0; i < info.vertex_buffer_count; ++i) {
-        const VertexBuffer *vertex_buffer = info.vertex_buffers[i];
-        assert(vertex_buffer->renderer_type() == RendererType::Vulkan);
-    }
-    assert(info.index_buffer != nullptr);
-    assert(info.index_buffer->renderer_type() == RendererType::Vulkan);
-
-    // Validate descriptor set
-    if (info.pipeline->descriptor_set_count() > 0) {
-        assert(info.descriptor_set != nullptr);
-        assert(info.descriptor_set->renderer_type() == RendererType::Vulkan);
-        assert(info.pipeline->is_descriptor_set_compatible(info.descriptor_set));
-    }
-    else {
-        assert(info.descriptor_set == nullptr);
-    }
-#endif
-
     const auto *pipeline = reinterpret_cast<const VulkanPipeline *>(info.pipeline);
     const auto *index_buffer
         = reinterpret_cast<const VulkanGenericIndexBuffer *>(info.index_buffer->cast_to_specific());
@@ -196,6 +166,10 @@ void VulkanCommandBuffer::record_draw(const DrawInfo &info) const {
         0   // first instance
     );
 
+}
+
+bool VulkanCommandBuffer::is_valid() const {
+    return _handle != VK_NULL_HANDLE;
 }
 
 VkCommandBuffer VulkanCommandBuffer::handle() const {

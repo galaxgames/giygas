@@ -11,6 +11,7 @@
 #include "UniformBuffer.hpp"
 #include "Sampler.hpp"
 #include "RenderPass.hpp"
+#include "CommandBuffer.hpp"
 
 namespace giygas {
 
@@ -33,6 +34,7 @@ namespace giygas {
         virtual Framebuffer *make_framebuffer() = 0;
         virtual Pipeline *make_pipeline() = 0;
         virtual CommandPool *make_command_pool() = 0;
+        virtual CommandBuffer *make_command_buffer() = 0;
 
         virtual const RenderTarget *get_swapchain_rendertarget(uint32_t index) const = 0;
         virtual uint32_t swapchain_framebuffer_count() const = 0;

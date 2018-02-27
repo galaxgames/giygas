@@ -98,22 +98,23 @@ public:
         //
         // Setup Vertex Attribute layout
         //
-        VertexAttributeLayout layout(0, sizeof(VertexData));
-        LayoutAttribute position_attrib = {};
+        array<VertexAttribute, 3> layout_attribs = {};
+        VertexAttribute &position_attrib = layout_attribs[0];
+        VertexAttribute &color_attrib = layout_attribs[1];
+        VertexAttribute &uv_attrib = layout_attribs[2];
         position_attrib.component_count = 3;
         position_attrib.component_size = sizeof(Vector3);
         position_attrib.offset = offsetof(VertexData, position);
-        LayoutAttribute color_attrib = {};
         color_attrib.component_count = 3;
         color_attrib.component_size = sizeof(Vector3);
         color_attrib.offset = offsetof(VertexData, color);
-        LayoutAttribute uv_attrib = {};
         uv_attrib.component_count = 2;
         uv_attrib.component_size = sizeof(Vector2);
         uv_attrib.offset = offsetof(VertexData, uv);
-        layout.add_attribute(position_attrib);
-        layout.add_attribute(color_attrib);
-        layout.add_attribute(uv_attrib);
+        VertexAttributeLayout layout = {};
+        layout.stride = sizeof(VertexData);
+        layout.attribute_count = layout_attribs.size();
+        layout.attributes = layout_attribs.data();
 
         //
         // Setup uniform buffer
@@ -286,8 +287,12 @@ public:
         // Make command buffers
         //
         _command_pool = unique_ptr<CommandPool>(_renderer->make_command_pool());
-        _offscreen_command_buffer = unique_ptr<CommandBuffer>(_command_pool->make_buffer());
-        _onscreen_command_buffer = unique_ptr<CommandBuffer>(_command_pool->make_buffer());
+        _command_pool->create();
+        _offscreen_command_buffer = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
+        _onscreen_command_buffer = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
+        _offscreen_command_buffer->create(_command_pool.get());
+        _onscreen_command_buffer->create(_command_pool.get());
+
     }
 
     void update(float elapsed_seconds) override {

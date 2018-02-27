@@ -1,7 +1,9 @@
 #include "VulkanRenderPass.hpp"
 #include "VulkanRenderer.hpp"
+#include <giygas/validation/render_pass_validation.hpp>
 
 using namespace giygas;
+using namespace giygas::validation;
 
 VulkanRenderPass::VulkanRenderPass(VulkanRenderer *renderer) {
     _renderer = renderer;
@@ -17,6 +19,7 @@ RendererType VulkanRenderPass::renderer_type() const {
 }
 
 void VulkanRenderPass::create(const RenderPassCreateParameters &params) {
+    assert(validate_render_pass_create(this, params));
 
     unique_ptr<VkAttachmentDescription[]> attachment_descriptions(
         new VkAttachmentDescription[params.attachment_count] {}
@@ -35,14 +38,13 @@ void VulkanRenderPass::create(const RenderPassCreateParameters &params) {
         }
     }
 
-    assert(depth_stencil_attachment_count < 2);
-
     unique_ptr<VkAttachmentReference[]> color_refs(
         new VkAttachmentReference[color_attachment_count] {}
     );
     VkAttachmentReference depth_stencil_ref = {};
     depth_stencil_ref.attachment = VK_ATTACHMENT_UNUSED;
 
+    _attachment_count = params.attachment_count;
     _purposes = unique_ptr<AttachmentPurpose []>(
         new AttachmentPurpose[params.attachment_count] {}
     );
@@ -54,8 +56,6 @@ void VulkanRenderPass::create(const RenderPassCreateParameters &params) {
         const RenderPassAttachment &attachment = params.attachments[i];
         _purposes[i] = attachment.purpose;
         VkAttachmentDescription &description = attachment_descriptions[i];
-        assert(attachment.target != nullptr);
-        assert(attachment.target->renderer_type() == RendererType::Vulkan);
         const auto *target = static_cast<const VulkanRenderTarget *>(attachment.target->rendertarget_impl());
         set_description_from_attachmnent_params(description, target);
 
@@ -87,11 +87,19 @@ void VulkanRenderPass::create(const RenderPassCreateParameters &params) {
     vkCreateRenderPass(_renderer->device(), &renderpass_create_info, nullptr, &_handle);
 }
 
+bool VulkanRenderPass::is_valid() const {
+    return _handle != VK_NULL_HANDLE;
+}
+
 VkRenderPass VulkanRenderPass::handle() const {
     return _handle;
 }
 
-const AttachmentPurpose* VulkanRenderPass::purposes() const {
+size_t VulkanRenderPass::attachment_count() const {
+    return _attachment_count;
+}
+
+const AttachmentPurpose* VulkanRenderPass::attachment_purposes() const {
     return _purposes.get();
 }
 

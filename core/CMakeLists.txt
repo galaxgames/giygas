@@ -16,7 +16,10 @@ set(GIYGAS_WITH_VULKAN ${Vulkan_FOUND} CACHE BOOL "Build with Vulkan Renderer Im
 file(GLOB GIYGAS_SOURCE_FILES
     "./src/*.cpp"
     "./src/*.hpp"
+    "./src/validation/*.cpp"
+    "./src/validation/*.hpp"
     "./include/giygas/*.hpp"
+    "./include/giygas/validation/*.hpp"
 )
 file(GLOB_RECURSE GIYGAS_TEST_SOURCE_FILES
     "./test/core/*.cpp"

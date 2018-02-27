@@ -10,13 +10,13 @@ namespace giygas {
     class VulkanCommandBuffer final : public CommandBuffer {
 
         VulkanRenderer *_renderer;
-        VulkanCommandPool *_pool;
+        const VulkanCommandPool *_pool;
         VkCommandBuffer _handle;
 
         void record_draw(const DrawInfo &info) const;
 
     public:
-        VulkanCommandBuffer(VulkanRenderer *renderer, VulkanCommandPool *pool /*, bool is_static */);
+        VulkanCommandBuffer(VulkanRenderer *renderer);
         ~VulkanCommandBuffer() override;
 
         //
@@ -25,13 +25,13 @@ namespace giygas {
 
         RendererType renderer_type() const override;
         void record_pass(const SingleBufferPassInfo &info) override;
-
+        void create(CommandPool *pool) override;
+        bool is_valid() const override;
 
         //
         // VulkanCommandBuffer implementation
         //
 
-        void create();
         VkCommandBuffer handle() const;
 
     };
