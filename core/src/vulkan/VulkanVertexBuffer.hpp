@@ -28,9 +28,8 @@ namespace giygas {
         //
 
         RendererType renderer_type() const override;
-
         void set_data(size_t offset, const uint8_t *data, size_t size) override;
-
+        bool is_valid() const override;
 
         //
         // VulkanVertexBuffer implementation

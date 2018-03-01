@@ -28,6 +28,7 @@ namespace giygas {
         uint32_t _next_swapchain_image_index;
         VkFence _command_buffers_finished_fence;
         VkDescriptorPool _shared_descriptor_pool;
+        bool _ready_to_present;
 
         static VkResult create_instance(
             const VulkanContext *context,

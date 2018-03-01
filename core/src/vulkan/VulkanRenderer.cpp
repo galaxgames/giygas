@@ -31,6 +31,7 @@ VulkanRenderer::VulkanRenderer(VulkanContext *context)
     _image_available_semaphore = VK_NULL_HANDLE;
     _render_finished_semaphore = VK_NULL_HANDLE;
     _command_buffers_finished_fence = VK_NULL_HANDLE;
+    _ready_to_present = false;
 }
 
 VulkanRenderer::~VulkanRenderer() {
@@ -206,6 +207,7 @@ uint32_t VulkanRenderer::get_api_texture_format(TextureFormat format) const {
 }
 
 void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
+    assert(_ready_to_present == false);
 
     // TODO: Reallocating this buffer every frame sucks.
     // TODO: Investigate how expensive this is to do every frame and look into a better interface
@@ -235,9 +237,12 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
 
 
     vkQueueSubmit(_graphics_queue, 1, &submit_info, _command_buffers_finished_fence);
+    _ready_to_present = true;
 }
 
 void VulkanRenderer::present() {
+    assert(_ready_to_present);
+
     VkSwapchainKHR swapchain_handle = _swapchain.handle();
     VkResult present_result;
     VkPresentInfoKHR present_info = {};
@@ -262,6 +267,8 @@ void VulkanRenderer::present() {
 
     vkWaitForFences(_device, 1, &_command_buffers_finished_fence, VK_TRUE, numeric_limits<uint64_t>::max());
     vkResetFences(_device, 1, &_command_buffers_finished_fence);
+
+    _ready_to_present = false;
 }
 
 VkDevice VulkanRenderer::device() const {

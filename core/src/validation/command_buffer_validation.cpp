@@ -23,6 +23,14 @@ bool validate_draw_info(const CommandBuffer *target, const DrawInfo &info, size_
     for (size_t i = 0; i < info.vertex_buffer_count; ++i) {
         const VertexBuffer *vertex_buffer = info.vertex_buffers[i];
         validate(
+            vertex_buffer != nullptr,
+            "DrawInfo[" << index << "]: Given pointer to vertex buffer #" << i << " is null"
+        )
+        validate(
+            vertex_buffer->is_valid(),
+            "DrawInfo[" << index << "]: VertexBuffer #" << i << " is not in a valid state."
+        )
+        validate(
             vertex_buffer->renderer_type() == target->renderer_type(),
             "DrawInfo[" << index << "]: RendererType of given vertex buffer #" << i << " does not "
             "match the RendererType of the CommandBuffer being recorded."

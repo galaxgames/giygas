@@ -7,7 +7,7 @@ namespace giygas  {
     public:
         float x, y, z, w;
 
-        Vector4();
+        Vector4() = default; // Default in header to allow default value initialization
         Vector4(float x, float y, float z, float w);
     };
 }

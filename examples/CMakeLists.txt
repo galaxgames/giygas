@@ -56,7 +56,7 @@ file(GLOB_RECURSE GIYGAS_EXAMPLE_CONTENT_SOURCE_FILES RELATIVE ${CMAKE_CURRENT_S
     "./content/*"
 )
 add_content_commands("${GIYGAS_EXAMPLE_CONTENT_SOURCE_FILES}" GIYGAS_EXAMPLE_CONTENT_GENERATED_CONTENT_FILES)
-add_custom_target(example_content DEPENDS ${GIYGAS_EXAMPLE_CONTENT_GENERATED_CONTENT_FILES})
+add_custom_target(example_content DEPENDS ${GIYGAS_EXAMPLE_CONTENT_GENERATED_CONTENT_FILES} SOURCES ${GIYGAS_EXAMPLE_CONTENT_SOURCE_FILES})
 
 # Framebuffers Example
 add_executable(example_framebuffers "example_common.cpp" "example_common.hpp" "framebuffers.cpp")

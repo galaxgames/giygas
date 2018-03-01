@@ -50,6 +50,10 @@ void VulkanVertexBuffer::set_data(size_t offset, const uint8_t *data, size_t siz
     vkUnmapMemory(device, _device_memory);
 }
 
+bool VulkanVertexBuffer::is_valid() const {
+    return _handle != VK_NULL_HANDLE;
+}
+
 VkBuffer VulkanVertexBuffer::handle() const {
     return _handle;
 }

@@ -21,6 +21,9 @@ namespace giygas {
          */
         virtual void set_data(size_t offset, const uint8_t *data, size_t size) = 0;
 
+        virtual bool is_valid() const = 0;
+
+
         template <typename T>
         static void set_data(VertexBuffer &buffer, size_t offset, const T *data, size_t count) {
             assert(sizeof(T) % sizeof(uint8_t) == 0);

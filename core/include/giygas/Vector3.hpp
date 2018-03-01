@@ -6,7 +6,7 @@ namespace giygas {
     public:
         float x, y, z;
 
-        Vector3();
+        Vector3() = default;  // Default in header to allow default value initialization
         Vector3(float x, float y, float z);
 
         Vector3 operator+(const Vector3 &rhs) const;
