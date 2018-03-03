@@ -197,6 +197,8 @@ void VulkanPipeline::create(const PipelineCreateParameters &params) {
         range.offset = static_cast<uint32_t>(params.fragment_push_constants.offset);
         ++push_constant_range_count;
     }
+    _vertex_push_constants_range = params.vertex_push_constants;
+    _fragment_push_constants_range = params.fragment_push_constants;
 
     uint32_t set_layout_count;
     unique_ptr<VkDescriptorSetLayout[]> descriptor_set_layout_handles;
@@ -271,6 +273,14 @@ bool VulkanPipeline::is_descriptor_set_compatible(const DescriptorSet *descripto
     assert(descriptor_set->renderer_type() == RendererType::Vulkan);
     const auto *set_impl = reinterpret_cast<const VulkanDescriptorSet *>(descriptor_set);
     return _descriptor_set_layout == set_impl->layout();
+}
+
+PushConstantsRange VulkanPipeline::vertex_push_constants_range() const {
+    return _vertex_push_constants_range;
+}
+
+PushConstantsRange VulkanPipeline::fragment_push_constants_range() const {
+    return _fragment_push_constants_range;
 }
 
 RendererType VulkanPipeline::renderer_type() const {

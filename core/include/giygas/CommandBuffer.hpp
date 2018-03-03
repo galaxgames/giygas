@@ -33,6 +33,12 @@ namespace giygas {
         const ClearValue *clear_values;
     };
 
+    class PushConstants {
+    public:
+        PushConstantsRange range;
+        const uint8_t *data;
+    };
+
     class DrawInfo {
     public:
         const Pipeline *pipeline;
@@ -41,9 +47,8 @@ namespace giygas {
         const GenericIndexBuffer *index_buffer;
         const DescriptorSet *descriptor_set;
         IndexRange index_range;
-        size_t push_constants_offset;
-        size_t push_constants_size;
-        const uint8_t *push_constants;
+        PushConstants vertex_push_constants;
+        PushConstants fragment_push_constants;
     };
 
     class SingleBufferPassInfo {

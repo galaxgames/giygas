@@ -6,14 +6,9 @@
 #include "DescriptorSet.hpp"
 #include "Framebuffer.hpp"
 #include "ColorChannels.hpp"
+#include "PushConstantsRange.hpp"
 
 namespace giygas {
-
-    class PushConstantsRange {
-    public:
-        size_t size;
-        size_t offset;
-    };
 
     enum class BlendOperation {
         ADD,

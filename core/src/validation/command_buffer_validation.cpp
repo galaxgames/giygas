@@ -66,6 +66,32 @@ bool validate_draw_info(const CommandBuffer *target, const DrawInfo &info, size_
         );
     }
 
+    // Validate push constants
+    PushConstantsRange pipeline_pc_v = info.pipeline->vertex_push_constants_range();
+    PushConstantsRange pipeline_pc_f = info.pipeline->fragment_push_constants_range();
+    if (pipeline_pc_v.size > 0 || info.vertex_push_constants.range.size > 0) {
+        validate(
+            info.vertex_push_constants.range.size == pipeline_pc_v.size && info.vertex_push_constants.range.offset == pipeline_pc_v.offset,
+            "DrawInfo[" << index << "]: The given vertex push constants range does not match the pipelines."
+        )
+        validate(
+            info.vertex_push_constants.data != nullptr,
+            "DrawInfo[" << index << "]: The given pointer vertex push constants data cannot be "
+            "null when the given vertex push constant size is greater than zero."
+        )
+    }
+    if (pipeline_pc_f.size > 0 || info.fragment_push_constants.range.size > 0) {
+        validate(
+            info.fragment_push_constants.range.size == pipeline_pc_f.size && info.vertex_push_constants.range.offset == pipeline_pc_f.offset,
+            "DrawInfo[" << index << "]: The given fragment push constants range does not match the pipeline's."
+        )
+        validate(
+            info.fragment_push_constants.data != nullptr,
+            "DrawInfo[" << index << "]: The given pointer fragment push constants data cannot be "
+                "null when the given fragment push constant size is greater than zero."
+        )
+    }
+
     return true;
 }
 

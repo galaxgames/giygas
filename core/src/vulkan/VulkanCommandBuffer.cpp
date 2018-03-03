@@ -132,14 +132,24 @@ void VulkanCommandBuffer::record_draw(const DrawInfo &info) const {
 
     vkCmdBindIndexBuffer(_handle, index_buffer->handle(), 0, index_buffer->index_type());
 
-    if (info.push_constants_size > 0) {
+    if (info.vertex_push_constants.range.size > 0) {
         vkCmdPushConstants(
             _handle,
             pipeline->layout_handle(),
-            VK_SHADER_STAGE_ALL,
-            static_cast<uint32_t>(info.push_constants_offset * sizeof(uint8_t)),
-            static_cast<uint32_t>(info.push_constants_size * sizeof(uint8_t)),
-            info.push_constants
+            VK_SHADER_STAGE_VERTEX_BIT,
+            static_cast<uint32_t>(info.vertex_push_constants.range.offset * sizeof(uint8_t)),
+            static_cast<uint32_t>(info.vertex_push_constants.range.size * sizeof(uint8_t)),
+            info.vertex_push_constants.data
+        );
+    }
+    if (info.fragment_push_constants.range.size > 0) {
+        vkCmdPushConstants(
+            _handle,
+            pipeline->layout_handle(),
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            static_cast<uint32_t>(info.fragment_push_constants.range.offset * sizeof(uint8_t)),
+            static_cast<uint32_t>(info.fragment_push_constants.range.size * sizeof(uint8_t)),
+            info.fragment_push_constants.data
         );
     }
 

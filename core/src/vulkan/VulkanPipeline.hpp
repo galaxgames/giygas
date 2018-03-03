@@ -13,6 +13,8 @@ namespace giygas {
         VkPipelineLayout _layout;
         VkPipeline _handle;
         VkDescriptorSetLayout _descriptor_set_layout;
+        PushConstantsRange _vertex_push_constants_range;
+        PushConstantsRange _fragment_push_constants_range;
 
         static VkShaderStageFlagBits shader_type_to_stage_flags(ShaderType type);
 
@@ -42,6 +44,8 @@ namespace giygas {
         bool is_valid() const override;
         uint8_t descriptor_set_count() const override;
         bool is_descriptor_set_compatible(const DescriptorSet *descriptor_set) const override;
+        PushConstantsRange vertex_push_constants_range() const override;
+        PushConstantsRange fragment_push_constants_range() const override;
 
 
         //

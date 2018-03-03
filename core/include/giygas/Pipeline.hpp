@@ -11,6 +11,8 @@ namespace giygas {
         virtual bool is_valid() const = 0;
         virtual uint8_t descriptor_set_count() const = 0;
         virtual bool is_descriptor_set_compatible(const DescriptorSet *descriptor_set) const = 0;
+        virtual PushConstantsRange vertex_push_constants_range() const = 0;
+        virtual PushConstantsRange fragment_push_constants_range() const = 0;
     };
 
 }
