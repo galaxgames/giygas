@@ -1,7 +1,7 @@
 #include <giygas/GLFWContext.hpp>
 #include <giygas/Renderer.hpp>
 #include <giygas/giygas.hpp>
-#include <giygasutil/EventLoopUpdatable.hpp>
+#include <giygasutil/GameLoopDelegate.hpp>
 #include <giygasutil/EventLoopContextRunner.hpp>
 #include <iostream>
 #include <giygasutil/util.hpp>
@@ -18,7 +18,7 @@ public:
     Vector4 color;
 };
 
-class TriangleExampleApp : public EventLoopUpdatable {
+class TriangleExampleApp : public GameLoopDelegate {
 
     unique_ptr<Renderer> _renderer;
     ShaderLoader _shader_loader;
@@ -172,7 +172,10 @@ public:
 
     }
 
-    void update(float elapsed_seconds) override {
+    void update_logic(float elapsed_seconds) override {
+    }
+
+    void update_graphics() override {
         const CommandBuffer *command_buffer
             = _command_buffers[_renderer->next_swapchain_framebuffer_index()].get();
         _renderer->submit(&command_buffer, 1);

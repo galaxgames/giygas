@@ -1,19 +1,19 @@
 #pragma once
 #include <giygasutil/export.h>
 #include <giygas/EventLoopContext.hpp>
-#include "EventLoopUpdatable.hpp"
+#include "GameLoopDelegate.hpp"
 
 namespace giygas {
     class GIYGASUTIL_EXPORT EventLoopContextRunner {
         EventLoopContext *_context;
-        EventLoopUpdatable *_updatable;
+        GameLoopDelegate *_updatable;
     public:
         EventLoopContextRunner(
             EventLoopContext *context,
-            EventLoopUpdatable *updatable
+            GameLoopDelegate *updatable
         );
         void set_context(EventLoopContext *context);
-        void set_updatable(EventLoopUpdatable *updatable);
+        void set_updatable(GameLoopDelegate *updatable);
         void run();
     };
 }

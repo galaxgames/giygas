@@ -30,11 +30,19 @@ void VulkanVertexBuffer::set_data(size_t offset, const uint8_t *data, size_t siz
 
     VkDevice device = _renderer->device();
 
-    if (previous_size <= required_size) {
+    // set_data ensures that the buffer if valid and ready for usage, so let's make an interal
+    // buffer is created for zero-sized buffers.
+    if (previous_size < required_size || _handle == VK_NULL_HANDLE) {
         vkFreeMemory(device, _device_memory, nullptr);
         vkDestroyBuffer(device, _handle, nullptr);
+
+        VkDeviceSize buffer_size = static_cast<VkDeviceSize>(required_size);
+        if (buffer_size == 0) {
+            buffer_size = 1;
+        }
+
         _renderer->create_buffer(
-            static_cast<VkDeviceSize>(required_size),
+            buffer_size,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             _handle,
@@ -42,12 +50,22 @@ void VulkanVertexBuffer::set_data(size_t offset, const uint8_t *data, size_t siz
         );
     }
 
-    void *mapped_buffer;
-    if (vkMapMemory(device, _device_memory, offset, size, 0, &mapped_buffer) != VK_SUCCESS) {
-        return;
+    size_t copy_size = size;
+    size_t copy_offset = offset;
+    if (previous_size < required_size) {
+        copy_size = required_size;
+        copy_offset = 0;
     }
-    std::copy_n(data, size, static_cast<uint8_t *>(mapped_buffer));
-    vkUnmapMemory(device, _device_memory);
+
+    // Vulkan does not support mapping 0-sized buffers.
+    if (copy_size > 0) {
+        void *mapped_buffer;
+        if (vkMapMemory(device, _device_memory, copy_offset, copy_size, 0, &mapped_buffer) != VK_SUCCESS) {
+            return;
+        }
+        std::copy_n(data, size, static_cast<uint8_t *>(mapped_buffer));
+        vkUnmapMemory(device, _device_memory);
+    }
 }
 
 bool VulkanVertexBuffer::is_valid() const {

@@ -1,6 +1,6 @@
 #include <giygas/giygas.hpp>
 #include <giygas/GLFWContext.hpp>
-#include <giygasutil/EventLoopUpdatable.hpp>
+#include <giygasutil/GameLoopDelegate.hpp>
 #include <giygasutil/EventLoopContextRunner.hpp>
 #include <giygas/Matrix4x4.hpp>
 #include <giygasutil/util.hpp>
@@ -24,7 +24,7 @@ public:
     Matrix4x4 projection_tf;
 };
 
-class FramebufferExampleApp : public EventLoopUpdatable  {
+class FramebufferExampleApp : public GameLoopDelegate  {
 
     unique_ptr<Renderer> _renderer;
     ShaderLoader _shader_loader;
@@ -295,10 +295,11 @@ public:
 
     }
 
-    void update(float elapsed_seconds) override {
-        // Update game logic
+    void update_logic(float elapsed_seconds) override {
         current_rotation += elapsed_seconds;
+    }
 
+    void update_graphics() override {
         //
         // Setup uniform data
         //

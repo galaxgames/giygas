@@ -9,7 +9,7 @@ using namespace chrono;
 
 EventLoopContextRunner::EventLoopContextRunner(
     EventLoopContext *context,
-    EventLoopUpdatable *updatable
+    GameLoopDelegate *updatable
 ) {
     _context = context;
     _updatable = updatable;
@@ -19,7 +19,7 @@ void EventLoopContextRunner::set_context(EventLoopContext *context) {
     _context = context;
 }
 
-void EventLoopContextRunner::set_updatable(EventLoopUpdatable *updatable) {
+void EventLoopContextRunner::set_updatable(GameLoopDelegate *updatable) {
     _updatable = updatable;
 }
 
@@ -33,9 +33,9 @@ void EventLoopContextRunner::run() {
 
     for (;;) {
         float elapsed_seconds = duration_cast<FSeconds>(frame_start - previous_frame_start).count();
-        _updatable->update(elapsed_seconds);
         _context->update();
-
+        _updatable->update_logic(elapsed_seconds);
+        _updatable->update_graphics();
         if(_context->should_close()) {
             break;
         }

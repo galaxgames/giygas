@@ -1,7 +1,7 @@
 #include <giygas/GLFWContext.hpp>
 #include <giygas/Renderer.hpp>
 #include <giygas/giygas.hpp>
-#include <giygasutil/EventLoopUpdatable.hpp>
+#include <giygasutil/GameLoopDelegate.hpp>
 #include <giygasutil/EventLoopContextRunner.hpp>
 #include <giygasutil/util.hpp>
 #include <giygasutil/paths.hpp>
@@ -19,7 +19,7 @@ public:
     Vector2 uv;
 };
 
-class TriangleExampleApp : public EventLoopUpdatable {
+class TriangleExampleApp : public GameLoopDelegate {
 
     unique_ptr<Renderer> _renderer;
     string _content_dir;
@@ -250,7 +250,11 @@ public:
 
     }
 
-    void update(float elapsed_seconds) override {
+    void update_logic(float elapsed_seconds) override {
+
+    }
+
+    void update_graphics() override {
         const CommandBuffer *command_buffer
             = _command_buffers[_renderer->next_swapchain_framebuffer_index()].get();
         _renderer->submit(&command_buffer, 1);
