@@ -8,7 +8,6 @@
 
 #include <memory>
 #include <unordered_set>
-#include "EventLoopContext.hpp"
 #include "GLFWWindowInitOptions.hpp"
 #include "GLContext.hpp"
 #include "VulkanContext.hpp"
@@ -18,7 +17,7 @@ namespace giygas {
     using namespace std;
 
     class GIYGAS_EXPORT GLFWContext final
-        : public EventLoopContext
+        : public Context
         , public GLContext
         , public VulkanContext
     {
@@ -26,9 +25,8 @@ namespace giygas {
         int _init_error;
         GLFWwindow *_window;
         GLVersion _version;
-        unsigned int _framebuffer_width;
-        unsigned int _framebuffer_height;
-        Event<unsigned int, unsigned int> _surface_size_changed_event;
+
+        Event<unsigned int, float> _input_changed;
 
 
         //
@@ -70,10 +68,20 @@ namespace giygas {
             GLVersion version
         );
 
+        void setup_callbacks();
+
         static void framebuffer_size_callback(
             GLFWwindow* window,
             int width,
             int height
+        );
+
+        static void key_callback(
+            GLFWwindow* window,
+            int key,
+            int scancode,
+            int action,
+            int mods
         );
 
     public:
@@ -90,16 +98,10 @@ namespace giygas {
 
         bool is_valid() const override;
         void *cast_to_specific(RendererType type) override;
-        unsigned int framebuffer_width() const override;
-        unsigned int framebuffer_height() const override;
-        EventHandler<unsigned int, unsigned int> surface_size_changed() override;
-
-        //
-        // EventLoopContext implementation
-        //
-
         void update() override;
         bool should_close() const override;
+        unsigned int translate_key(InputKey key) const override;
+        EventHandler<unsigned int, float> input_changed() override;
 
 
         //

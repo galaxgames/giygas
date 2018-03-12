@@ -1,7 +1,7 @@
 #include <giygas/giygas.hpp>
 #include <giygas/GLFWContext.hpp>
 #include <giygasutil/GameLoopDelegate.hpp>
-#include <giygasutil/EventLoopContextRunner.hpp>
+#include <giygasutil/GameLoopRunner.hpp>
 #include <giygas/Matrix4x4.hpp>
 #include <giygasutil/util.hpp>
 #include "example_common.hpp"
@@ -103,13 +103,13 @@ public:
         VertexAttribute &color_attrib = layout_attribs[1];
         VertexAttribute &uv_attrib = layout_attribs[2];
         position_attrib.component_count = 3;
-        position_attrib.component_size = sizeof(Vector3);
+        position_attrib.component_size = sizeof(float);
         position_attrib.offset = offsetof(VertexData, position);
         color_attrib.component_count = 3;
-        color_attrib.component_size = sizeof(Vector3);
+        color_attrib.component_size = sizeof(float);
         color_attrib.offset = offsetof(VertexData, color);
         uv_attrib.component_count = 2;
-        uv_attrib.component_size = sizeof(Vector2);
+        uv_attrib.component_size = sizeof(float);
         uv_attrib.offset = offsetof(VertexData, uv);
         VertexAttributeLayout layout = {};
         layout.stride = sizeof(VertexData);
@@ -406,7 +406,7 @@ public:
 int main(int argc, char **argv) {
     GLFWContext context;
     FramebufferExampleApp app(context, argv[0]);
-    EventLoopContextRunner runner(&context, &app);
+    GameLoopRunner runner(&context, &app);
     app.setup();
     context.show();
     runner.run();

@@ -2,7 +2,7 @@
 #include <giygas/Renderer.hpp>
 #include <giygas/giygas.hpp>
 #include <giygasutil/GameLoopDelegate.hpp>
-#include <giygasutil/EventLoopContextRunner.hpp>
+#include <giygasutil/GameLoopRunner.hpp>
 #include <iostream>
 #include <giygasutil/util.hpp>
 #include "example_common.hpp"
@@ -188,7 +188,7 @@ public:
 int main (int argc, char **argv) {
     GLFWContext context;
     TriangleExampleApp app(context, argv[0]);
-    EventLoopContextRunner runner(&context, &app);
+    GameLoopRunner runner(&context, &app);
     app.init();
     context.show();
     runner.run();

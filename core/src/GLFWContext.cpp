@@ -1,7 +1,6 @@
 #include <glad/glad.h>
 #include <giygas/GLFWContext.hpp>
-#include <cassert>
-#include <giygas/VulkanContext.hpp>
+#include "glfw_translate_key.hpp"
 
 using namespace giygas;
 using namespace std;
@@ -12,22 +11,22 @@ GLFWContext::GLFWContext() {
 }
 
 GLFWContext::GLFWContext(GLFWContext &&other) noexcept
-    : _surface_size_changed_event(move(other._surface_size_changed_event))
+    : _input_changed(move(other._input_changed))
 {
     move_common(move(other));
 }
 
 GLFWContext& GLFWContext::operator=(GLFWContext &&other) noexcept {
-    _surface_size_changed_event = move(other._surface_size_changed_event);
+    _input_changed = move(other._input_changed);
     move_common(move(other));
     return *this;
 }
 
 void GLFWContext::move_common(GLFWContext &&other) noexcept {
+    _init_options = other._init_options;
+    _init_error = other._init_error;
     _window = other._window;
     _version = other._version;
-    _framebuffer_width = other._framebuffer_width;
-    _framebuffer_height = other._framebuffer_height;
     other._window = nullptr;
 }
 
@@ -61,16 +60,37 @@ void GLFWContext::initialize_for_opengl(GLVersion min, GLVersion max) {
         return;
     }
 
-    int framebuffer_width, framebuffer_height;
-    glfwGetFramebufferSize(_window, &framebuffer_width, &framebuffer_height);
-    _framebuffer_width = static_cast<unsigned int>(framebuffer_width);
-    _framebuffer_height = static_cast<unsigned int>(framebuffer_height);
-
-    glfwSetWindowUserPointer(_window, this);
-    glfwSetFramebufferSizeCallback(_window, framebuffer_size_callback);
+    setup_callbacks();
 
     // Make the window's context current
     glfwMakeContextCurrent(_window);
+}
+
+bool GLFWContext::initialize_for_vulkan() {
+    glfwWindowHint(GLFW_RESIZABLE, _init_options.is_resizable ? GL_TRUE : GL_FALSE);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+
+    _window = glfwCreateWindow(
+        _init_options.width,
+        _init_options.height,
+        _init_options.title,
+        nullptr, // monitor
+        nullptr  // share
+    );
+
+    if (_window == nullptr) {
+        return false;
+    }
+
+    setup_callbacks();
+    return true;
+}
+
+void GLFWContext::setup_callbacks() {
+    glfwSetWindowUserPointer(_window, this);
+    glfwSetFramebufferSizeCallback(_window, framebuffer_size_callback);
+    glfwSetKeyCallback(_window, key_callback);
 }
 
 GLFWwindow *GLFWContext::try_create_opengl_window(
@@ -114,6 +134,10 @@ void GLFWContext::get_major_minor(GLVersion version, int &major, int &minor) {
     minor = discriminant - base_discriminant + offset;
 }
 
+void GLFWContext::set_init_options(GLFWWindowInitOptions options) {
+    _init_options = options;
+}
+
 void GLFWContext::show() {
     glfwShowWindow(_window);
 }
@@ -128,6 +152,10 @@ void GLFWContext::present() {
 
 bool GLFWContext::should_close() const {
     return static_cast<bool>(glfwWindowShouldClose(_window));
+}
+
+unsigned int GLFWContext::translate_key(InputKey key) const {
+    return translate_to_glfw3_key(key);
 }
 
 bool GLFWContext::is_valid() const {
@@ -146,44 +174,8 @@ void* GLFWContext::cast_to_specific(RendererType type) {
     return nullptr;
 }
 
-//bool GLFWContext::supports_renderer(RendererType type) const {
-//    switch (type)  {
-//        case RendererType::OpenGL:
-//            return true;
-//        case RendererType::Vulkan:
-//            return glfwVulkanSupported() == GLFW_TRUE;
-//    }
-//}
-
 void GLFWContext::make_current_on_calling_thread() {
     glfwMakeContextCurrent(_window);
-}
-
-bool GLFWContext::initialize_for_vulkan() {
-    glfwWindowHint(GLFW_RESIZABLE, _init_options.is_resizable ? GL_TRUE : GL_FALSE);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
-
-    _window = glfwCreateWindow(
-        _init_options.width,
-        _init_options.height,
-        _init_options.title,
-        nullptr, // monitor
-        nullptr  // share
-    );
-
-    if (_window == nullptr) {
-        return false;
-    }
-
-    int framebuffer_width, framebuffer_height;
-    glfwGetFramebufferSize(_window, &framebuffer_width, &framebuffer_height);
-    _framebuffer_width = static_cast<unsigned int>(framebuffer_width);
-    _framebuffer_height = static_cast<unsigned int>(framebuffer_height);
-
-    glfwSetWindowUserPointer(_window, this);
-    glfwSetFramebufferSizeCallback(_window, framebuffer_size_callback);
-    return true;
 }
 
 const char** GLFWContext::get_required_instance_extensions(
@@ -199,16 +191,8 @@ VkResult GLFWContext::create_surface(
     return glfwCreateWindowSurface(instance, _window, nullptr, surface);
 }
 
-unsigned int GLFWContext::framebuffer_width() const {
-    return _framebuffer_width;
-}
-
-unsigned int GLFWContext::framebuffer_height() const {
-    return _framebuffer_height;
-}
-
-EventHandler<unsigned int, unsigned int> GLFWContext::surface_size_changed() {
-    return _surface_size_changed_event.make_handler();
+EventHandler<unsigned int, float> GLFWContext::input_changed() {
+    return _input_changed.make_handler();
 }
 
 void GLFWContext::framebuffer_size_callback(
@@ -218,10 +202,23 @@ void GLFWContext::framebuffer_size_callback(
 ) {
     void *userdata = glfwGetWindowUserPointer(window);
     auto *instance = reinterpret_cast<GLFWContext *>(userdata);
-    instance->_framebuffer_width = static_cast<unsigned int>(width);
-    instance->_framebuffer_height = static_cast<unsigned int>(height);
-    instance->_surface_size_changed_event.invoke(
-        instance->_framebuffer_width,
-        instance->_framebuffer_height
-    );
+//    instance->_framebuffer_width = static_cast<unsigned int>(width);
+//    instance->_framebuffer_height = static_cast<unsigned int>(height);
+//    instance->_surface_size_changed_event.invoke(
+//        instance->_framebuffer_width,
+//        instance->_framebuffer_height
+//    );
+}
+
+void GLFWContext::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    void *userdata = glfwGetWindowUserPointer(window);
+    auto *instance = reinterpret_cast<GLFWContext *>(userdata);
+
+    // TODO: Support repeating keys through some interface. This will be useful for in-game
+    // text input.
+    if (action == GLFW_REPEAT) {
+        return;
+    }
+    float val = action == GLFW_PRESS ? 1.0f : -1.0f;
+    instance->_input_changed.invoke(static_cast<unsigned int>(key), val);
 }

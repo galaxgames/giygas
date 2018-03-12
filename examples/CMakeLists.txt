@@ -58,22 +58,22 @@ file(GLOB_RECURSE GIYGAS_EXAMPLE_CONTENT_SOURCE_FILES RELATIVE ${CMAKE_CURRENT_S
 add_content_commands("${GIYGAS_EXAMPLE_CONTENT_SOURCE_FILES}" GIYGAS_EXAMPLE_CONTENT_GENERATED_CONTENT_FILES)
 add_custom_target(example_content DEPENDS ${GIYGAS_EXAMPLE_CONTENT_GENERATED_CONTENT_FILES} SOURCES ${GIYGAS_EXAMPLE_CONTENT_SOURCE_FILES})
 
-# Framebuffers Example
-add_executable(example_framebuffers "example_common.cpp" "example_common.hpp" "framebuffers.cpp")
-add_executable(example_triangle "example_common.cpp" "example_common.hpp" "triangle.cpp")
-add_executable(example_texture "example_common.cpp" "example_common.hpp" "texture.cpp")
-target_link_libraries(example_framebuffers giygas giygasutil)
-target_link_libraries(example_triangle giygas giygasutil)
-target_link_libraries(example_texture giygas giygasutil)
-add_dependencies(example_framebuffers example_content)
-add_dependencies(example_triangle example_content)
-add_dependencies(example_texture example_content)
+function(add_example name source_file)
+    add_executable("${name}" "example_common.hpp" "example_common.cpp" "${source_file}")
+    target_link_libraries("${name}" giygas giygasutil)
+    add_dependencies("${name}" example_content)
+    set_target_properties(
+        "${name}"
+        PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED ON
+    )
+endfunction()
 
-set_target_properties(example_framebuffers example_triangle example_texture
-    PROPERTIES
-        CXX_STANDARD 11
-        CXX_STANDARD_REQUIRED ON
-)
-
-
-
+#
+# All example executables are added below:
+#
+add_example(example_framebuffers "framebuffers.cpp")
+add_example(example_triangle "triangle.cpp")
+add_example(example_texture "texture.cpp")
+add_example(example_input "input.cpp")

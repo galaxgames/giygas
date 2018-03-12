@@ -1,4 +1,4 @@
-#include <giygasutil/EventLoopContextRunner.hpp>
+#include <giygasutil/GameLoopRunner.hpp>
 #include <ratio>
 #include <chrono>
 #include <thread>
@@ -7,23 +7,23 @@ using namespace giygas;
 using namespace std;
 using namespace chrono;
 
-EventLoopContextRunner::EventLoopContextRunner(
-    EventLoopContext *context,
+GameLoopRunner::GameLoopRunner(
+    Context *context,
     GameLoopDelegate *updatable
 ) {
     _context = context;
     _updatable = updatable;
 }
 
-void EventLoopContextRunner::set_context(EventLoopContext *context) {
+void GameLoopRunner::set_context(Context *context) {
     _context = context;
 }
 
-void EventLoopContextRunner::set_updatable(GameLoopDelegate *updatable) {
+void GameLoopRunner::set_updatable(GameLoopDelegate *updatable) {
     _updatable = updatable;
 }
 
-void EventLoopContextRunner::run() {
+void GameLoopRunner::run() {
     typedef duration<long long, ratio<1, 60>> Frames;
     typedef duration<float> FSeconds;
     typedef high_resolution_clock clock_t;
