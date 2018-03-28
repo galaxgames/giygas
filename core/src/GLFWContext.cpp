@@ -158,6 +158,14 @@ unsigned int GLFWContext::translate_key(InputKey key) const {
     return translate_to_glfw3_key(key);
 }
 
+float GLFWContext::get_input(uint32_t input) const {
+    return glfwGetKey(_window, input);
+}
+
+EventHandler<uint32_t, float> GLFWContext::input_changed() {
+    return _input_changed.make_handler();
+}
+
 bool GLFWContext::is_valid() const {
     return _window != nullptr;
 }
@@ -191,9 +199,6 @@ VkResult GLFWContext::create_surface(
     return glfwCreateWindowSurface(instance, _window, nullptr, surface);
 }
 
-EventHandler<unsigned int, float> GLFWContext::input_changed() {
-    return _input_changed.make_handler();
-}
 
 void GLFWContext::framebuffer_size_callback(
     GLFWwindow *window,

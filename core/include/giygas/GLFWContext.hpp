@@ -26,7 +26,7 @@ namespace giygas {
         GLFWwindow *_window;
         GLVersion _version;
 
-        Event<unsigned int, float> _input_changed;
+        Event<uint32_t, float> _input_changed;
 
 
         //
@@ -100,8 +100,9 @@ namespace giygas {
         void *cast_to_specific(RendererType type) override;
         void update() override;
         bool should_close() const override;
-        unsigned int translate_key(InputKey key) const override;
-        EventHandler<unsigned int, float> input_changed() override;
+        uint32_t translate_key(InputKey key) const override;
+        float get_input(uint32_t input) const override;
+        EventHandler<uint32_t, float> input_changed() override;
 
 
         //
@@ -109,7 +110,7 @@ namespace giygas {
         //
         void set_init_options(GLFWWindowInitOptions options);
         void show();
-        void set_size(unsigned int width, unsigned int height);
+        void set_size(uint32_t width, uint32_t height);
     };
 
 }

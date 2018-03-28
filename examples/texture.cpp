@@ -154,14 +154,26 @@ public:
         // Setup descriptor set
         //
         _descriptor_set = unique_ptr<DescriptorSet>(_renderer->make_descriptor_set());
-        DescriptorSetParameters descriptor_set_params = {};
-        const Sampler *descriptor_sampler = _sampler.get();
-        const Texture *descriptor_texture = _texture.get();
-        descriptor_set_params.pool = _descriptor_pool.get();
-        descriptor_set_params.sampler_count = 1;
-        descriptor_set_params.samplers = &descriptor_sampler;
-        descriptor_set_params.textures = &descriptor_texture;
-        _descriptor_set->create(descriptor_set_params);
+        SamplerDescriptorSlot sampler_slot = {};
+        sampler_slot.binding_index = 0;
+        sampler_slot.stages = GIYGAS_SHADER_STAGE_FRAGMENT;
+        sampler_slot.immutable_sampler = _sampler.get();
+        DescriptorSetCreateParameters descriptor_set_create_params = {};
+        descriptor_set_create_params.pool = _descriptor_pool.get();
+        descriptor_set_create_params.sampler_count = 1;
+        descriptor_set_create_params.sampler_slots = &sampler_slot;
+        _descriptor_set->create(descriptor_set_create_params);
+
+        SamplerDescriptorBinding sampler_binding = {};
+        sampler_binding.binding_index = 0;
+        sampler_binding.sampler = _sampler.get();
+        sampler_binding.texture = _texture.get();
+
+        DescriptorSetUpdateParameters descriptor_set_update_params = {};
+        descriptor_set_update_params.sampler_count = 1;
+        descriptor_set_update_params.sampler_bindings = &sampler_binding;
+        _descriptor_set->update(descriptor_set_update_params);
+
 
         //
         // Setup renderpass

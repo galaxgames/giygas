@@ -155,26 +155,57 @@ public:
         _descriptor_pool = unique_ptr<DescriptorPool>(_renderer->make_descriptor_pool());
         _descriptor_pool->create(descriptor_pool_params);
 
-        DescriptorSetParameters offscreen_set_parameters = {};
-        const UniformBuffer *offscreen_uniform_buffer = _offscreen_uniforms.get();
-        offscreen_set_parameters.pool = _descriptor_pool.get();
-        offscreen_set_parameters.uniform_buffer_count = 1;
-        offscreen_set_parameters.uniform_buffers = &offscreen_uniform_buffer;
-        _offscreen_descriptors = unique_ptr<DescriptorSet>(_renderer->make_descriptor_set());
-        _offscreen_descriptors->create(offscreen_set_parameters);
+        UniformBufferDescriptorSlot ub_slot = {};
+        ub_slot.binding_index = 0;
+        ub_slot.stages = GIYGAS_SHADER_STAGE_VERTEX;
 
-        DescriptorSetParameters onscreen_set_parameters = {};
-        const UniformBuffer *onscreen_uniform_buffer = _onscreen_uniforms.get();
-        const Sampler *sampler = _sampler.get();
-        const Texture *texture = _render_texture.get();
-        onscreen_set_parameters.pool = _descriptor_pool.get();
-        onscreen_set_parameters.uniform_buffer_count = 1;
-        onscreen_set_parameters.uniform_buffers = &onscreen_uniform_buffer;
-        onscreen_set_parameters.sampler_count = 1;
-        onscreen_set_parameters.samplers = &sampler;
-        onscreen_set_parameters.textures = &texture;
+        DescriptorSetCreateParameters offscreen_set_create_params = {};
+        offscreen_set_create_params.pool = _descriptor_pool.get();
+        offscreen_set_create_params.uniform_buffer_count = 1;
+        offscreen_set_create_params.uniform_buffer_slots = &ub_slot;
+        _offscreen_descriptors = unique_ptr<DescriptorSet>(_renderer->make_descriptor_set());
+        _offscreen_descriptors->create(offscreen_set_create_params);
+
+        UniformBufferDescriptorBinding ub_binding = {};
+        ub_binding.binding_index = 0;
+        ub_binding.buffer = _offscreen_uniforms.get();
+
+        DescriptorSetUpdateParameters offscreen_set_update_params = {};
+        offscreen_set_update_params.uniform_buffer_count = 1;
+        offscreen_set_update_params.uniform_buffer_bindings = &ub_binding;
+        _offscreen_descriptors->update(offscreen_set_update_params);
+
+        UniformBufferDescriptorSlot onscreen_ub_slot = {};
+        onscreen_ub_slot.binding_index = 0;
+        onscreen_ub_slot.stages = GIYGAS_SHADER_STAGE_VERTEX;
+        SamplerDescriptorSlot onscreen_sampler_slot = {};
+        onscreen_sampler_slot.binding_index = 1;
+        onscreen_sampler_slot.stages = GIYGAS_SHADER_STAGE_FRAGMENT;
+        onscreen_sampler_slot.immutable_sampler = _sampler.get();
+
+        DescriptorSetCreateParameters onscreen_set_create_params = {};
+        onscreen_set_create_params.pool = _descriptor_pool.get();
+        onscreen_set_create_params.uniform_buffer_count = 1;
+        onscreen_set_create_params.uniform_buffer_slots = &onscreen_ub_slot;
+        onscreen_set_create_params.sampler_count = 1;
+        onscreen_set_create_params.sampler_slots = &onscreen_sampler_slot;
         _onscreen_descriptors = unique_ptr<DescriptorSet>(_renderer->make_descriptor_set());
-        _onscreen_descriptors->create(onscreen_set_parameters);
+        _onscreen_descriptors->create(onscreen_set_create_params);
+
+        UniformBufferDescriptorBinding onscreen_ub_binding = {};
+        onscreen_ub_binding.binding_index = 0;
+        onscreen_ub_binding.buffer = _onscreen_uniforms.get();
+        SamplerDescriptorBinding onscreen_sampler_binding = {};
+        onscreen_sampler_binding.binding_index = 1;
+        onscreen_sampler_binding.sampler = _sampler.get();
+        onscreen_sampler_binding.texture = _render_texture.get();
+
+        DescriptorSetUpdateParameters onscreen_set_update_params = {};
+        onscreen_set_update_params.uniform_buffer_count = 1;
+        onscreen_set_update_params.uniform_buffer_bindings = &onscreen_ub_binding;
+        onscreen_set_update_params.sampler_count = 1;
+        onscreen_set_update_params.sampler_bindings = &onscreen_sampler_binding;
+        _onscreen_descriptors->update(onscreen_set_update_params);
 
         //
         // Setup shaders
