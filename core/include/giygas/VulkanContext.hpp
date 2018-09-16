@@ -1,4 +1,6 @@
 #pragma once
+#include <giygas/config.hpp>
+#ifdef GIYGAS_WITH_VULKAN
 #include <giygas/export.h>
 #include <vulkan/vulkan.h>
 #include "Context.hpp"
@@ -16,3 +18,5 @@ namespace giygas {
         ) = 0;
     };
 }
+
+#endif

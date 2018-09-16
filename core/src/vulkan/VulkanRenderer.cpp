@@ -235,7 +235,6 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &_render_finished_semaphore;
 
-
     vkQueueSubmit(_graphics_queue, 1, &submit_info, _command_buffers_finished_fence);
     _ready_to_present = true;
 }
@@ -244,7 +243,7 @@ void VulkanRenderer::present() {
     assert(_ready_to_present);
 
     VkSwapchainKHR swapchain_handle = _swapchain.handle();
-    VkResult present_result;
+    VkResult present_result = VK_RESULT_MAX_ENUM;
     VkPresentInfoKHR present_info = {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 1;
@@ -252,9 +251,9 @@ void VulkanRenderer::present() {
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &swapchain_handle;
     present_info.pImageIndices = &_next_swapchain_image_index;
-    present_info.pResults = &present_result;
+    //present_info.pResults = &present_result;
 
-    vkQueuePresentKHR(_graphics_queue, &present_info);
+    vkQueuePresentKHR(_present_queue, &present_info);
 
     vkAcquireNextImageKHR(
         _device,
@@ -264,6 +263,7 @@ void VulkanRenderer::present() {
         nullptr,
         &_next_swapchain_image_index
     );
+
 
     vkWaitForFences(_device, 1, &_command_buffers_finished_fence, VK_TRUE, numeric_limits<uint64_t>::max());
     vkResetFences(_device, 1, &_command_buffers_finished_fence);
@@ -328,10 +328,12 @@ VkResult VulkanRenderer::create_instance(
     create_info.enabledExtensionCount = needed_extensions_count;
     create_info.ppEnabledExtensionNames = needed_extensions;
 
-    array<const char *, 1> validation_layers = {
-        //"VK_LAYER_LUNARG_vktrace",
-        "VK_LAYER_LUNARG_standard_validation"
-    };
+//    array<const char *, 1> validation_layers = {
+//        //"VK_LAYER_LUNARG_vktrace",
+//        "VK_LAYER_LUNARG_standard_validation"
+//    };
+
+    array<const char *, 0> validation_layers = {};
 
     // Validation layers
     create_info.enabledLayerCount = validation_layers.size();

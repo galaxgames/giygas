@@ -10,8 +10,17 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(GTest REQUIRED)
 find_library(GMOCK_LIBRARY NAMES gmock)
 
-set(GIYGAS_WITH_OPENGL ${glad_FOUND} CACHE BOOL "Build with OpenGL Renderer Implementation")
-set(GIYGAS_WITH_VULKAN ${Vulkan_FOUND} CACHE BOOL "Build with Vulkan Renderer Implementation")
+set(giygas_with_opengl_default OFF)
+set(giygas_with_vulkan_default OFF)
+if (glad_FOUND)
+    set(giygas_with_opengl_default ON)
+endif()
+if (Vulkan_FOUND)
+    set(giygas_with_vulkan_default ON)
+endif()
+
+option(GIYGAS_WITH_OPENGL "Include OpenGL Renderer Implementation" "${giygas_with_opengl_default}")
+option(GIYGAS_WITH_VULKAN "Include Vulkan Renderer Implementation" "${giygas_with_vulkan_default}")
 
 file(GLOB GIYGAS_SOURCE_FILES
     "./src/*.cpp"
@@ -51,14 +60,6 @@ add_library(giygas_internal STATIC $<TARGET_OBJECTS:giygas_objects>)
 add_library(giygas $<TARGET_OBJECTS:giygas_objects>)
 add_executable(giygas_test ${GIYGAS_TEST_SOURCE_FILES})
 
-if (GIYGAS_WITH_OPENGL)
-    target_compile_definitions(giygas_objects PRIVATE GIYGAS_WITH_OPENGL)
-endif()
-if (GIYGAS_WITH_VULKAN)
-    target_compile_definitions(giygas_objects PRIVATE GIYGAS_WITH_VULKAN=1)
-endif()
-
-
 set_target_properties(giygas_objects giygas_test
     PROPERTIES
         CXX_STANDARD 11
@@ -73,9 +74,9 @@ generate_export_header(giygas
 
 target_include_directories(giygas_objects
     PRIVATE
-        $<TARGET_PROPERTY:glad::glad,INTERFACE_INCLUDE_DIRECTORIES>
+        # $<TARGET_PROPERTY:glad::glad,INTERFACE_INCLUDE_DIRECTORIES>
         $<TARGET_PROPERTY:glfw,INTERFACE_INCLUDE_DIRECTORIES>
-        ${Vulkan_INCLUDE_DIRS}
+        $<TARGET_PROPERTY:Vulkan::Vulkan,INTERFACE_INCLUDE_DIRECTORIES>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
 )
@@ -90,13 +91,19 @@ target_include_directories(giygas_internal
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
 )
-#target_include_directories(giygas_test
-#    PRIVATE
-#        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-#)
 
-target_link_libraries(giygas glad::glad glfw ${Vulkan_LIBRARIES})
-target_link_libraries(giygas_internal glad::glad glfw ${Vulkan_LIBRARIES})
+configure_file("config.hpp.in" "include/giygas/config.hpp")
+
+set(giygas_link_libraries glfw)
+if (GIYGAS_WITH_VULKAN)
+    list(APPEND giygas_link_libraries Vulkan::Vulkan)
+endif()
+if (GIYGAS_WITH_OPENGL)
+    list(APPEND giygas_link_libraries glad::glad)
+endif()
+
+target_link_libraries(giygas ${giygas_link_libraries})
+target_link_libraries(giygas_internal ${giygas_link_libraries})
 target_link_libraries(giygas_test
     GTest::GTest GTest::Main ${GMOCK_LIBRARY} giygas_internal
 )

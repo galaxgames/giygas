@@ -1,4 +1,10 @@
 {
+    "options": 
+    [
+        { "name": "WITH_EXAMPLES", "default": true, "cmake_option": "GIYGAS_WITH_EXAMPLES" },
+        { "name": "WITH_OPENGL", "default": false, "cmake_option": "GIYGAS_WITH_OPENGL" },
+        { "name": "WITH_VULKAN", "default": false, "cmake_option": "GIYGAS_WITH_VULKAN" }
+    ],
     "dependencies": 
     [
         {
@@ -8,17 +14,10 @@
             "ref": "release-1.8.0"
         },
         {
-            "name": "glad",
-            "type": "git",
-            "url": "https://github.com/sfuller/glad.git",
-            "ref": "cmake-config",
-            "build_arguments": ["-DGLAD_INSTALL=\"true\""]
-        },
-        {
             "name": "glfw",
             "type": "git",
             "url": "https://github.com/glfw/glfw.git",
-            "ref": "3.2.1"
+            "ref": "0a3c4f5d80b041ee1a12c8da3503653d98bd1a15"
         }
     ]
 }

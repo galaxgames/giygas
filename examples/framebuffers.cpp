@@ -5,6 +5,7 @@
 #include <giygas/Matrix4x4.hpp>
 #include <giygasutil/util.hpp>
 #include "example_common.hpp"
+#include <array>
 
 using namespace giygas;
 using namespace std;

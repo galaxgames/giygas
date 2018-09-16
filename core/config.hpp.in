@@ -1,0 +1,4 @@
+#pragma once
+
+#cmakedefine GIYGAS_WITH_OPENGL
+#cmakedefine GIYGAS_WITH_VULKAN

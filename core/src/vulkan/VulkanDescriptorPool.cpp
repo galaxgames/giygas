@@ -1,5 +1,6 @@
 #include "VulkanDescriptorPool.hpp"
 #include "VulkanRenderer.hpp"
+#include <array>
 
 using namespace giygas;
 

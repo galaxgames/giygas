@@ -1,9 +1,16 @@
 #pragma once
+#include <giygas/config.hpp>
 
+#ifdef GIYGAS_WITH_VULKAN
 // Explicitly include vulkan before glfw3 to enable glfw vulkan features.
 #include <vulkan/vulkan.h>
+#endif
+
+#ifdef GIYGAS_WITH_OPENGL
 // Glad too, glad required it is included before any other GL headers.
 #include <glad/glad.h>
+#endif
+
 #include <GLFW/glfw3.h>
 
 #include <memory>
@@ -18,8 +25,14 @@ namespace giygas {
 
     class GIYGAS_EXPORT GLFWContext final
         : public Context
+
+#ifdef GIYGAS_WITH_OPENGL
         , public GLContext
+#endif
+#ifdef GIYGAS_WITH_VULKAN
         , public VulkanContext
+#endif
+
     {
         GLFWWindowInitOptions _init_options;
         int _init_error;
@@ -28,7 +41,7 @@ namespace giygas {
 
         Event<uint32_t, float> _input_changed;
 
-
+#ifdef GIYGAS_WITH_OPENGL
         //
         // GLContext implementation
         //
@@ -36,12 +49,12 @@ namespace giygas {
         void initialize_for_opengl(GLVersion min, GLVersion max) override;
         void make_current_on_calling_thread() override;
         void present() override;
+#endif //GIYGAS_WITH_OPENGL
 
-
+#ifdef GIYGAS_WITH_VULKAN
         //
         // VulkanContext implementation
         //
-
         bool initialize_for_vulkan() override;
 
         const char **get_required_instance_extensions(
@@ -53,6 +66,7 @@ namespace giygas {
             VkSurfaceKHR *surface
         ) override;
 
+#endif // GIYGAS_WITH_VULKAN
 
         //
         // GLFWContext implementation

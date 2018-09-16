@@ -7,6 +7,7 @@
 #include <giygasutil/paths.hpp>
 #include <iostream>
 #include <fstream>
+#include <array>
 #include "example_common.hpp"
 
 using namespace giygas;

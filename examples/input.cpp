@@ -6,6 +6,7 @@
 #include <giygasutil/util.hpp>
 #include "example_common.hpp"
 #include <giygas/Matrix4x4.hpp>
+#include <array>
 
 using namespace giygas;
 using namespace giygasutil;

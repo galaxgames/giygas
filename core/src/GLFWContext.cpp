@@ -1,4 +1,6 @@
+#ifdef GIYGAS_WITH_OPENGL
 #include <glad/glad.h>
+#endif
 #include <giygas/GLFWContext.hpp>
 #include "glfw_translate_key.hpp"
 
@@ -34,6 +36,7 @@ GLFWContext::~GLFWContext() {
     glfwTerminate();
 }
 
+#ifdef GIYGAS_WITH_OPENGL
 void GLFWContext::initialize_for_opengl(GLVersion min, GLVersion max) {
     glfwWindowHint(GLFW_RESIZABLE, _init_options.is_resizable ? GL_TRUE : GL_FALSE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -65,7 +68,9 @@ void GLFWContext::initialize_for_opengl(GLVersion min, GLVersion max) {
     // Make the window's context current
     glfwMakeContextCurrent(_window);
 }
+#endif
 
+#ifdef GIYGAS_WITH_VULKAN
 bool GLFWContext::initialize_for_vulkan() {
     glfwWindowHint(GLFW_RESIZABLE, _init_options.is_resizable ? GL_TRUE : GL_FALSE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -86,6 +91,7 @@ bool GLFWContext::initialize_for_vulkan() {
     setup_callbacks();
     return true;
 }
+#endif
 
 void GLFWContext::setup_callbacks() {
     glfwSetWindowUserPointer(_window, this);
@@ -146,9 +152,11 @@ void GLFWContext::update() {
     glfwPollEvents();
 }
 
+#ifdef GIYGAS_WITH_OPENGL
 void GLFWContext::present() {
     glfwSwapBuffers(_window);
 }
+#endif
 
 bool GLFWContext::should_close() const {
     return static_cast<bool>(glfwWindowShouldClose(_window));
@@ -173,19 +181,26 @@ bool GLFWContext::is_valid() const {
 void* GLFWContext::cast_to_specific(RendererType type) {
     // Returns a pointer that can safely be re-interpreted to the a pointer of
     // the given context type. (accounts for thunking)
+#ifdef GIYGAS_WITH_OPENGL
     if (type == RendererType::OpenGL) {
         return static_cast<GLContext *>(this);
     }
+#endif
+#ifdef GIYGAS_WITH_VULKAN
     if (type == RendererType::Vulkan) {
         return static_cast<VulkanContext *>(this);
     }
+#endif
     return nullptr;
 }
 
+#ifdef GIYGAS_WITH_OPENGL
 void GLFWContext::make_current_on_calling_thread() {
     glfwMakeContextCurrent(_window);
 }
+#endif
 
+#ifdef GIYGAS_WITH_VULKAN
 const char** GLFWContext::get_required_instance_extensions(
     unsigned int *count
 ) const {
@@ -198,6 +213,7 @@ VkResult GLFWContext::create_surface(
 ) {
     return glfwCreateWindowSurface(instance, _window, nullptr, surface);
 }
+#endif //GIYGAS_WITH_VULKAN
 
 
 void GLFWContext::framebuffer_size_callback(

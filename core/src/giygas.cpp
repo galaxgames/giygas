@@ -1,9 +1,10 @@
 #include <giygas/giygas.hpp>
+#include <giygas/config.hpp>
 
-#if GIYGAS_WITH_VULKAN
+#ifdef GIYGAS_WITH_VULKAN
 #include "vulkan/VulkanRenderer.hpp"
 #endif
-#if GIYGAS_WITH_OPENGL
+#ifdef GIYGAS_WITH_OPENGL
 #include <giygas/GLContext.hpp>
 #endif
 
@@ -19,7 +20,7 @@ Renderer *giygas::make_renderer(Context *context) {
 
 Renderer* giygas::make_renderer(Context *context, RendererType type) {
     switch (type) {
-#if VULKAN_WITH_OPENGL
+#ifdef GIYGAS_WITH_OPENGL
         case RendererType::OpenGL: {
             auto *gl_context = static_cast<GLContext *>(
                 context->cast_to_specific(type)
@@ -30,6 +31,7 @@ Renderer* giygas::make_renderer(Context *context, RendererType type) {
             break;
         }
 #endif
+#ifdef GIYGAS_WITH_VULKAN
         case RendererType::Vulkan: {
             auto *vulkan_context = static_cast<VulkanContext *>(
                 context->cast_to_specific(type)
@@ -39,6 +41,7 @@ Renderer* giygas::make_renderer(Context *context, RendererType type) {
             }
             break;
         }
+#endif
         default:
             break;
     }
