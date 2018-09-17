@@ -52,6 +52,11 @@ namespace giygas {
         VkCommandBuffer begin_command_buffer() const;
         void end_command_buffer(VkCommandBuffer buffer) const;
 
+        VkFormatFeatureFlags get_required_format_features(VkImageUsageFlags usage_flags) const;
+        bool supports_texture_format(VkFormat format, VkFormatFeatureFlags needed_features) const;
+
+        void convert_data(TextureFormat from_format, TextureFormat to_format);
+
         static VkImageAspectFlags image_aspects_from_format(TextureFormat format);
 
     public:
@@ -102,15 +107,6 @@ namespace giygas {
         //
 
 
-//        void create(
-//            unique_ptr<uint8_t[]> &&data,
-//            size_t size,
-//            uint32_t width,
-//            uint32_t height,
-//            TextureFormat format,
-//            VkImageUsageFlags usage_flags,
-//            VkImageLayout final_layout
-//        );
 
     };
 

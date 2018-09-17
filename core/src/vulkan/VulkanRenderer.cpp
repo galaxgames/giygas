@@ -65,6 +65,7 @@ void VulkanRenderer::initialize() {
         _queue_family_indices,
         swapchain_info
     );
+    _physical_device = physical_device;
     if (physical_device == nullptr) {
         return;
     }
@@ -269,6 +270,10 @@ void VulkanRenderer::present() {
     vkResetFences(_device, 1, &_command_buffers_finished_fence);
 
     _ready_to_present = false;
+}
+
+VkPhysicalDevice VulkanRenderer::physical_device() const {
+    return _physical_device;
 }
 
 VkDevice VulkanRenderer::device() const {

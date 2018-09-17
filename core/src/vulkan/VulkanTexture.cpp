@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <giygas/giygas.hpp>
+#include "../giygas_internal.hpp"
 #include "VulkanTexture.hpp"
 #include "VulkanRenderer.hpp"
 
@@ -46,13 +47,10 @@ void VulkanTexture::create(
 
     VkDevice device = _renderer->device();
 
-    TextureFormat format = input_format; // TODO
-
     _data = move(data);
     _size = size;
     _width = width;
     _height = height;
-    _format = format;
 
     // Figure out the desired layout and usage flags
     VkImageLayout final_layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -72,11 +70,19 @@ void VulkanTexture::create(
     }
     _layout = final_layout;
 
-    // TODO: FIX THIS: We don't check VkFormatProperties::optimalTilingFeatures from physical device
-    // https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#VUID-VkImageCreateInfo-tiling-00985
+    VkFormat translated_format = VulkanRenderer::translate_texture_format(desired_format);
+    VkFormatFeatureFlags required_features = get_required_format_features(usage_flags);
+    while (!supports_texture_format(translated_format, required_features)) {
+        bool got_fallback_texture = giygas::get_fallback_texture_format(desired_format, desired_format);
+        translated_format = VulkanRenderer::translate_texture_format(desired_format);
+        if (!got_fallback_texture) {
+            break;
+        }
+    }
 
+    convert_data(input_format, desired_format);
+    _format = desired_format;
 
-    VkFormat translated_format = VulkanRenderer::translate_texture_format(format);
     _api_format = translated_format;
 
     VkImageLayout current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -117,7 +123,7 @@ void VulkanTexture::create(
         VkImageLayout next_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         transition_image_layout(
             _image,
-            format,
+            _format,
             current_layout,
             next_layout
         );
@@ -131,7 +137,7 @@ void VulkanTexture::create(
 
     transition_image_layout(
         _image,
-        format,
+        _format,
         current_layout,
         final_layout
     );
@@ -145,7 +151,7 @@ void VulkanTexture::create(
     view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
     view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
     view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    view_info.subresourceRange.aspectMask = image_aspects_from_format(format);
+    view_info.subresourceRange.aspectMask = image_aspects_from_format(_format);
     view_info.subresourceRange.baseMipLevel = 0;
     view_info.subresourceRange.levelCount = 1;
     view_info.subresourceRange.baseArrayLayer = 0;
@@ -249,8 +255,8 @@ void VulkanTexture::transition_image_layout(
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;
 
-    VkPipelineStageFlags source_stage;
-    VkPipelineStageFlags dest_stage;
+    VkPipelineStageFlags source_stage = {};
+    VkPipelineStageFlags dest_stage = {};
 
     if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
         barrier.srcAccessMask = 0;
@@ -394,4 +400,61 @@ VkImageAspectFlags VulkanTexture::image_aspects_from_format(TextureFormat format
             }
             return VK_IMAGE_ASPECT_STENCIL_BIT;
     }
+}
+
+VkFormatFeatureFlags VulkanTexture::get_required_format_features(VkImageUsageFlags usage_flags) const {
+    VkFormatFeatureFlags required_features = 0;
+    if (usage_flags & VK_IMAGE_USAGE_SAMPLED_BIT) {
+        required_features |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+    }
+    if (usage_flags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) {
+        required_features |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+    }
+    if (usage_flags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) {
+        required_features |= VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    }
+    if (usage_flags & VK_IMAGE_USAGE_STORAGE_BIT) {
+        required_features |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
+    }
+    if (usage_flags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+        required_features |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+    }
+    if (usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        required_features |= VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }
+    return required_features;
+}
+
+bool VulkanTexture::supports_texture_format(VkFormat format, VkFormatFeatureFlags needed_features) const {
+    VkFormatProperties properties = {};
+    vkGetPhysicalDeviceFormatProperties(_renderer->physical_device(), format, &properties);
+    return (properties.optimalTilingFeatures & needed_features) == needed_features;
+}
+
+void VulkanTexture::convert_data(TextureFormat from_format, TextureFormat to_format) {
+    if (from_format == to_format) {
+        return;
+    }
+
+    unique_ptr<uint8_t[]> new_data;
+    size_t new_size = 0;
+
+    if (from_format == TextureFormat::RGB && to_format == TextureFormat::RGBA) {
+        new_size = _width * _height * 4;
+        new_data = unique_ptr<uint8_t[]>(new uint8_t[new_size]);
+        for (int i = 0, ilen = _width * _height; i < ilen; ++i) {
+            int new_base = i * 4;
+            int old_base = i * 3;
+            new_data[new_base] = _data[old_base];
+            new_data[new_base + 1] = _data[old_base + 1];
+            new_data[new_base + 2] = _data[old_base + 2];
+            new_data[new_base + 3] = 255;
+        }
+    }
+    else {
+        assert("Not Implemented");
+    }
+
+    _data = move(new_data);
+    _size = new_size;
 }

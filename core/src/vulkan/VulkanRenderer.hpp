@@ -16,6 +16,7 @@ namespace giygas {
         VulkanContext *_context;
         VkInstance _instance;
         VkSurfaceKHR _surface;
+        VkPhysicalDevice _physical_device;
         VkDevice _device;
         QueueFamilyIndices _queue_family_indices;
         VkQueue _graphics_queue;
@@ -29,6 +30,7 @@ namespace giygas {
         VkFence _command_buffers_finished_fence;
         VkDescriptorPool _shared_descriptor_pool;
         bool _ready_to_present;
+
 
         static VkResult create_instance(
             const VulkanContext *context,
@@ -121,6 +123,7 @@ namespace giygas {
         // VulkanRenderer implementation
         //
 
+        VkPhysicalDevice physical_device() const;
         VkDevice device() const;
         const QueueFamilyIndices &queue_family_indices() const;
         VkCommandPool copy_command_pool() const;
