@@ -83,7 +83,7 @@ public:
 
 
 string giygas_examples_common::get_content_dir(const char *arg0) {
-    string content_dir = paths::basename(arg0);
+    string content_dir = paths::basename(paths::normalize(arg0).c_str());
     paths::append(content_dir, "content");
     return content_dir;
 }

@@ -4,6 +4,15 @@
 using namespace giygasutil;
 using namespace std;
 
+string paths::normalize(const char *path) {
+    string path_string = string(path);
+    string::size_type i;
+    while((i = path_string.find('\\')) != string::npos) {
+        path_string.replace(i, 1, "/");
+    }
+    return path_string;
+}
+
 string paths::basename(const char *path) {
     size_t len = strlen(path);
     while(len > 0) {

@@ -7,7 +7,7 @@ enable_testing()
 find_package(glad CONFIG)
 find_package(Vulkan)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(GTest REQUIRED)
+find_package(GTest)
 find_library(GMOCK_LIBRARY NAMES gmock)
 
 set(giygas_with_opengl_default OFF)
@@ -58,13 +58,24 @@ endif()
 add_library(giygas_objects OBJECT ${GIYGAS_SOURCE_FILES})
 add_library(giygas_internal STATIC $<TARGET_OBJECTS:giygas_objects>)
 add_library(giygas $<TARGET_OBJECTS:giygas_objects>)
-add_executable(giygas_test ${GIYGAS_TEST_SOURCE_FILES})
+if (GTest_FOUND)
+    add_executable(giygas_test ${GIYGAS_TEST_SOURCE_FILES})
+endif()
 
-set_target_properties(giygas_objects giygas_test
+set_target_properties(giygas_objects
     PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED ON
 )
+
+if (GTest_FOUND)
+    set_target_properties(giygas_test
+        PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED ON
+    )
+endif()
+
 set_target_properties(giygas giygas_objects giygas_internal PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 generate_export_header(giygas
@@ -104,11 +115,14 @@ endif()
 
 target_link_libraries(giygas ${giygas_link_libraries})
 target_link_libraries(giygas_internal ${giygas_link_libraries})
-target_link_libraries(giygas_test
-    GTest::GTest GTest::Main ${GMOCK_LIBRARY} giygas_internal
-)
 
-add_test(GiygasTests giygas_test)
+if (GTest_FOUND)
+    target_link_libraries(giygas_test
+        GTest::GTest GTest::Main ${GMOCK_LIBRARY} giygas_internal
+    )
+
+    add_test(GiygasTests giygas_test)
+endif()
 
 #
 # Install

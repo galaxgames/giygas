@@ -6,6 +6,8 @@ project(examples LANGUAGES CXX VERSION 0.1)
 # TODO: Make this functionality part of a CMake file that can be included by projects
 #
 
+find_program(GLSLANG_VALIDATOR glslangValidator)
+
 function(add_shader_compile_commands shaderstage output_list infile outfile)
     string(REGEX MATCH "^(.*).glsl" dummy "${outfile}")
     set(spv_filename "${CMAKE_MATCH_1}.spv")
@@ -13,7 +15,7 @@ function(add_shader_compile_commands shaderstage output_list infile outfile)
     add_custom_command(
             OUTPUT "${spv_filename}"
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${dest_dir}"
-            COMMAND "glslangValidator"
+            COMMAND "${GLSLANG_VALIDATOR}"
             -S "${shaderstage}"
             -o "${spv_filename}"
             -V

@@ -333,12 +333,12 @@ VkResult VulkanRenderer::create_instance(
     create_info.enabledExtensionCount = needed_extensions_count;
     create_info.ppEnabledExtensionNames = needed_extensions;
 
-//    array<const char *, 1> validation_layers = {
-//        //"VK_LAYER_LUNARG_vktrace",
-//        "VK_LAYER_LUNARG_standard_validation"
-//    };
+    array<const char *, 1> validation_layers = {
+        //"VK_LAYER_LUNARG_vktrace",
+        "VK_LAYER_LUNARG_standard_validation"
+    };
 
-    array<const char *, 0> validation_layers = {};
+    //array<const char *, 0> validation_layers = {};
 
     // Validation layers
     create_info.enabledLayerCount = validation_layers.size();
@@ -621,13 +621,17 @@ void VulkanRenderer::create_buffer(
         return;
     }
 
+    VkDeviceSize actual_size = max(memory_requirements.size, size);
+
     VkMemoryAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.allocationSize = size;
+    alloc_info.allocationSize = actual_size;
     alloc_info.memoryTypeIndex = memory_type_index;
     if (vkAllocateMemory(_device, &alloc_info, nullptr, &device_memory) != VK_SUCCESS) {
         return;
     }
+
+
 
     vkBindBufferMemory(_device, buffer, device_memory, 0);
 }
