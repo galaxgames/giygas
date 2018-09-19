@@ -55,7 +55,12 @@ namespace giygas {
         KEYBOARD_BACKSLASH = 92,
         KEYBOARD_RIGHT_SQUARE_BRACKET = 93,
         KEYBOARD_GRAVE_ACCENT = 96,
-        KEYBOARD_DELETE = 127
+        KEYBOARD_DELETE = 127,
+
+        KEYBOARD_LEFT = 128,
+        KEYBOARD_RIGHT = 129,
+        KEYBOARD_UP = 130,
+        KEYBOARD_DOWN = 131
     };
 
 }

@@ -111,7 +111,15 @@ unsigned int giygas::translate_to_glfw3_key(InputKey key) {
             return GLFW_KEY_GRAVE_ACCENT;
         case InputKey::KEYBOARD_DELETE:
             return GLFW_KEY_DELETE;
+        case InputKey::KEYBOARD_LEFT:
+            return GLFW_KEY_LEFT;
+        case InputKey::KEYBOARD_RIGHT:
+            return GLFW_KEY_RIGHT;
+        case InputKey::KEYBOARD_UP:
+            return GLFW_KEY_UP;
+        case InputKey::KEYBOARD_DOWN:
+            return GLFW_KEY_DOWN;
         default:
-            return GLFW_KEY_UNKNOWN;
+            return static_cast<unsigned int>(GLFW_KEY_UNKNOWN);
     }
 }
