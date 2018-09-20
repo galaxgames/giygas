@@ -24,6 +24,7 @@ class TriangleExampleApp : public GameLoopDelegate {
 
     unique_ptr<Renderer> _renderer;
     string _content_dir;
+    const char *_texture_name;
     ShaderLoader _shader_loader;
     unique_ptr<Shader> _vertex_shader;
     unique_ptr<Shader> _fragment_shader;
@@ -41,7 +42,25 @@ class TriangleExampleApp : public GameLoopDelegate {
 
 public:
 
-    TriangleExampleApp(GLFWContext &context, const char *arg0) {
+    TriangleExampleApp(GLFWContext &context, int argc, const char * const* argv ) {
+        const char *arg0 = argv[0];
+        _texture_name = nullptr;
+
+        while (argc > 0) {
+            if (!strcmp(argv[0], "--texture")) {
+                if (argc > 1) {
+                    _texture_name = argv[1];
+                    argc--;
+                }
+            }
+            argc--;
+            argv++;
+        }
+
+        if (_texture_name == nullptr) {
+            _texture_name = "logo_rgba.tga";
+        }
+
         _renderer = unique_ptr<Renderer>(giygas::make_renderer(&context));
         _content_dir = get_content_dir(arg0);
         _shader_loader = ShaderLoader(_content_dir.c_str(), _renderer->renderer_type());
@@ -101,7 +120,8 @@ public:
         // Load texture data
         //
         string texture_path = _content_dir;
-        giygasutil::paths::append(texture_path, "textures/logo.tga");
+        giygasutil::paths::append(texture_path, "textures");
+        giygasutil::paths::append(texture_path, _texture_name);
         ifstream texture_file_stream(texture_path, ifstream::binary);
         size_t texture_data_size;
         uint32_t texture_width, texture_height;
@@ -280,7 +300,7 @@ public:
 
 int main (int argc, char **argv) {
     GLFWContext context;
-    TriangleExampleApp app(context, argv[0]);
+    TriangleExampleApp app(context, argc, argv);
     GameLoopRunner runner(&context, &app);
     app.init();
     context.show();

@@ -81,6 +81,7 @@ void VulkanTexture::create(
     }
 
     convert_data(input_format, desired_format);
+    size = _size;
     _format = desired_format;
 
     _api_format = translated_format;
