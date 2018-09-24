@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <array>
+#include <cstring>
 #include "example_common.hpp"
 
 using namespace giygas;
