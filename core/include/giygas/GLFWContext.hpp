@@ -115,6 +115,7 @@ namespace giygas {
         void update() override;
         bool should_close() const override;
         uint32_t translate_key(InputKey key) const override;
+        InputKey get_universal_key(uint32_t key) const override;
         float get_input(uint32_t input) const override;
         EventHandler<uint32_t, float> input_changed() override;
 

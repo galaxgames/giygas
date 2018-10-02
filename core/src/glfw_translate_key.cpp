@@ -3,123 +3,22 @@
 
 using namespace giygas;
 
-unsigned int giygas::translate_to_glfw3_key(InputKey key) {
+uint32_t giygas::translate_to_glfw3_key(InputKey key) {
+    #define KEY_MAPPING(k, v) case k: return v;
     switch (key) {
-        case InputKey::KEYBOARD_BACKSPACE:
-            return GLFW_KEY_BACKSPACE;
-        case InputKey::KEYBOARD_ENTER:
-            return GLFW_KEY_ENTER;
-        case InputKey::KEYBOARD_HOME:
-            return GLFW_KEY_HOME;
-        case InputKey::KEYBOARD_ESCAPE:
-            return GLFW_KEY_ESCAPE;
-        case InputKey::KEYBOARD_SPACE:
-            return GLFW_KEY_SPACE;
-        case InputKey::KEYBOARD_APOSTROPHE:
-            return GLFW_KEY_APOSTROPHE;
-        case InputKey::KEYBOARD_COMMA:
-            return GLFW_KEY_COMMA;
-        case InputKey::KEYBOARD_HYPHEN:
-            return GLFW_KEY_MINUS;
-        case InputKey::KEYBOARD_PERIOD:
-            return GLFW_KEY_PERIOD;
-        case InputKey::KEYBOARD_FORWARDSLASH:
-            return GLFW_KEY_SLASH;
-        case InputKey::KEYBOARD_ZERO:
-            return GLFW_KEY_0;
-        case InputKey::KEYBOARD_ONE:
-            return GLFW_KEY_1;
-        case InputKey::KEYBOARD_TWO:
-            return GLFW_KEY_2;
-        case InputKey::KEYBOARD_THREE:
-            return GLFW_KEY_3;
-        case InputKey::KEYBOARD_FOUR:
-            return GLFW_KEY_4;
-        case InputKey::KEYBOARD_FIVE:
-            return GLFW_KEY_5;
-        case InputKey::KEYBOARD_SIX:
-            return GLFW_KEY_6;
-        case InputKey::KEYBOARD_SEVEN:
-            return GLFW_KEY_7;
-        case InputKey::KEYBOARD_EIGHT:
-            return GLFW_KEY_8;
-        case InputKey::KEYBOARD_NINE:
-            return GLFW_KEY_9;
-        case InputKey::KEYBOARD_SEMICOLON:
-            return GLFW_KEY_SEMICOLON;
-        case InputKey::KEYBOARD_EQUALS:
-            return GLFW_KEY_EQUAL;
-        case InputKey::KEYBOARD_A:
-            return GLFW_KEY_A;
-        case InputKey::KEYBOARD_B:
-            return GLFW_KEY_B;
-        case InputKey::KEYBOARD_C:
-            return GLFW_KEY_C;
-        case InputKey::KEYBOARD_D:
-            return GLFW_KEY_D;
-        case InputKey::KEYBOARD_E:
-            return GLFW_KEY_E;
-        case InputKey::KEYBOARD_F:
-            return GLFW_KEY_F;
-        case InputKey::KEYBOARD_G:
-            return GLFW_KEY_G;
-        case InputKey::KEYBOARD_H:
-            return GLFW_KEY_H;
-        case InputKey::KEYBOARD_I:
-            return GLFW_KEY_I;
-        case InputKey::KEYBOARD_J:
-            return GLFW_KEY_J;
-        case InputKey::KEYBOARD_K:
-            return GLFW_KEY_K;
-        case InputKey::KEYBOARD_L:
-            return GLFW_KEY_L;
-        case InputKey::KEYBOARD_M:
-            return GLFW_KEY_M;
-        case InputKey::KEYBOARD_N:
-            return GLFW_KEY_N;
-        case InputKey::KEYBOARD_O:
-            return GLFW_KEY_O;
-        case InputKey::KEYBOARD_P:
-            return GLFW_KEY_P;
-        case InputKey::KEYBOARD_Q:
-            return GLFW_KEY_Q;
-        case InputKey::KEYBOARD_R:
-            return GLFW_KEY_R;
-        case InputKey::KEYBOARD_S:
-            return GLFW_KEY_S;
-        case InputKey::KEYBOARD_T:
-            return GLFW_KEY_T;
-        case InputKey::KEYBOARD_U:
-            return GLFW_KEY_U;
-        case InputKey::KEYBOARD_V:
-            return GLFW_KEY_V;
-        case InputKey::KEYBOARD_W:
-            return GLFW_KEY_W;
-        case InputKey::KEYBOARD_X:
-            return GLFW_KEY_X;
-        case InputKey::KEYBOARD_Y:
-            return GLFW_KEY_Y;
-        case InputKey::KEYBOARD_Z:
-            return GLFW_KEY_Z;
-        case InputKey::KEYBOARD_LEFT_SQUARE_BRACKET:
-            return GLFW_KEY_LEFT_BRACKET;
-        case InputKey::KEYBOARD_BACKSLASH:
-            return GLFW_KEY_BACKSLASH;
-        case InputKey::KEYBOARD_RIGHT_SQUARE_BRACKET:
-            return GLFW_KEY_RIGHT_BRACKET;
-        case InputKey::KEYBOARD_GRAVE_ACCENT:
-            return GLFW_KEY_GRAVE_ACCENT;
-        case InputKey::KEYBOARD_DELETE:
-            return GLFW_KEY_DELETE;
-        case InputKey::KEYBOARD_LEFT:
-            return GLFW_KEY_LEFT;
-        case InputKey::KEYBOARD_RIGHT:
-            return GLFW_KEY_RIGHT;
-        case InputKey::KEYBOARD_UP:
-            return GLFW_KEY_UP;
-        case InputKey::KEYBOARD_DOWN:
-            return GLFW_KEY_DOWN;
+        #include "glfw_key_mappings.hpp"
         default:
-            return static_cast<unsigned int>(GLFW_KEY_UNKNOWN);
+            return static_cast<uint32_t>(GLFW_KEY_UNKNOWN);
     }
+    #undef KEY_MAPPING
+}
+
+InputKey giygas::translate_to_giygas_key(uint32_t key) {
+    #define KEY_MAPPING(v, k) case k: return v;
+    switch (key) {
+    #include "glfw_key_mappings.hpp"
+        default:
+            return InputKey::UNKNOWN;
+    }
+    #undef KEY_MAPPING
 }

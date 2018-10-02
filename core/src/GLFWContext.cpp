@@ -166,6 +166,10 @@ unsigned int GLFWContext::translate_key(InputKey key) const {
     return translate_to_glfw3_key(key);
 }
 
+InputKey GLFWContext::get_universal_key(uint32_t key) const {
+    return translate_to_giygas_key(key);
+}
+
 float GLFWContext::get_input(uint32_t input) const {
     return glfwGetKey(_window, input);
 }

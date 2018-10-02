@@ -3,6 +3,8 @@
 namespace giygas {
 
     enum class InputKey {
+        UNKNOWN = 0,
+
         KEYBOARD_BACKSPACE = 8,
         KEYBOARD_ENTER = 10,
         KEYBOARD_HOME = 13,
