@@ -82,7 +82,7 @@ bool validate_draw_info(const CommandBuffer *target, const DrawInfo &info, size_
     }
     if (pipeline_pc_f.size > 0 || info.fragment_push_constants.range.size > 0) {
         validate(
-            info.fragment_push_constants.range.size == pipeline_pc_f.size && info.vertex_push_constants.range.offset == pipeline_pc_f.offset,
+            info.fragment_push_constants.range.size == pipeline_pc_f.size && info.fragment_push_constants.range.offset == pipeline_pc_f.offset,
             "DrawInfo[" << index << "]: The given fragment push constants range does not match the pipeline's."
         )
         validate(

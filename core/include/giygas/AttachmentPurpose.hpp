@@ -4,7 +4,9 @@ namespace giygas {
 
     enum class AttachmentPurpose {
         Color,
-        DepthStencil
+        DepthStencil,
+
+        Unknown
     };
 
 }

@@ -59,6 +59,8 @@ AttachmentPurpose giygas::attachment_purpose_from_texture_format(TextureFormat f
         case TextureFormat::Depth32Float:
             return AttachmentPurpose::DepthStencil;
     }
+    assert(false);
+    return AttachmentPurpose::Unknown;
 }
 
 bool giygas::is_depth_format(TextureFormat format) {

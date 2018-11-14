@@ -302,6 +302,8 @@ VkShaderStageFlagBits VulkanPipeline::shader_type_to_stage_flags(ShaderType type
         case ShaderType::Fragment:
             return VK_SHADER_STAGE_FRAGMENT_BIT;
     }
+    assert(false);
+    return static_cast<VkShaderStageFlagBits>(0);
 }
 
 uint32_t VulkanPipeline::count_total_attributes(
@@ -343,6 +345,8 @@ VkBlendOp VulkanPipeline::translate_blend_op(BlendOperation op) {
         case BlendOperation::MAX:
             return VK_BLEND_OP_MAX;
     }
+    assert(false);
+    return static_cast<VkBlendOp>(0);
 }
 
 VkBlendFactor VulkanPipeline::translate_blend_factor(BlendFactor factor) {
@@ -386,4 +390,6 @@ VkBlendFactor VulkanPipeline::translate_blend_factor(BlendFactor factor) {
         case BlendFactor::ONE_MINUS_SRC1_ALPHA:
             return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
     }
+    assert(false);
+    return static_cast<VkBlendFactor>(0);
 }
