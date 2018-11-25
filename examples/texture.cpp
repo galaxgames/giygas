@@ -296,6 +296,10 @@ public:
         _renderer->present();
     }
 
+    bool should_close() const override {
+        return false;
+    }
+
 };
 
 

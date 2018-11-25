@@ -184,6 +184,10 @@ public:
         _renderer->present();
     }
 
+    bool should_close() const override {
+        return false;
+    }
+
 };
 
 int main (int argc, char **argv) {

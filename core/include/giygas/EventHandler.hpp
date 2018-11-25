@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GIYGAS_EVENTHANDLER_HPP
+#define GIYGAS_EVENTHANDLER_HPP
 #include <unordered_set>
 #include <vector>
 #include <functional>
@@ -138,12 +139,47 @@ namespace giygas {
 
     };
 
-
     template <typename ... P>
     EventHandler<P...> Event<P...>::make_handler() {
         EventHandler<P...> handler(this);
         add(&handler);
         return handler;
     }
+
 }
 
+#endif // GIYGAS_EVENTHANDLER_HPP
+
+#ifdef GIYGAS_EVENT_INCLUDE_HELPERS
+
+#define BIND_MEMBER0(fn) std::bind(fn, this)
+
+#define BIND_MEMBER1(fn) std::bind(fn, this, \
+    std::placeholders::_1);
+
+#define BIND_MEMBER2(fn) std::bind(fn, this, \
+    std::placeholders::_1, std::placeholders::_2);
+
+#define BIND_MEMBER3(fn) std::bind(fn, this, \
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+#define BIND_MEMBER4(fn) std::bind(fn, this, \
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+
+#define BIND_MEMBER5(fn) std::bind(fn, this, \
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4 \
+    std::placeholders::_5);
+
+#define BIND_MEMBER6(fn) std::bind(fn, this, \
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4 \
+    std::placeholders::_5, std::placeholders::_6);
+
+#define BIND_MEMBER7(fn) std::bind(fn, this, \
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4 \
+    std::placeholders::_5, std::placeholders::_6, std::placeholders::_7);
+
+#define BIND_MEMBER8(fn) std::bind(fn, this \
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4 \
+    std::placeholders::_5, std::placeholders::_6, std::placeholders::_7, std::placeholders::_8);
+
+#endif

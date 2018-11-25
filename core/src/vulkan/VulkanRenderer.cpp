@@ -23,14 +23,14 @@ VulkanRenderer::VulkanRenderer(VulkanContext *context)
     : _copy_command_pool(this)
 {
     _context = context;
-    _instance = VK_NULL_HANDLE;
-    _surface = VK_NULL_HANDLE;
-    _device = VK_NULL_HANDLE;
-    _graphics_queue = VK_NULL_HANDLE;
-    _present_queue = VK_NULL_HANDLE;
-    _image_available_semaphore = VK_NULL_HANDLE;
-    _render_finished_semaphore = VK_NULL_HANDLE;
-    _command_buffers_finished_fence = VK_NULL_HANDLE;
+    _instance = nullptr;
+    _surface = nullptr;
+    _device = nullptr;
+    _graphics_queue = nullptr;
+    _present_queue = nullptr;
+    _image_available_semaphore = nullptr;
+    _render_finished_semaphore = nullptr;
+    _command_buffers_finished_fence = nullptr;
     _ready_to_present = false;
 }
 

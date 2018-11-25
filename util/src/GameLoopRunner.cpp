@@ -36,7 +36,7 @@ void GameLoopRunner::run() {
         _context->update();
         _updatable->update_logic(elapsed_seconds);
         _updatable->update_graphics();
-        if(_context->should_close()) {
+        if(_context->should_close() || _updatable->should_close()) {
             break;
         }
 
