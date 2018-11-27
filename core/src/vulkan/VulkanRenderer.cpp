@@ -225,7 +225,7 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     // Wait stage is TOP_OF_PIPE because the top of the pipe will transition our aqcuired image
     // if we just wait for the image to be aqcuired before starting. This simplified things a bit.
     // TODO: Look into this later
-    VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.waitSemaphoreCount = 1;

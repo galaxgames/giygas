@@ -71,18 +71,28 @@ void VulkanRenderPass::create(const RenderPassCreateParameters &params) {
         ref->attachment = static_cast<uint32_t>(i);
     }
 
-    VkSubpassDescription pass_description = {};
-    pass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    pass_description.colorAttachmentCount = static_cast<uint32_t>(color_attachment_count);
-    pass_description.pColorAttachments = color_refs.get();
-    pass_description.pDepthStencilAttachment = &depth_stencil_ref;
+    VkSubpassDescription subpass_description = {};
+    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_description.colorAttachmentCount = static_cast<uint32_t>(color_attachment_count);
+    subpass_description.pColorAttachments = color_refs.get();
+    subpass_description.pDepthStencilAttachment = &depth_stencil_ref;
+
+    VkSubpassDependency subpass_dependency = {};
+    subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency.dstSubpass = 0;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.srcAccessMask = 0;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     VkRenderPassCreateInfo renderpass_create_info = {};
     renderpass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderpass_create_info.attachmentCount = static_cast<uint32_t>(params.attachment_count);
     renderpass_create_info.pAttachments = attachment_descriptions.get();
     renderpass_create_info.subpassCount = 1;
-    renderpass_create_info.pSubpasses = &pass_description;
+    renderpass_create_info.pSubpasses = &subpass_description;
+    renderpass_create_info.dependencyCount = 1;
+    renderpass_create_info.pDependencies = &subpass_dependency;
 
     vkCreateRenderPass(_renderer->device(), &renderpass_create_info, nullptr, &_handle);
 }
