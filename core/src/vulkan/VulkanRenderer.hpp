@@ -13,24 +13,24 @@ namespace giygas {
     using namespace std;
 
     class VulkanRenderer final : public Renderer {
-        VulkanContext *_context;
-        VkInstance _instance;
-        VkSurfaceKHR _surface;
-        VkPhysicalDevice _physical_device;
-        VkDevice _device;
-        QueueFamilyIndices _queue_family_indices;
-        VkQueue _graphics_queue;
-        VkQueue _present_queue;
-        VulkanSwapchain _swapchain;
-        VkPhysicalDeviceMemoryProperties _memory_properties;
-        VulkanCommandPool _copy_command_pool;
-        VkSemaphore _image_available_semaphore;
-        VkSemaphore _render_finished_semaphore;
-        uint32_t _next_swapchain_image_index;
-        VkFence _command_buffers_finished_fence;
-        VkDescriptorPool _shared_descriptor_pool;
-        bool _ready_to_present;
 
+        VulkanContext *_context = nullptr;
+        VkInstance _instance = nullptr;
+        VkSurfaceKHR _surface = nullptr;
+        VkPhysicalDevice _physical_device = nullptr;
+        VkDevice _device = nullptr;
+        QueueFamilyIndices _queue_family_indices;
+        VkQueue _graphics_queue = nullptr;
+        VkQueue _present_queue = nullptr;
+        VulkanSwapchain _swapchain;
+        VkPhysicalDeviceMemoryProperties _memory_properties = {};
+        VulkanCommandPool _copy_command_pool;
+        VkSemaphore _image_available_semaphore = nullptr;
+        VkSemaphore _render_finished_semaphore = nullptr;
+        uint32_t _next_swapchain_image_index = 0;
+        VkFence _image_acquired_fence = nullptr;
+        VkDescriptorPool _shared_descriptor_pool = nullptr;
+        bool _ready_to_present = false;
 
         static VkResult create_instance(
             const VulkanContext *context,

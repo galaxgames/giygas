@@ -4,10 +4,9 @@
 namespace giygas {
     class QueueFamilyIndices {
     public:
-        uint32_t graphics_family;
-        uint32_t present_family;
+        uint32_t graphics_family = static_cast<unsigned int>(-1);
+        uint32_t present_family = static_cast<unsigned int>(-1);
 
-        QueueFamilyIndices();
         bool is_complete() const;
     };
 }

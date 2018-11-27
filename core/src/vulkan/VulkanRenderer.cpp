@@ -23,21 +23,12 @@ VulkanRenderer::VulkanRenderer(VulkanContext *context)
     : _copy_command_pool(this)
 {
     _context = context;
-    _instance = nullptr;
-    _surface = nullptr;
-    _device = nullptr;
-    _graphics_queue = nullptr;
-    _present_queue = nullptr;
-    _image_available_semaphore = nullptr;
-    _render_finished_semaphore = nullptr;
-    _command_buffers_finished_fence = nullptr;
-    _ready_to_present = false;
 }
 
 VulkanRenderer::~VulkanRenderer() {
     _copy_command_pool.destroy();
     _swapchain.destroy();
-    vkDestroyFence(_device, _command_buffers_finished_fence, nullptr);
+    vkDestroyFence(_device, _image_acquired_fence, nullptr);
     vkDestroySemaphore(_device, _render_finished_semaphore, nullptr);
     vkDestroySemaphore(_device, _image_available_semaphore, nullptr);
     vkDestroyDevice(_device, nullptr);
@@ -115,7 +106,7 @@ void VulkanRenderer::initialize() {
     VkFenceCreateInfo fence_info = {};
     fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_info.flags = 0;
-    vkCreateFence(_device, &fence_info, nullptr, &_command_buffers_finished_fence);
+    vkCreateFence(_device, &fence_info, nullptr, &_image_acquired_fence);
 }
 
 RendererType VulkanRenderer::renderer_type() const {
@@ -236,7 +227,7 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &_render_finished_semaphore;
 
-    vkQueueSubmit(_graphics_queue, 1, &submit_info, _command_buffers_finished_fence);
+    vkQueueSubmit(_graphics_queue, 1, &submit_info, nullptr /*_command_buffers_finished_fence*/);
     _ready_to_present = true;
 }
 
@@ -261,13 +252,15 @@ void VulkanRenderer::present() {
         _swapchain.handle(),
         numeric_limits<uint64_t>::max(),
         _image_available_semaphore,
-        nullptr,
+        _image_acquired_fence,  // fence to signal
         &_next_swapchain_image_index
     );
 
+    vkWaitForFences(_device, 1, &_image_acquired_fence, VK_TRUE, numeric_limits<uint64_t>::max());
+    vkResetFences(_device, 1, &_image_acquired_fence);
 
-    vkWaitForFences(_device, 1, &_command_buffers_finished_fence, VK_TRUE, numeric_limits<uint64_t>::max());
-    vkResetFences(_device, 1, &_command_buffers_finished_fence);
+//    vkWaitForFences(_device, 1, &_command_buffers_finished_fence, VK_TRUE, numeric_limits<uint64_t>::max());
+//    vkResetFences(_device, 1, &_command_buffers_finished_fence);
 
     _ready_to_present = false;
 }
@@ -558,12 +551,12 @@ VkPresentModeKHR VulkanRenderer::choose_present_mode(
     VkPresentModeKHR selected_mode = VK_PRESENT_MODE_FIFO_KHR;
 
     // TODO: Make this smarter and capable of choosing different modes.
-    for (unsigned int i = 0; i < info.present_mode_count; ++i) {
-        VkPresentModeKHR mode = info.present_modes[i];
-        if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
-            return mode;
-        }
-    }
+//    for (unsigned int i = 0; i < info.present_mode_count; ++i) {
+//        VkPresentModeKHR mode = info.present_modes[i];
+//        if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+//            return mode;
+//        }
+//    }
 
     return selected_mode;
 }
@@ -704,4 +697,5 @@ VkFormat VulkanRenderer::translate_texture_format(TextureFormat format) {
         case TextureFormat::Depth32Float:
             return VK_FORMAT_D32_SFLOAT;
     }
+    return VK_FORMAT_UNDEFINED;
 }

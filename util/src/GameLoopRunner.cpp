@@ -3,6 +3,8 @@
 #include <chrono>
 #include <thread>
 
+#include <iostream>
+
 using namespace giygas;
 using namespace std;
 using namespace chrono;
@@ -26,7 +28,7 @@ void GameLoopRunner::set_updatable(GameLoopDelegate *updatable) {
 void GameLoopRunner::run() {
     typedef duration<long long, ratio<1, 60>> Frames;
     typedef duration<float> FSeconds;
-    typedef high_resolution_clock clock_t;
+    typedef steady_clock clock_t;
 
     clock_t::time_point frame_start = clock_t::now();
     clock_t::time_point previous_frame_start = frame_start - duration_cast<clock_t::duration>(Frames(1));
@@ -40,10 +42,11 @@ void GameLoopRunner::run() {
             break;
         }
 
-        // Figure out how much to sleep
-        clock_t::time_point next_frame_start = frame_start + duration_cast<clock_t::duration>(Frames(1));
-        clock_t::time_point current_time = clock_t::now();
-        this_thread::sleep_for(next_frame_start - current_time);
+        // NOTE: Sleeping no longer necesary, as we are currently only using the VK_PRESENT_MODE_FIFO_KHR
+        // present mode now, blocking on next image acquisition. This is currently the most reliable way
+        // to maintain a consistent framerate, however it is probably not the best. But it's better than
+        // the previous sleep code, as the system makes no promises to when we will get waken back up again. :/
+
         previous_frame_start = frame_start;
         frame_start = clock_t::now();
     }
