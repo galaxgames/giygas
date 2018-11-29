@@ -29,6 +29,7 @@ namespace giygas {
         VkSemaphore _render_finished_semaphore = nullptr;
         uint32_t _next_swapchain_image_index = 0;
         VkFence _image_acquired_fence = nullptr;
+        VkFence _submitted_command_buffers_finished_fence = nullptr;
         VkDescriptorPool _shared_descriptor_pool = nullptr;
         bool _ready_to_present = false;
 

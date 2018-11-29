@@ -28,6 +28,7 @@ VulkanRenderer::VulkanRenderer(VulkanContext *context)
 VulkanRenderer::~VulkanRenderer() {
     _copy_command_pool.destroy();
     _swapchain.destroy();
+    vkDestroyFence(_device, _submitted_command_buffers_finished_fence, nullptr);
     vkDestroyFence(_device, _image_acquired_fence, nullptr);
     vkDestroySemaphore(_device, _render_finished_semaphore, nullptr);
     vkDestroySemaphore(_device, _image_available_semaphore, nullptr);
@@ -107,6 +108,7 @@ void VulkanRenderer::initialize() {
     fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_info.flags = 0;
     vkCreateFence(_device, &fence_info, nullptr, &_image_acquired_fence);
+    vkCreateFence(_device, &fence_info, nullptr, &_submitted_command_buffers_finished_fence);
 }
 
 RendererType VulkanRenderer::renderer_type() const {
@@ -227,7 +229,7 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &_render_finished_semaphore;
 
-    vkQueueSubmit(_graphics_queue, 1, &submit_info, nullptr /*_command_buffers_finished_fence*/);
+    vkQueueSubmit(_graphics_queue, 1, &submit_info, _submitted_command_buffers_finished_fence);
     _ready_to_present = true;
 }
 
@@ -243,6 +245,7 @@ void VulkanRenderer::present() {
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &swapchain_handle;
     present_info.pImageIndices = &_next_swapchain_image_index;
+    // TODO: This was commented out for some reason, but I can't remember why. Need to look into this again.
     //present_info.pResults = &present_result;
 
     vkQueuePresentKHR(_present_queue, &present_info);
@@ -256,11 +259,10 @@ void VulkanRenderer::present() {
         &_next_swapchain_image_index
     );
 
-    vkWaitForFences(_device, 1, &_image_acquired_fence, VK_TRUE, numeric_limits<uint64_t>::max());
-    vkResetFences(_device, 1, &_image_acquired_fence);
+    array<VkFence, 2> fences = {_submitted_command_buffers_finished_fence, _image_acquired_fence};
 
-//    vkWaitForFences(_device, 1, &_command_buffers_finished_fence, VK_TRUE, numeric_limits<uint64_t>::max());
-//    vkResetFences(_device, 1, &_command_buffers_finished_fence);
+    vkWaitForFences(_device, fences.size(), fences.data(), VK_TRUE, numeric_limits<uint64_t>::max());
+    vkResetFences(_device, fences.size(), fences.data());
 
     _ready_to_present = false;
 }
