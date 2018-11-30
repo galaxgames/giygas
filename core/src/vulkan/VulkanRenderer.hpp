@@ -25,12 +25,12 @@ namespace giygas {
         VulkanSwapchain _swapchain;
         VkPhysicalDeviceMemoryProperties _memory_properties = {};
         VulkanCommandPool _copy_command_pool;
-        VkSemaphore _image_available_semaphore = nullptr;
-        VkSemaphore _render_finished_semaphore = nullptr;
-        uint32_t _next_swapchain_image_index = 0;
-        VkFence _image_acquired_fence = nullptr;
-        VkFence _submitted_command_buffers_finished_fence = nullptr;
+        unique_ptr<VkSemaphore[]> _swapchain_image_available_semaphores;
+        VkFence _command_buffers_executed_fence = nullptr;
         VkDescriptorPool _shared_descriptor_pool = nullptr;
+
+        uint32_t _current_submission_loop_semaphore_index = 0;
+        uint32_t _next_swapchain_image_index = 0;
         bool _ready_to_present = false;
 
         static VkResult create_instance(
@@ -108,17 +108,11 @@ namespace giygas {
         CommandPool *make_command_pool() override;
         CommandBuffer *make_command_buffer() override;
 
-        const RenderTarget *get_swapchain_rendertarget(uint32_t index) const override;
-        uint32_t swapchain_framebuffer_count() const override;
-        uint32_t next_swapchain_framebuffer_index() const override;
-        uint32_t swapchain_width() const override;
-        uint32_t swapchain_height() const override;
+        const  RenderTarget *swapchain() const override;
 
         uint32_t get_api_texture_format(TextureFormat format) const override;
 
         void submit(const CommandBuffer **buffers, size_t buffer_count) override;
-        void present() override;
-
 
         //
         // VulkanRenderer implementation
@@ -150,7 +144,11 @@ namespace giygas {
             VkDeviceSize size
         ) const;
 
+        uint32_t next_swapchain_image_index() const;
+        uint32_t swapchain_image_count() const;
+
         static VkFormat translate_texture_format(TextureFormat format);
+
     };
 
 }

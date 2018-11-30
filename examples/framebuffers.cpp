@@ -51,7 +51,7 @@ class FramebufferExampleApp : public GameLoopDelegate  {
     unique_ptr<CommandPool> _command_pool;
     unique_ptr<CommandBuffer> _offscreen_command_buffer;
     unique_ptr<CommandBuffer> _onscreen_command_buffer;
-    unique_ptr<unique_ptr<Framebuffer>[]> _swapchain_framebuffers;
+    unique_ptr<Framebuffer> _swapchain_framebuffer;
 
     float current_rotation;
 
@@ -244,7 +244,7 @@ public:
         RenderPassCreateParameters onscreen_pass_params = {};
         RenderPassAttachment onscreen_attachment = {};
         onscreen_attachment.purpose = AttachmentPurpose::Color;
-        onscreen_attachment.target = _renderer->get_swapchain_rendertarget(0);
+        onscreen_attachment.target = _renderer->swapchain();
         onscreen_pass_params.attachment_count = 1;
         onscreen_pass_params.attachments = &onscreen_attachment;
         _onscreen_pass = unique_ptr<RenderPass>(_renderer->make_render_pass());
@@ -268,15 +268,10 @@ public:
         _offscreen_framebuffer->create(offscreen_fb_params);
 
         //
-        // Create swapchain framebuffers
+        // Create swapchain framebuffer
         //
-        size_t framebuffer_count = _renderer->swapchain_framebuffer_count();
-        _swapchain_framebuffers = unique_ptr<unique_ptr<Framebuffer>[]>(
-            giygasutil::util::create_swapchain_framebuffers<unique_ptr<Framebuffer>>(
-                _renderer.get(),
-                _onscreen_pass.get()
-            )
-        );
+        _swapchain_framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
+        giygasutil::create_basic_framebuffer(_swapchain_framebuffer.get(), _renderer->swapchain(), _onscreen_pass.get());
 
         //
         // Setup pipelines
@@ -300,12 +295,12 @@ public:
 
         PipelineCreateParameters textured_pipeline_params = {};
         array<const Shader *, 2> textured_shaders = {_textured_shader_v.get(), _textured_shader_f.get()};
-        textured_pipeline_params.viewport.width = _renderer->swapchain_width();
-        textured_pipeline_params.viewport.height = _renderer->swapchain_height();
+        textured_pipeline_params.viewport.width = _renderer->swapchain()->width();
+        textured_pipeline_params.viewport.height = _renderer->swapchain()->height();
         textured_pipeline_params.viewport.min_depth = 0;
         textured_pipeline_params.viewport.min_depth = 1;
-        textured_pipeline_params.scissor.width = _renderer->swapchain_width();
-        textured_pipeline_params.scissor.height = _renderer->swapchain_height();
+        textured_pipeline_params.scissor.width = _renderer->swapchain()->width();
+        textured_pipeline_params.scissor.height = _renderer->swapchain()->height();
         textured_pipeline_params.shader_count = 2;
         textured_pipeline_params.shaders = textured_shaders.data();
         textured_pipeline_params.vertex_buffer_layout_count = 1;
@@ -324,7 +319,6 @@ public:
         _onscreen_command_buffer = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
         _offscreen_command_buffer->create(_command_pool.get());
         _onscreen_command_buffer->create(_command_pool.get());
-
     }
 
     void update_logic(float elapsed_seconds) override {
@@ -349,8 +343,8 @@ public:
 
         UniformData onscreen_uniforms = {};
         aspect =
-            static_cast<float>(_renderer->swapchain_width()) /
-            static_cast<float>(_renderer->swapchain_height());
+            static_cast<float>(_renderer->swapchain()->width()) /
+            static_cast<float>(_renderer->swapchain()->height());
         onscreen_uniforms.model_tf =
             Matrix4x4::scale(Vector4(1,1,1,1));
         onscreen_uniforms.view_tf =
@@ -415,7 +409,7 @@ public:
         onscreen_record_info.draw_count = 1;
         onscreen_record_info.draws = &onscreen_cube_info;
         onscreen_record_info.pass_info.pass = _onscreen_pass.get();
-        onscreen_record_info.pass_info.framebuffer = _swapchain_framebuffers[_renderer->next_swapchain_framebuffer_index()].get();
+        onscreen_record_info.pass_info.framebuffer = _swapchain_framebuffer.get();
         onscreen_record_info.pass_info.clear_value_count = 2;
         onscreen_record_info.pass_info.clear_values = onscreen_clear_values.data();
 
@@ -429,8 +423,6 @@ public:
             _offscreen_command_buffer.get(), _onscreen_command_buffer.get()
         };
         _renderer->submit(buffers_to_submit.data(), buffers_to_submit.size());
-
-        _renderer->present();
     }
 
     bool should_close() const override {
@@ -439,7 +431,7 @@ public:
 
 };
 
-int main(int argc, char **argv) {
+int main(int /*argc*/, char **argv) {
     GLFWContext context;
     FramebufferExampleApp app(context, argv[0]);
     GameLoopRunner runner(&context, &app);

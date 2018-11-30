@@ -160,7 +160,7 @@ void VulkanDescriptorSet::update(const DescriptorSetUpdateParameters &params) {
     unique_ptr<VkWriteDescriptorSet[]> writes (new VkWriteDescriptorSet[write_count] {});
     uint32_t write_index = 0;
 
-    for (int i = 0; i < params.uniform_buffer_count; ++i) {
+    for (uint32_t i = 0; i < params.uniform_buffer_count; ++i) {
         const UniformBufferDescriptorBinding &binding = params.uniform_buffer_bindings[i];
 
         VkDescriptorBufferInfo &buffer_info = buffer_infos[i];
@@ -188,13 +188,13 @@ void VulkanDescriptorSet::update(const DescriptorSetUpdateParameters &params) {
         assert(texture != nullptr);
         assert(texture->renderer_type() == RendererType::Vulkan);
         const auto *texture_impl = static_cast<const VulkanTexture *>(texture->texture_impl());
-        assert(texture_impl->image_view() != VK_NULL_HANDLE);
+        assert(texture_impl->image_view(0) != VK_NULL_HANDLE);
         const Sampler *sampler = binding.sampler;
         assert(sampler->renderer_type() == RendererType::Vulkan);
         const auto *sampler_impl = reinterpret_cast<const VulkanSampler *>(sampler);
         image_info.imageLayout = texture_impl->layout();
         image_info.sampler = sampler_impl->handle();
-        image_info.imageView = texture_impl->image_view();
+        image_info.imageView = texture_impl->image_view(0);
 
         VkWriteDescriptorSet &write = writes[write_index++];
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

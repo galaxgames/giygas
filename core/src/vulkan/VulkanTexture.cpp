@@ -170,11 +170,20 @@ const void* VulkanTexture::rendertarget_impl() const {
     return static_cast<const VulkanRenderTarget *>(this);
 }
 
+uint32_t VulkanTexture::width() const {
+    return _width;
+}
+
+uint32_t VulkanTexture::height() const {
+    return _height;
+}
+
 const void * VulkanTexture::texture_impl() const {
     return static_cast<const VulkanTexture *>(this);
 }
 
-VkImageView VulkanTexture::image_view() const {
+VkImageView VulkanTexture::image_view(uint32_t index) const {
+    assert(index == 0);
     return _image_view;
 }
 
@@ -184,6 +193,10 @@ VkImageLayout VulkanTexture::layout() const {
 
 VkFormat VulkanTexture::api_format() const {
     return _api_format;
+}
+
+bool VulkanTexture::is_swapchain() const {
+    return false;
 }
 
 void VulkanTexture::create_image(

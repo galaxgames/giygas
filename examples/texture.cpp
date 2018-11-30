@@ -38,8 +38,8 @@ class TriangleExampleApp : public GameLoopDelegate {
     unique_ptr<RenderPass> _pass;
     unique_ptr<Pipeline> _pipeline;
     unique_ptr<CommandPool> _command_pool;
-    unique_ptr<unique_ptr<CommandBuffer>[]> _command_buffers;
-    unique_ptr<unique_ptr<Framebuffer>[]> _swapchain_framebuffers;
+    unique_ptr<CommandBuffer> _command_buffer;
+    unique_ptr<Framebuffer> _swapchain_framebuffer;
 
 public:
 
@@ -203,7 +203,7 @@ public:
         _pass = unique_ptr<RenderPass>(_renderer->make_render_pass());
         RenderPassAttachment pass_attachment = {};
         pass_attachment.purpose = AttachmentPurpose::Color;
-        pass_attachment.target = _renderer->get_swapchain_rendertarget(0);
+        pass_attachment.target = _renderer->swapchain();
         RenderPassCreateParameters pass_params = {};
         pass_params.attachment_count = 1;
         pass_params.attachments = &pass_attachment;
@@ -212,26 +212,24 @@ public:
         //
         // Create swapchain framebuffers
         //
-        size_t framebuffer_count = _renderer->swapchain_framebuffer_count();
-        _swapchain_framebuffers = unique_ptr<unique_ptr<Framebuffer>[]>(
-            giygasutil::util::create_swapchain_framebuffers<unique_ptr<Framebuffer>>(
-                _renderer.get(),
-                _pass.get()
-            )
+        _swapchain_framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
+        giygasutil::create_basic_framebuffer(
+            _swapchain_framebuffer.get(),
+            _renderer->swapchain(),
+            _pass.get()
         );
-
 
         //
         // Setup pipeline 
         //
         array<const Shader *, 2> shaders = {_vertex_shader.get(), _fragment_shader.get()};
         PipelineCreateParameters pipeline_params = {};
-        pipeline_params.viewport.width = _renderer->swapchain_width();
-        pipeline_params.viewport.height = _renderer->swapchain_height();
+        pipeline_params.viewport.width = _renderer->swapchain()->width();
+        pipeline_params.viewport.height = _renderer->swapchain()->height();
         pipeline_params.viewport.min_depth = 0;
         pipeline_params.viewport.min_depth = 1;
-        pipeline_params.scissor.width = _renderer->swapchain_width();
-        pipeline_params.scissor.height = _renderer->swapchain_height();
+        pipeline_params.scissor.width = _renderer->swapchain()->width();
+        pipeline_params.scissor.height = _renderer->swapchain()->height();
         pipeline_params.blend = BlendParameters::conventional_alpha_blending();
         pipeline_params.shader_count = 2;
         pipeline_params.shaders = shaders.data();
@@ -252,48 +250,37 @@ public:
         //
         _command_pool = unique_ptr<CommandPool>(_renderer->make_command_pool());
         _command_pool->create();
-        _command_buffers = unique_ptr<unique_ptr<CommandBuffer>[]>(
-            new unique_ptr<CommandBuffer>[framebuffer_count]
-        );
-        for (uint32_t i = 0; i < framebuffer_count; ++i) {
-            unique_ptr<CommandBuffer> &commands = _command_buffers[i];
-            commands = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
-            commands->create(_command_pool.get());
 
-            DrawInfo draw_info = {};
-            const VertexBuffer *vertex_buffer = _vertex_buffer.get();
-            const GenericIndexBuffer *index_buffer = _index_buffer.get();
-            draw_info.pipeline = _pipeline.get();
-            draw_info.vertex_buffer_count = 1;
-            draw_info.vertex_buffers = &vertex_buffer;
-            draw_info.index_buffer = _index_buffer.get();
-            draw_info.index_range.offset = 0;
-            draw_info.index_range.count = 6;
-            draw_info.descriptor_set = _descriptor_set.get();
+        _command_buffer = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
+        _command_buffer->create(_command_pool.get());
 
-            SingleBufferPassInfo record_info = {};
-            record_info.draw_count = 1;
-            record_info.draws = &draw_info;
-            record_info.pass_info.pass = _pass.get();
-            record_info.pass_info.framebuffer = _swapchain_framebuffers[i].get();
-            record_info.pass_info.clear_value_count = 1;
-            record_info.pass_info.clear_values = &clear_value;
+        DrawInfo draw_info = {};
+        const VertexBuffer *vertex_buffer = _vertex_buffer.get();
+        draw_info.pipeline = _pipeline.get();
+        draw_info.vertex_buffer_count = 1;
+        draw_info.vertex_buffers = &vertex_buffer;
+        draw_info.index_buffer = _index_buffer.get();
+        draw_info.index_range.offset = 0;
+        draw_info.index_range.count = 6;
+        draw_info.descriptor_set = _descriptor_set.get();
 
-            commands->record_pass(record_info);
-        }
+        SingleBufferPassInfo record_info = {};
+        record_info.draw_count = 1;
+        record_info.draws = &draw_info;
+        record_info.pass_info.pass = _pass.get();
+        record_info.pass_info.framebuffer = _swapchain_framebuffer.get();
+        record_info.pass_info.clear_value_count = 1;
+        record_info.pass_info.clear_values = &clear_value;
 
+        _command_buffer->record_pass(record_info);
     }
 
-    void update_logic(float elapsed_seconds) override {
-
+    void update_logic(float /*elapsed_seconds*/) override {
     }
 
     void update_graphics() override {
-        const CommandBuffer *command_buffer
-            = _command_buffers[_renderer->next_swapchain_framebuffer_index()].get();
+        const CommandBuffer *command_buffer = _command_buffer.get();
         _renderer->submit(&command_buffer, 1);
-
-        _renderer->present();
     }
 
     bool should_close() const override {

@@ -55,14 +55,12 @@ if (GIYGAS_WITH_VULKAN)
     list(APPEND GIYGAS_SOURCE_FILES ${GIYGAS_VULKAN_SOURCE_FILES})
 endif()
 
-add_library(giygas_objects OBJECT ${GIYGAS_SOURCE_FILES})
-add_library(giygas_internal STATIC $<TARGET_OBJECTS:giygas_objects>)
-add_library(giygas $<TARGET_OBJECTS:giygas_objects>)
+add_library(giygas ${GIYGAS_SOURCE_FILES})
 if (GTest_FOUND)
     add_executable(giygas_test ${GIYGAS_TEST_SOURCE_FILES})
 endif()
 
-set_target_properties(giygas_objects
+set_target_properties(giygas
     PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED ON
@@ -76,31 +74,22 @@ if (GTest_FOUND)
     )
 endif()
 
-set_target_properties(giygas giygas_objects giygas_internal PROPERTIES CXX_VISIBILITY_PRESET hidden)
+set_target_properties(giygas PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 generate_export_header(giygas
     BASE_NAME GIYGAS
     EXPORT_FILE_NAME "${PROJECT_BINARY_DIR}/include/giygas/export.h"
 )
 
-target_include_directories(giygas_objects
+target_include_directories(giygas
     PRIVATE
         # $<TARGET_PROPERTY:glad::glad,INTERFACE_INCLUDE_DIRECTORIES>
         $<TARGET_PROPERTY:glfw,INTERFACE_INCLUDE_DIRECTORIES>
         $<TARGET_PROPERTY:Vulkan::Vulkan,INTERFACE_INCLUDE_DIRECTORIES>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-)
-target_include_directories(giygas
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         $<INSTALL_INTERFACE:include/giygas>
-)
-target_include_directories(giygas_internal
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
 )
 
 configure_file("config.hpp.in" "include/giygas/config.hpp")
@@ -114,11 +103,10 @@ if (GIYGAS_WITH_OPENGL)
 endif()
 
 target_link_libraries(giygas ${giygas_link_libraries})
-target_link_libraries(giygas_internal ${giygas_link_libraries})
 
 if (GTest_FOUND)
     target_link_libraries(giygas_test
-        GTest::GTest GTest::Main ${GMOCK_LIBRARY} giygas_internal
+        GTest::GTest GTest::Main ${GMOCK_LIBRARY} giygas
     )
 
     add_test(GiygasTests giygas_test)

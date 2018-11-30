@@ -18,6 +18,12 @@
             "type": "git",
             "url": "https://github.com/glfw/glfw.git",
             "ref": "0a3c4f5d80b041ee1a12c8da3503653d98bd1a15"
+        },
+        {
+            "name": "glslang",
+            "type": "git",
+            "url": "https://github.com/KhronosGroup/glslang.git",
+            "ref": "f44b17ee135d5e153ce000e88b806b5377812b11"
         }
     ]
 }

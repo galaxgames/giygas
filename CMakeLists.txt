@@ -3,6 +3,9 @@ project(giygas VERSION 0.1)
 
 include(CMakePackageConfigHelpers)
 
+include("cmake/dew.cmake")
+setup_dew(dew_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/dewfile.json")
+
 set(CONFIG_INSTALL_DIR "lib/cmake/giygas")
 
 add_subdirectory(core)

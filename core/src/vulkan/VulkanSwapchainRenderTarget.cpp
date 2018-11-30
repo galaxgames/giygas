@@ -4,6 +4,10 @@
 
 using namespace giygas;
 
+VulkanSwapchainRenderTarget::VulkanSwapchainRenderTarget(const VulkanSwapchain *swapchain) {
+    _swapchain = swapchain;
+}
+
 RendererType VulkanSwapchainRenderTarget::renderer_type() const {
     return RendererType::Vulkan;
 }
@@ -12,8 +16,16 @@ const void* VulkanSwapchainRenderTarget::rendertarget_impl() const {
     return static_cast<const VulkanRenderTarget *>(this);
 }
 
-VkImageView VulkanSwapchainRenderTarget::image_view() const {
-    return swapchain->get_image_view(image_index);
+uint32_t VulkanSwapchainRenderTarget::width() const {
+    return _swapchain->width();
+}
+
+uint32_t VulkanSwapchainRenderTarget::height() const {
+    return _swapchain->height();
+}
+
+VkImageView VulkanSwapchainRenderTarget::image_view(uint32_t index) const {
+    return _swapchain->get_image_view(index);
 }
 
 VkImageLayout VulkanSwapchainRenderTarget::layout() const {
@@ -22,5 +34,9 @@ VkImageLayout VulkanSwapchainRenderTarget::layout() const {
 }
 
 VkFormat VulkanSwapchainRenderTarget::api_format() const {
-    return swapchain->surface_format().format;
+    return _swapchain->surface_format().format;
+}
+
+bool VulkanSwapchainRenderTarget::is_swapchain() const {
+    return true;
 }

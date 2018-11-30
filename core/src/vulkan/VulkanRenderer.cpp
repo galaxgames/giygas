@@ -1,4 +1,3 @@
-#include <iostream>
 #include <cassert>
 #include <limits>
 #include "VulkanRenderer.hpp"
@@ -27,11 +26,15 @@ VulkanRenderer::VulkanRenderer(VulkanContext *context)
 
 VulkanRenderer::~VulkanRenderer() {
     _copy_command_pool.destroy();
+
+    vkDestroyFence(_device, _command_buffers_executed_fence, nullptr);
+
+    for (uint32_t i = 0; i < _swapchain.image_count(); ++i) {
+        vkDestroySemaphore(_device, _swapchain_image_available_semaphores[i], nullptr);
+    }
+
     _swapchain.destroy();
-    vkDestroyFence(_device, _submitted_command_buffers_finished_fence, nullptr);
-    vkDestroyFence(_device, _image_acquired_fence, nullptr);
-    vkDestroySemaphore(_device, _render_finished_semaphore, nullptr);
-    vkDestroySemaphore(_device, _image_available_semaphore, nullptr);
+
     vkDestroyDevice(_device, nullptr);
     vkDestroySurfaceKHR(_instance, _surface, nullptr);
     vkDestroyInstance(_instance, nullptr);
@@ -90,25 +93,28 @@ void VulkanRenderer::initialize() {
     VkSemaphoreCreateInfo semaphore_info = {};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    vkCreateSemaphore(_device, &semaphore_info, nullptr, &_image_available_semaphore);
-    vkCreateSemaphore(_device, &semaphore_info, nullptr, &_render_finished_semaphore);
+    _swapchain_image_available_semaphores = unique_ptr<VkSemaphore[]>(new VkSemaphore[_swapchain.image_count()]);
+
+    for (uint32_t i = 0, ilen = _swapchain.image_count(); i < ilen; ++i) {
+        vkCreateSemaphore(_device, &semaphore_info, nullptr, &_swapchain_image_available_semaphores[i]);
+    }
 
     _copy_command_pool.create();
+
+    VkFenceCreateInfo fence_info = {};
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_info.flags = 0;
+    vkCreateFence(_device, &fence_info, nullptr, &_command_buffers_executed_fence);
 
     vkAcquireNextImageKHR(
         _device,
         _swapchain.handle(),
         numeric_limits<uint64_t>::max(),
-        _image_available_semaphore,
-        nullptr,
+        _swapchain_image_available_semaphores[_current_submission_loop_semaphore_index],
+        nullptr,  // fence to signal
         &_next_swapchain_image_index
     );
 
-    VkFenceCreateInfo fence_info = {};
-    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_info.flags = 0;
-    vkCreateFence(_device, &fence_info, nullptr, &_image_acquired_fence);
-    vkCreateFence(_device, &fence_info, nullptr, &_submitted_command_buffers_finished_fence);
 }
 
 RendererType VulkanRenderer::renderer_type() const {
@@ -176,24 +182,16 @@ CommandBuffer* VulkanRenderer::make_command_buffer() {
     return new VulkanCommandBuffer(this);
 }
 
-const RenderTarget* VulkanRenderer::get_swapchain_rendertarget(uint32_t index) const {
-    return _swapchain.get_render_target(index);
-}
-
-uint32_t VulkanRenderer::swapchain_framebuffer_count() const {
-    return _swapchain.image_count();
-}
-
-uint32_t VulkanRenderer::next_swapchain_framebuffer_index() const {
+uint32_t VulkanRenderer::next_swapchain_image_index() const {
     return _next_swapchain_image_index;
 }
 
-uint32_t VulkanRenderer::swapchain_width() const {
-    return _swapchain.width();
+const RenderTarget *VulkanRenderer::swapchain() const {
+    return _swapchain.rendertarget();
 }
 
-uint32_t VulkanRenderer::swapchain_height() const {
-    return _swapchain.height();
+uint32_t VulkanRenderer::swapchain_image_count() const {
+    return _swapchain.image_count();
 }
 
 uint32_t VulkanRenderer::get_api_texture_format(TextureFormat format) const {
@@ -201,7 +199,6 @@ uint32_t VulkanRenderer::get_api_texture_format(TextureFormat format) const {
 }
 
 void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
-    assert(_ready_to_present == false);
 
     // TODO: Reallocating this buffer every frame sucks.
     // TODO: Investigate how expensive this is to do every frame and look into a better interface
@@ -212,59 +209,55 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
         assert(buffer != nullptr);
         assert(buffer->renderer_type() == RendererType::Vulkan);
         const auto *vulkan_buffer = reinterpret_cast<const VulkanCommandBuffer *>(buffer);
-        buffer_handles[i] = vulkan_buffer->handle();
+
+        uint32_t handle_index = 0;
+        if (vulkan_buffer->handle_count() > 1) {
+            handle_index = _next_swapchain_image_index;
+        }
+
+        buffer_handles[i] = vulkan_buffer->get_handle(handle_index);
     }
 
-    // Wait stage is TOP_OF_PIPE because the top of the pipe will transition our aqcuired image
-    // if we just wait for the image to be aqcuired before starting. This simplified things a bit.
-    // TODO: Look into this later
-    VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info = {};
+    VkSemaphore wait_semaphore = _swapchain_image_available_semaphores[_current_submission_loop_semaphore_index];
+    VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &_image_available_semaphore;
+    submit_info.pWaitSemaphores = &wait_semaphore;
     submit_info.pWaitDstStageMask = &wait_stage;
     submit_info.commandBufferCount = static_cast<uint32_t>(buffer_count);
     submit_info.pCommandBuffers = buffer_handles.get();
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &_render_finished_semaphore;
 
-    vkQueueSubmit(_graphics_queue, 1, &submit_info, _submitted_command_buffers_finished_fence);
-    _ready_to_present = true;
-}
+    vkQueueSubmit(_graphics_queue, 1, &submit_info, _command_buffers_executed_fence);
 
-void VulkanRenderer::present() {
-    assert(_ready_to_present);
+    // Wait for all the command buffers to finsh execution.
+    vkWaitForFences(_device, 1, &_command_buffers_executed_fence, VK_TRUE, numeric_limits<uint64_t>::max());
+    vkResetFences(_device, 1, &_command_buffers_executed_fence);
 
-    VkSwapchainKHR swapchain_handle = _swapchain.handle();
-    VkResult present_result = VK_RESULT_MAX_ENUM;
     VkPresentInfoKHR present_info = {};
+    VkSwapchainKHR swapchain_handle = _swapchain.handle();
+    //VkResult present_result = VK_RESULT_MAX_ENUM;
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &_render_finished_semaphore;
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &swapchain_handle;
     present_info.pImageIndices = &_next_swapchain_image_index;
     // TODO: This was commented out for some reason, but I can't remember why. Need to look into this again.
     //present_info.pResults = &present_result;
-
     vkQueuePresentKHR(_present_queue, &present_info);
+
+    uint32_t next_submission_loop_semaphore_index =
+            (_current_submission_loop_semaphore_index + 1) % _swapchain.image_count();
 
     vkAcquireNextImageKHR(
         _device,
         _swapchain.handle(),
         numeric_limits<uint64_t>::max(),
-        _image_available_semaphore,
-        _image_acquired_fence,  // fence to signal
+        _swapchain_image_available_semaphores[next_submission_loop_semaphore_index],
+        nullptr,  // fence to signal
         &_next_swapchain_image_index
     );
 
-    array<VkFence, 2> fences = {_submitted_command_buffers_finished_fence, _image_acquired_fence};
-
-    vkWaitForFences(_device, fences.size(), fences.data(), VK_TRUE, numeric_limits<uint64_t>::max());
-    vkResetFences(_device, fences.size(), fences.data());
-
-    _ready_to_present = false;
+    _current_submission_loop_semaphore_index = next_submission_loop_semaphore_index;
 }
 
 VkPhysicalDevice VulkanRenderer::physical_device() const {
@@ -443,13 +436,13 @@ VkPhysicalDevice VulkanRenderer::find_suitable_physical_device(
     QueueFamilyIndices &queue_family_indices,
     SwapchainInfo &swapchain_info
 ) {
-    unsigned int device_count = 0;
+    uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 
     unique_ptr<VkPhysicalDevice[]> devices(new VkPhysicalDevice[device_count]);
     vkEnumeratePhysicalDevices(instance, &device_count, devices.get());
 
-    for (int i = 0; i < device_count; ++i) {
+    for (uint32_t i = 0; i < device_count; ++i) {
         VkPhysicalDevice device = devices[i];
         if (is_physical_device_suitable(
             device,
@@ -547,7 +540,7 @@ VkSurfaceFormatKHR VulkanRenderer::choose_surface_format(
 }
 
 VkPresentModeKHR VulkanRenderer::choose_present_mode(
-    const SwapchainInfo &info
+    const SwapchainInfo &/*info*/
 ) {
     // VK_PRESENT_MODE_FIFO_KHR is guaranteed to always be available.
     VkPresentModeKHR selected_mode = VK_PRESENT_MODE_FIFO_KHR;

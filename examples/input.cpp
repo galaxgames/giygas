@@ -35,7 +35,7 @@ class TriangleExampleApp : public GameLoopDelegate {
     unique_ptr<Pipeline> _pipeline;
     unique_ptr<CommandPool> _command_pool;
     unique_ptr<CommandBuffer> _commands;
-    unique_ptr<unique_ptr<Framebuffer>[]> _swapchain_framebuffers;
+    unique_ptr<Framebuffer> _swapchain_framebuffer;
 
     EventHandler<unsigned int, float> _input_changed_handler;
     bool _is_up_pressed;
@@ -115,7 +115,7 @@ public:
         RenderPassCreateParameters pass_params = {};
         RenderPassAttachment pass_attachment = {};
         pass_attachment.purpose = AttachmentPurpose::Color;
-        pass_attachment.target = _renderer->get_swapchain_rendertarget(0);
+        pass_attachment.target = _renderer->swapchain();
         pass_params.attachment_count = 1;
         pass_params.attachments = &pass_attachment;
         _pass = unique_ptr<RenderPass>(_renderer->make_render_pass());
@@ -124,12 +124,11 @@ public:
         //
         // Create swapchain framebuffers
         //
-        size_t framebuffer_count = _renderer->swapchain_framebuffer_count();
-        _swapchain_framebuffers = unique_ptr<unique_ptr<Framebuffer>[]>(
-            giygasutil::util::create_swapchain_framebuffers<unique_ptr<Framebuffer>>(
-                _renderer.get(),
-                _pass.get()
-            )
+        _swapchain_framebuffer = unique_ptr<Framebuffer>(_renderer->make_framebuffer());
+        giygasutil::create_basic_framebuffer(
+            _swapchain_framebuffer.get(),
+            _renderer->swapchain(),
+            _pass.get()
         );
 
         //
@@ -137,12 +136,12 @@ public:
         //
         PipelineCreateParameters pipeline_params = {};
         array<const Shader *, 2> textured_shaders = {_vs.get(), _fs.get()};
-        pipeline_params.viewport.width = _renderer->swapchain_width();
-        pipeline_params.viewport.height = _renderer->swapchain_height();
+        pipeline_params.viewport.width = _renderer->swapchain()->width();
+        pipeline_params.viewport.height = _renderer->swapchain()->height();
         pipeline_params.viewport.min_depth = 0;
         pipeline_params.viewport.min_depth = 1;
-        pipeline_params.scissor.width = _renderer->swapchain_width();
-        pipeline_params.scissor.height = _renderer->swapchain_height();
+        pipeline_params.scissor.width = _renderer->swapchain()->width();
+        pipeline_params.scissor.height = _renderer->swapchain()->height();
         pipeline_params.shader_count = 2;
         pipeline_params.shaders = textured_shaders.data();
         pipeline_params.vertex_buffer_layout_count = 1;
@@ -186,7 +185,7 @@ public:
         // Setup push constant data
         //
         PushConstantData push_data = {};
-        float aspect = (float)_renderer->swapchain_width() / (float)_renderer->swapchain_height();
+        float aspect = (float)_renderer->swapchain()->width() / (float)_renderer->swapchain()->height();
         const float playfield_width = 10;
         const float playfield_height = 10;
         Matrix4x4 projection = Matrix4x4::scale(Vector4((1.0f / aspect) / playfield_width, 1.0f / playfield_height, 1.0f, 1.0f));
@@ -218,7 +217,7 @@ public:
         onscreen_record_info.draw_count = 1;
         onscreen_record_info.draws = &draw_info;
         onscreen_record_info.pass_info.pass = _pass.get();
-        onscreen_record_info.pass_info.framebuffer = _swapchain_framebuffers[_renderer->next_swapchain_framebuffer_index()].get();
+        onscreen_record_info.pass_info.framebuffer = _swapchain_framebuffer.get();
         onscreen_record_info.pass_info.clear_value_count = 1;
         onscreen_record_info.pass_info.clear_values = &clear_value;
 
@@ -229,8 +228,6 @@ public:
         //
         const CommandBuffer *commands = _commands.get();
         _renderer->submit(&commands, 1);
-
-        _renderer->present();
     }
 
     void handle_input_changed(unsigned int id, float value) {
@@ -256,7 +253,7 @@ public:
 
 };
 
-int main (int argc, char **argv) {
+int main (int /*argc*/, char **argv) {
     GLFWContext context;
     TriangleExampleApp app(&context, argv[0]);
     GameLoopRunner runner(&context, &app);

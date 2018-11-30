@@ -11,12 +11,14 @@ using namespace giygas::validation;
 
 VulkanFramebuffer::VulkanFramebuffer(VulkanRenderer *renderer) {
     _renderer = renderer;
-    _handle = VK_NULL_HANDLE;
 }
 
 VulkanFramebuffer::~VulkanFramebuffer() {
     VkDevice device = _renderer->device();
-    vkDestroyFramebuffer(device, _handle, nullptr);
+
+    for (uint32_t i = 0; i < _handle_count; ++i) {
+        vkDestroyFramebuffer(device, _handles[i], nullptr);
+    }
 }
 
 RendererType VulkanFramebuffer::renderer_type() const {
@@ -25,6 +27,7 @@ RendererType VulkanFramebuffer::renderer_type() const {
 
 void VulkanFramebuffer::create(const FramebufferCreateParameters &params) {
     assert(validate_framebuffer_create(this, params));
+    // TODO: Validate that all attachments are either for or not for the swapchain.
 
     const auto *pass_impl = reinterpret_cast<const VulkanRenderPass *>(params.pass);
 
@@ -33,29 +36,47 @@ void VulkanFramebuffer::create(const FramebufferCreateParameters &params) {
     _attachment_count = params.attachment_count;
     _purposes = unique_ptr<AttachmentPurpose[]>(new AttachmentPurpose[params.attachment_count] {});
 
-    unique_ptr<VkImageView[]> image_views(new VkImageView[params.attachment_count]);
+    _handle_count = 1;
 
-    for (size_t i = 0; i < params.attachment_count; ++i) {
+    // Determine if we need to allocate multiple framebuffers due to swapchain render target attachments
+    for (uint32_t i = 0; i < params.attachment_count; ++i) {
         const FramebufferAttachment &attachment = params.attachments[i];
         const auto *target = static_cast<const VulkanRenderTarget *>(attachment.target->rendertarget_impl());
-        image_views[i] = target->image_view();
-        _purposes[i] = attachment.purpose;
+        if (target->is_swapchain()) {
+            _handle_count = _renderer->swapchain_image_count();
+            break;
+        }
     }
 
-    VkFramebufferCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    create_info.renderPass = pass_impl->handle();
-    create_info.attachmentCount = static_cast<uint32_t>(params.attachment_count);
-    create_info.pAttachments = image_views.get();
-    create_info.width = params.width;
-    create_info.height = params.height;
-    create_info.layers = 1;
+    // Create all (or just the one) vulkan framebuffer objects.
+    _handles = unique_ptr<VkFramebuffer[]>(new VkFramebuffer[_handle_count]);
 
-    vkCreateFramebuffer(_renderer->device(), &create_info, nullptr, &_handle);
+    for (uint32_t framebuffer_index = 0; framebuffer_index < _handle_count; ++framebuffer_index) {
+        unique_ptr<VkImageView[]> image_views(new VkImageView[params.attachment_count]);
+
+        for (uint32_t i = 0; i < params.attachment_count; ++i) {
+            const FramebufferAttachment &attachment = params.attachments[i];
+            const auto *target = static_cast<const VulkanRenderTarget *>(attachment.target->rendertarget_impl());
+            image_views[i] = target->image_view(framebuffer_index);
+            _purposes[i] = attachment.purpose;
+            _is_for_swapchain = target->is_swapchain();
+        }
+
+        VkFramebufferCreateInfo create_info = {};
+        create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        create_info.renderPass = pass_impl->handle();
+        create_info.attachmentCount = static_cast<uint32_t>(params.attachment_count);
+        create_info.pAttachments = image_views.get();
+        create_info.width = params.width;
+        create_info.height = params.height;
+        create_info.layers = 1;
+
+        vkCreateFramebuffer(_renderer->device(), &create_info, nullptr, _handles.get() + framebuffer_index);
+    }
 }
 
 bool VulkanFramebuffer::is_valid() const {
-    return _handle != VK_NULL_HANDLE;
+    return _handle_count > 0;
 }
 
 uint32_t VulkanFramebuffer::width() const {
@@ -74,6 +95,11 @@ const AttachmentPurpose* VulkanFramebuffer::attachment_purposes() const {
     return _purposes.get();
 }
 
-VkFramebuffer VulkanFramebuffer::handle() const {
-    return _handle;
+bool VulkanFramebuffer::is_for_swapchain() const {
+    return _is_for_swapchain;
+}
+
+VkFramebuffer VulkanFramebuffer::get_handle(uint32_t index) const {
+    assert(index < _handle_count);
+    return _handles[index];
 }

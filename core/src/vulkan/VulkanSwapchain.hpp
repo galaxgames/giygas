@@ -20,7 +20,7 @@ namespace giygas {
         uint32_t _image_view_count;
         unique_ptr<VkImage[]> _images;
         unique_ptr<VkImageView[]> _image_views;
-        unique_ptr<VulkanSwapchainRenderTarget[]> _render_targets;
+        VulkanSwapchainRenderTarget _rendertarget;
         VkSurfaceFormatKHR _format;
         VkExtent2D _extent;
 
@@ -77,8 +77,7 @@ namespace giygas {
         uint32_t image_count() const;
         const VkSurfaceFormatKHR &surface_format() const;
         VkImageView get_image_view(uint32_t index) const;
-        const VulkanSwapchainRenderTarget *get_render_target(uint32_t index) const;
-
+        const VulkanSwapchainRenderTarget *rendertarget() const;
 
     };
 

@@ -5,8 +5,6 @@
 #include "VulkanRenderTarget.hpp"
 
 namespace giygas {
-    using namespace std;
-
     class VulkanRenderer;
 
     class VulkanTexture final : public Texture, public VulkanRenderTarget {
@@ -92,15 +90,18 @@ namespace giygas {
         //
 
         const void *rendertarget_impl() const override;
+        uint32_t width() const override;
+        uint32_t height() const override;
 
 
         //
         // VulkanRenderTarget implementation
         //
 
-        VkImageView image_view() const override;
+        VkImageView image_view(uint32_t index) const override;
         VkImageLayout layout() const override;
         VkFormat api_format() const override;
+        bool is_swapchain() const override;
 
         //
         // VulkanTexture implementation

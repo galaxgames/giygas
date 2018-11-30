@@ -18,7 +18,7 @@ namespace giygas {
     public:
         const RenderPass *pass;
         const FramebufferAttachment *attachments;
-        size_t attachment_count;
+        uint32_t attachment_count;
         uint32_t width;
         uint32_t height;
     };

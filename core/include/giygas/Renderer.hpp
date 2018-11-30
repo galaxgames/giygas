@@ -36,16 +36,16 @@ namespace giygas {
         virtual CommandPool *make_command_pool() = 0;
         virtual CommandBuffer *make_command_buffer() = 0;
 
-        virtual const RenderTarget *get_swapchain_rendertarget(uint32_t index) const = 0;
-        virtual uint32_t swapchain_framebuffer_count() const = 0;
-        virtual uint32_t next_swapchain_framebuffer_index() const = 0;
-        virtual uint32_t swapchain_width() const = 0;
-        virtual uint32_t swapchain_height() const = 0;
+        //virtual const RenderTarget *get_swapchain_rendertarget(uint32_t index) const = 0;
+        //virtual uint32_t swapchain_framebuffer_count() const = 0;
+        //virtual uint32_t next_swapchain_framebuffer_index() const = 0;
+        virtual const RenderTarget *swapchain() const = 0;
+//        virtual uint32_t swapchain_width() const = 0;
+//        virtual uint32_t swapchain_height() const = 0;
 
         virtual uint32_t get_api_texture_format(TextureFormat format) const = 0;
 
         virtual void submit(const CommandBuffer **buffers, size_t buffer_count) = 0;
-        virtual void present() = 0;
     };
 }
 

@@ -9,11 +9,12 @@ namespace giygas {
 
     class VulkanCommandBuffer final : public CommandBuffer {
 
-        VulkanRenderer *_renderer;
-        const VulkanCommandPool *_pool;
-        VkCommandBuffer _handle;
+        VulkanRenderer *_renderer = nullptr;
+        const VulkanCommandPool *_pool = nullptr;
+        uint32_t _handle_count = 0;
+        unique_ptr<VkCommandBuffer[]> _handles;
 
-        void record_draw(const DrawInfo &info) const;
+        void record_draw(const DrawInfo &info, VkCommandBuffer handle) const;
 
     public:
         VulkanCommandBuffer(VulkanRenderer *renderer);
@@ -31,9 +32,8 @@ namespace giygas {
         //
         // VulkanCommandBuffer implementation
         //
-
-        VkCommandBuffer handle() const;
-
+        uint32_t handle_count() const;
+        VkCommandBuffer get_handle(uint32_t index) const;
     };
 
 

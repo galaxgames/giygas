@@ -8,14 +8,15 @@ namespace giygas {
 
     class VulkanRenderer;
 
-
     class VulkanFramebuffer : public Framebuffer {
 
-        VulkanRenderer *_renderer;
-        VkFramebuffer _handle;
-        uint32_t _width;
-        uint32_t _height;
-        size_t _attachment_count;
+        VulkanRenderer *_renderer = nullptr;
+        bool _is_for_swapchain = false;
+        uint32_t _handle_count = 0;
+        unique_ptr<VkFramebuffer[]> _handles;
+        uint32_t _width = 0;
+        uint32_t _height = 0;
+        size_t _attachment_count = 0;
         unique_ptr<AttachmentPurpose[]> _purposes;
 
     public:
@@ -41,10 +42,8 @@ namespace giygas {
         //
         // VulkanFramebuffer implementation
         //
-
-        VkFramebuffer handle() const;
-        //const AttachmentPurpose *attachment_purposes() const;
-
+        bool is_for_swapchain() const;
+        VkFramebuffer get_handle(uint32_t index) const;
 
     };
 
