@@ -8,6 +8,7 @@
 #include "SwapchainInfo.hpp"
 #include "VulkanSwapchain.hpp"
 #include <limits>
+#include <queue>
 
 
 namespace giygas {
@@ -26,8 +27,10 @@ namespace giygas {
         VkPhysicalDeviceMemoryProperties _memory_properties = {};
         VulkanCommandPool _copy_command_pool;
         unique_ptr<VkSemaphore[]> _swapchain_image_available_semaphores;
-        VkFence _command_buffers_executed_fence = nullptr;
+        //VkFence _command_buffers_executed_fence = nullptr;
         VkDescriptorPool _shared_descriptor_pool = nullptr;
+
+        std::queue<VkFence> _command_buffers_executed_fences;
 
         uint32_t _current_image_acquisition_semaphore_index = 0;
         uint32_t _next_swapchain_image_index = 0;

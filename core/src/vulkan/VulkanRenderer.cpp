@@ -27,7 +27,9 @@ VulkanRenderer::VulkanRenderer(VulkanContext *context)
 VulkanRenderer::~VulkanRenderer() {
     _copy_command_pool.destroy();
 
-    vkDestroyFence(_device, _command_buffers_executed_fence, nullptr);
+    while (!_command_buffers_executed_fences.empty()) {
+        vkDestroyFence(_device, _command_buffers_executed_fences.front(), nullptr);
+    }
 
     for (uint32_t i = 0; i < _swapchain.image_count(); ++i) {
         vkDestroySemaphore(_device, _swapchain_image_available_semaphores[i], nullptr);
@@ -93,18 +95,21 @@ void VulkanRenderer::initialize() {
     VkSemaphoreCreateInfo semaphore_info = {};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
+    VkFenceCreateInfo fence_info = {};
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
     _swapchain_image_available_semaphores = unique_ptr<VkSemaphore[]>(new VkSemaphore[_swapchain.image_count()]);
 
     for (uint32_t i = 0, ilen = _swapchain.image_count(); i < ilen; ++i) {
         vkCreateSemaphore(_device, &semaphore_info, nullptr, &_swapchain_image_available_semaphores[i]);
+
+        VkFence fence;
+        vkCreateFence(_device, &fence_info, nullptr, &fence);
+        _command_buffers_executed_fences.push(fence);
     }
 
     _copy_command_pool.create();
-
-    VkFenceCreateInfo fence_info = {};
-    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    vkCreateFence(_device, &fence_info, nullptr, &_command_buffers_executed_fence);
 
     vkAcquireNextImageKHR(
         _device,
@@ -200,9 +205,12 @@ uint32_t VulkanRenderer::get_api_texture_format(TextureFormat format) const {
 
 void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
 
-    // Wait for the previously submitted command buffers to finsh execution.
-    vkWaitForFences(_device, 1, &_command_buffers_executed_fence, VK_TRUE, numeric_limits<uint64_t>::max());
-    vkResetFences(_device, 1, &_command_buffers_executed_fence);
+    // Wait for the oldest command buffers to finsh execution.
+    VkFence command_buffers_executed_fence = _command_buffers_executed_fences.front();
+    _command_buffers_executed_fences.pop();
+
+    vkWaitForFences(_device, 1, &command_buffers_executed_fence, VK_TRUE, numeric_limits<uint64_t>::max());
+    vkResetFences(_device, 1, &command_buffers_executed_fence);
 
     //
     // Present the previous frame
@@ -243,7 +251,8 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     submit_info.commandBufferCount = static_cast<uint32_t>(buffer_count);
     submit_info.pCommandBuffers = buffer_handles.get();
 
-    vkQueueSubmit(_graphics_queue, 1, &submit_info, _command_buffers_executed_fence);
+    vkQueueSubmit(_graphics_queue, 1, &submit_info, command_buffers_executed_fence);
+    _command_buffers_executed_fences.push(command_buffers_executed_fence);
 
 
     _current_image_acquisition_semaphore_index =
@@ -545,6 +554,7 @@ VkPresentModeKHR VulkanRenderer::choose_present_mode(
 ) {
     // VK_PRESENT_MODE_FIFO_KHR is guaranteed to always be available.
     VkPresentModeKHR selected_mode = VK_PRESENT_MODE_FIFO_KHR;
+    //VkPresentModeKHR selected_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 
     // TODO: Make this smarter and capable of choosing different modes.
 //    for (unsigned int i = 0; i < info.present_mode_count; ++i) {
