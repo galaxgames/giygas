@@ -95,19 +95,34 @@ void VulkanRenderer::initialize() {
     VkSemaphoreCreateInfo semaphore_info = {};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    VkFenceCreateInfo fence_info = {};
-    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
     _swapchain_image_available_semaphores = unique_ptr<VkSemaphore[]>(new VkSemaphore[_swapchain.image_count()]);
 
     for (uint32_t i = 0, ilen = _swapchain.image_count(); i < ilen; ++i) {
         vkCreateSemaphore(_device, &semaphore_info, nullptr, &_swapchain_image_available_semaphores[i]);
 
-        VkFence fence;
+
+    }
+
+    //
+    // Create command buffer execution fences
+    //
+    VkFence fence;
+    VkFenceCreateInfo fence_info = {};
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    // submit the first fences as signalled, as we don't actually have any command buffers to wait on, given that we
+    // just started the engine.
+    for (uint32_t i = 1, ilen = _swapchain.image_count() - 1; i < ilen; ++i) {
         vkCreateFence(_device, &fence_info, nullptr, &fence);
         _command_buffers_executed_fences.push(fence);
     }
+
+    // Submit the last fence as unsigned, as this is the first fence that will be given to vkQueueSubmit.
+    fence_info.flags = 0;
+    vkCreateFence(_device, &fence_info, nullptr, &fence);
+    _command_buffers_executed_fences.push(fence);
+
 
     _copy_command_pool.create();
 
@@ -205,13 +220,6 @@ uint32_t VulkanRenderer::get_api_texture_format(TextureFormat format) const {
 
 void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
 
-    // Wait for the oldest command buffers to finsh execution.
-    VkFence command_buffers_executed_fence = _command_buffers_executed_fences.front();
-    _command_buffers_executed_fences.pop();
-
-    vkWaitForFences(_device, 1, &command_buffers_executed_fence, VK_TRUE, numeric_limits<uint64_t>::max());
-    vkResetFences(_device, 1, &command_buffers_executed_fence);
-
     //
     // Present the previous frame
     //
@@ -251,8 +259,7 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     submit_info.commandBufferCount = static_cast<uint32_t>(buffer_count);
     submit_info.pCommandBuffers = buffer_handles.get();
 
-    vkQueueSubmit(_graphics_queue, 1, &submit_info, command_buffers_executed_fence);
-    _command_buffers_executed_fences.push(command_buffers_executed_fence);
+    vkQueueSubmit(_graphics_queue, 1, &submit_info, _command_buffers_executed_fences.back());
 
 
     _current_image_acquisition_semaphore_index =
@@ -268,6 +275,15 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
         nullptr,  // fence to signal
         &_next_swapchain_image_index
     );
+
+    // Wait for the oldest command buffers to finsh execution.
+    VkFence command_buffers_executed_fence = _command_buffers_executed_fences.front();
+    _command_buffers_executed_fences.pop();
+
+    vkWaitForFences(_device, 1, &command_buffers_executed_fence, VK_TRUE, numeric_limits<uint64_t>::max());
+    vkResetFences(_device, 1, &command_buffers_executed_fence);
+
+    _command_buffers_executed_fences.push(command_buffers_executed_fence);
 }
 
 VkPhysicalDevice VulkanRenderer::physical_device() const {
