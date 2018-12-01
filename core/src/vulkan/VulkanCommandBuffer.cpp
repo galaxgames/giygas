@@ -8,6 +8,7 @@
 #include "VulkanDescriptorSet.hpp"
 #include "VulkanRenderPass.hpp"
 #include <giygas/validation/command_buffer_validation.hpp>
+#include <algorithm>
 
 using namespace giygas;
 using namespace giygas::validation;
@@ -17,7 +18,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(VulkanRenderer *renderer) {
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer() {
-    vkFreeCommandBuffers(_renderer->device(), _pool->handle(), _handle_count, _handles.get());
+    free_buffers();
 }
 
 RendererType VulkanCommandBuffer::renderer_type() const {
@@ -26,16 +27,45 @@ RendererType VulkanCommandBuffer::renderer_type() const {
 
 void VulkanCommandBuffer::create(CommandPool *pool) {
     assert(validate_command_buffer_create(this, pool));
+    _pool = reinterpret_cast<VulkanCommandPool *>(pool);
 
-    _pool = reinterpret_cast<const VulkanCommandPool *>(pool);
 
-//    VkCommandBufferAllocateInfo alloc_info = {};
-//    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-//    alloc_info.commandPool = _pool->handle();
-//    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-//    alloc_info.commandBufferCount = 1;
+    uint32_t image_count = _renderer->swapchain_image_count();
+    assert(image_count > 0);
 
-//    vkAllocateCommandBuffers(_renderer->device(), &alloc_info, &_handle);
+    VkCommandBuffer *buffers = new VkCommandBuffer[image_count];
+
+    for (uint32_t i = 0; i < image_count; ++i) {
+        buffers[i] = make_buffer(_pool->get_handle(i));
+    }
+
+    _handles = unique_ptr<VkCommandBuffer[]>(buffers);
+}
+
+VkCommandBuffer VulkanCommandBuffer::make_buffer(VkCommandPool pool) const {
+    VkCommandBuffer handle;
+    VkCommandBufferAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.commandPool = pool;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandBufferCount = 1;
+
+    vkAllocateCommandBuffers(_renderer->device(), &alloc_info, &handle);
+    return handle;
+}
+
+void VulkanCommandBuffer::free_buffers() {
+    if (_handles == nullptr) {
+        return;
+    }
+
+    VkDevice device = _renderer->device();
+
+    for (uint32_t i = 0, ilen = _renderer->swapchain_image_count(); i < ilen; ++i) {
+        vkFreeCommandBuffers(device, _pool->get_handle(i), 1, _handles.get() + i);
+    }
+
+    _handles = nullptr;
 }
 
 void VulkanCommandBuffer::record_pass(const SingleBufferPassInfo &info) {
@@ -45,52 +75,18 @@ void VulkanCommandBuffer::record_pass(const SingleBufferPassInfo &info) {
     const auto *framebuffer_impl = reinterpret_cast<const VulkanFramebuffer *>(info.pass_info.framebuffer);
 
     uint32_t framebuffer_handle_index = 0;
-    uint32_t command_buffer_handle_index = 0;
-    uint32_t command_buffer_required_count = 1;
+    uint32_t next_swapchain_image_index = _renderer->next_swapchain_image_index();
 
     if (framebuffer_impl->is_for_swapchain()) {
-        framebuffer_handle_index = _renderer->next_swapchain_image_index();
-        command_buffer_handle_index = framebuffer_handle_index;
-        command_buffer_required_count = _renderer->swapchain_image_count();
+        framebuffer_handle_index = next_swapchain_image_index;
     }
-
-    //
-    // Allocate command buffers if needed.
-    //
-    if (command_buffer_required_count != _handle_count) {
-        VkCommandBuffer *new_buffers = new VkCommandBuffer[command_buffer_required_count];
-        copy_n(_handles.get(), min(_handle_count, command_buffer_required_count), new_buffers);
-
-        if (command_buffer_required_count < _handle_count) {
-            // Need to free some buffers
-            vkFreeCommandBuffers(
-                _renderer->device()                              // device
-                , _pool->handle()                                // command pool
-                , _handle_count - command_buffer_required_count  // count to free
-                , _handles.get() + command_buffer_required_count // pointer to buffers
-            );
-        } else {
-            // Need to allocate some buffers
-            VkCommandBufferAllocateInfo alloc_info = {};
-            alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            alloc_info.commandPool = _pool->handle();
-            alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            alloc_info.commandBufferCount = command_buffer_required_count - _handle_count;
-
-            vkAllocateCommandBuffers(_renderer->device(), &alloc_info, new_buffers + _handle_count);
-        }
-
-        _handles = unique_ptr<VkCommandBuffer[]>(new_buffers);
-        _handle_count = command_buffer_required_count;
-    }
-
 
     VkCommandBufferBeginInfo begin_info = {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags = 0; //VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;  // TODO
     begin_info.pInheritanceInfo = nullptr;
 
-    VkCommandBuffer handle = _handles[command_buffer_handle_index];
+    VkCommandBuffer handle = _handles[next_swapchain_image_index];
 
     vkBeginCommandBuffer(handle, &begin_info);
 
@@ -218,11 +214,8 @@ bool VulkanCommandBuffer::is_valid() const {
     return _pool != nullptr;
 }
 
-uint32_t VulkanCommandBuffer::handle_count() const {
-    return _handle_count;
-}
-
-VkCommandBuffer VulkanCommandBuffer::get_handle(uint32_t index) const {
-    assert(index < _handle_count);
+VkCommandBuffer VulkanCommandBuffer::get_handle(uint32_t index) const {    
+    assert(_handles != nullptr);
+    assert(index < _renderer->swapchain_image_count());
     return _handles[index];
 }

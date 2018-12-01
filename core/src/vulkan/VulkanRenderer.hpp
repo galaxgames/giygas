@@ -7,10 +7,10 @@
 #include "QueueFamilyIndices.hpp"
 #include "SwapchainInfo.hpp"
 #include "VulkanSwapchain.hpp"
+#include <limits>
 
 
 namespace giygas {
-    using namespace std;
 
     class VulkanRenderer final : public Renderer {
 
@@ -31,7 +31,7 @@ namespace giygas {
 
         uint32_t _current_image_acquisition_semaphore_index = 0;
         uint32_t _next_swapchain_image_index = 0;
-        uint32_t _previous_swapchain_image_index = numeric_limits<uint32_t>::max();
+        uint32_t _previous_swapchain_image_index = std::numeric_limits<uint32_t>::max();
 
         static VkResult create_instance(
             const VulkanContext *context,

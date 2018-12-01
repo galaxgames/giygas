@@ -414,6 +414,9 @@ VkImageAspectFlags VulkanTexture::image_aspects_from_format(TextureFormat format
             }
             return VK_IMAGE_ASPECT_STENCIL_BIT;
     }
+
+    assert(false);
+    return 0;
 }
 
 VkFormatFeatureFlags VulkanTexture::get_required_format_features(VkImageUsageFlags usage_flags) const {

@@ -60,6 +60,7 @@ AttachmentPurpose giygas::attachment_purpose_from_texture_format(TextureFormat f
             return AttachmentPurpose::DepthStencil;
     }
     assert(false);
+    return AttachmentPurpose::Color;
 }
 
 bool giygas::is_depth_format(TextureFormat format) {

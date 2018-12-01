@@ -1,6 +1,7 @@
 #pragma once
 #include <giygas/CommandPool.hpp>
 #include <vulkan/vulkan.h>
+#include <memory>
 
 namespace giygas {
 
@@ -10,7 +11,9 @@ namespace giygas {
     class VulkanCommandPool final : public CommandPool {
 
         VulkanRenderer *_renderer;
-        VkCommandPool _handle;
+        std::unique_ptr<VkCommandPool[]> _handles;
+
+        VkCommandPool make_pool() const;
 
     public:
         explicit VulkanCommandPool(VulkanRenderer *renderer);
@@ -29,8 +32,7 @@ namespace giygas {
         //
 
         void destroy();
-        VkCommandPool handle() const;
-
+        VkCommandPool get_handle(uint32_t index) const;
     };
 
 }

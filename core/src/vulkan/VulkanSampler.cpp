@@ -49,6 +49,8 @@ VkFilter VulkanSampler::translate_filter(SamplerFilterMode mode) {
         case SamplerFilterMode::Linear:
             return VK_FILTER_LINEAR;
     }
+    assert(false);
+    return VK_FILTER_NEAREST;
 }
 
 VkSamplerAddressMode VulkanSampler::wrap_to_address_mode(SamplerWrapMode mode) {
@@ -62,6 +64,8 @@ VkSamplerAddressMode VulkanSampler::wrap_to_address_mode(SamplerWrapMode mode) {
         case SamplerWrapMode::Repeat:
             return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     }
+    assert(false);
+    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
 VkSamplerMipmapMode VulkanSampler::translate_mipmap_mode(SamplerMipmapMode mode) {
@@ -71,4 +75,6 @@ VkSamplerMipmapMode VulkanSampler::translate_mipmap_mode(SamplerMipmapMode mode)
         case SamplerMipmapMode::Linear:
             return VK_SAMPLER_MIPMAP_MODE_LINEAR;
     }
+    assert(false);
+    return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }

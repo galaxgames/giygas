@@ -230,12 +230,7 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
         assert(buffer->renderer_type() == RendererType::Vulkan);
         const auto *vulkan_buffer = reinterpret_cast<const VulkanCommandBuffer *>(buffer);
 
-        uint32_t handle_index = 0;
-        if (vulkan_buffer->handle_count() > 1) {
-            handle_index = _next_swapchain_image_index;
-        }
-
-        buffer_handles[i] = vulkan_buffer->get_handle(handle_index);
+        buffer_handles[i] = vulkan_buffer->get_handle(_next_swapchain_image_index);
     }
 
     VkSubmitInfo submit_info = {};
@@ -279,7 +274,7 @@ const QueueFamilyIndices& VulkanRenderer::queue_family_indices() const {
 }
 
 VkCommandPool VulkanRenderer::copy_command_pool() const {
-    return _copy_command_pool.handle();
+    return _copy_command_pool.get_handle(0);
 }
 
 VkQueue VulkanRenderer::graphics_queue() const {
@@ -634,7 +629,7 @@ VkResult VulkanRenderer::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize s
     VkCommandBufferAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc_info.commandPool = _copy_command_pool.handle();
+    alloc_info.commandPool = _copy_command_pool.get_handle(0);
     alloc_info.commandBufferCount = 1;
 
     VkCommandBuffer command_buffer;
@@ -678,7 +673,7 @@ VkResult VulkanRenderer::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize s
     }
 
     vkDestroyFence(_device, fence, nullptr);
-    vkFreeCommandBuffers(_device, _copy_command_pool.handle(), 1, &command_buffer);
+    vkFreeCommandBuffers(_device, _copy_command_pool.get_handle(0), 1, &command_buffer);
 
     return result;
 }
