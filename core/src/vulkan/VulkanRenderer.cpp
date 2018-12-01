@@ -103,14 +103,14 @@ void VulkanRenderer::initialize() {
 
     VkFenceCreateInfo fence_info = {};
     fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_info.flags = 0;
+    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     vkCreateFence(_device, &fence_info, nullptr, &_command_buffers_executed_fence);
 
     vkAcquireNextImageKHR(
         _device,
         _swapchain.handle(),
         numeric_limits<uint64_t>::max(),
-        _swapchain_image_available_semaphores[_current_submission_loop_semaphore_index],
+        _swapchain_image_available_semaphores[_current_image_acquisition_semaphore_index],
         nullptr,  // fence to signal
         &_next_swapchain_image_index
     );
@@ -200,6 +200,26 @@ uint32_t VulkanRenderer::get_api_texture_format(TextureFormat format) const {
 
 void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
 
+    // Wait for the previously submitted command buffers to finsh execution.
+    vkWaitForFences(_device, 1, &_command_buffers_executed_fence, VK_TRUE, numeric_limits<uint64_t>::max());
+    vkResetFences(_device, 1, &_command_buffers_executed_fence);
+
+    //
+    // Present the previous frame
+    //
+    if (_previous_swapchain_image_index != numeric_limits<uint32_t>::max()) {
+        VkPresentInfoKHR present_info = {};
+        VkSwapchainKHR swapchain_handle = _swapchain.handle();
+        //VkResult present_result = VK_RESULT_MAX_ENUM;
+        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        present_info.swapchainCount = 1;
+        present_info.pSwapchains = &swapchain_handle;
+        present_info.pImageIndices = &_previous_swapchain_image_index;
+        // TODO: This was commented out for some reason, but I can't remember why. Need to look into this again.
+        //present_info.pResults = &present_result;
+        vkQueuePresentKHR(_present_queue, &present_info);
+    }
+
     // TODO: Reallocating this buffer every frame sucks.
     // TODO: Investigate how expensive this is to do every frame and look into a better interface
     // for submitting command buffers.
@@ -219,7 +239,7 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
     }
 
     VkSubmitInfo submit_info = {};
-    VkSemaphore wait_semaphore = _swapchain_image_available_semaphores[_current_submission_loop_semaphore_index];
+    VkSemaphore wait_semaphore = _swapchain_image_available_semaphores[_current_image_acquisition_semaphore_index];
     VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.waitSemaphoreCount = 1;
@@ -230,34 +250,20 @@ void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) 
 
     vkQueueSubmit(_graphics_queue, 1, &submit_info, _command_buffers_executed_fence);
 
-    // Wait for all the command buffers to finsh execution.
-    vkWaitForFences(_device, 1, &_command_buffers_executed_fence, VK_TRUE, numeric_limits<uint64_t>::max());
-    vkResetFences(_device, 1, &_command_buffers_executed_fence);
 
-    VkPresentInfoKHR present_info = {};
-    VkSwapchainKHR swapchain_handle = _swapchain.handle();
-    //VkResult present_result = VK_RESULT_MAX_ENUM;
-    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present_info.swapchainCount = 1;
-    present_info.pSwapchains = &swapchain_handle;
-    present_info.pImageIndices = &_next_swapchain_image_index;
-    // TODO: This was commented out for some reason, but I can't remember why. Need to look into this again.
-    //present_info.pResults = &present_result;
-    vkQueuePresentKHR(_present_queue, &present_info);
+    _current_image_acquisition_semaphore_index =
+                (_current_image_acquisition_semaphore_index + 1) % _swapchain.image_count();
 
-    uint32_t next_submission_loop_semaphore_index =
-            (_current_submission_loop_semaphore_index + 1) % _swapchain.image_count();
+    _previous_swapchain_image_index = _next_swapchain_image_index;
 
     vkAcquireNextImageKHR(
         _device,
         _swapchain.handle(),
         numeric_limits<uint64_t>::max(),
-        _swapchain_image_available_semaphores[next_submission_loop_semaphore_index],
+        _swapchain_image_available_semaphores[_current_image_acquisition_semaphore_index],
         nullptr,  // fence to signal
         &_next_swapchain_image_index
     );
-
-    _current_submission_loop_semaphore_index = next_submission_loop_semaphore_index;
 }
 
 VkPhysicalDevice VulkanRenderer::physical_device() const {

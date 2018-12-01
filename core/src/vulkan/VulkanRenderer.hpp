@@ -29,9 +29,9 @@ namespace giygas {
         VkFence _command_buffers_executed_fence = nullptr;
         VkDescriptorPool _shared_descriptor_pool = nullptr;
 
-        uint32_t _current_submission_loop_semaphore_index = 0;
+        uint32_t _current_image_acquisition_semaphore_index = 0;
         uint32_t _next_swapchain_image_index = 0;
-        bool _ready_to_present = false;
+        uint32_t _previous_swapchain_image_index = numeric_limits<uint32_t>::max();
 
         static VkResult create_instance(
             const VulkanContext *context,
