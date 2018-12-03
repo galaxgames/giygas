@@ -4,13 +4,6 @@ services:
 language: cpp
 
 before_install:
-  # Get bleeding edge dew
-  - git clone https://github.com/sfuller/dew.git
-
-  # Get glslangValidator
-  - git clone https://github.com/KhronosGroup/glslang.git
-
-  # Build our docker container to build in
   - docker build -t giygasbuild .
 
 script:
