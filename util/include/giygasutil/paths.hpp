@@ -2,12 +2,10 @@
 #include <string>
 
 namespace giygasutil {
-    namespace paths {
-        using namespace std;
+namespace paths {
 
-        string normalize(const char *path);
-        string basename(const char *path);
-        void append(string &path, const char *part);
+    std::string normalize(const char *path);
+    std::string basename(const char *path);
+    void append(std::string &path, const char *part);
 
-    }
-}
+}}

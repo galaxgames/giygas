@@ -1,5 +1,5 @@
 #pragma once
-#include <giygas/CommandBuffer.hpp>
+#include <giygas/submission.hpp>
 #include <vulkan/vulkan.h>
 
 namespace giygas {
@@ -7,33 +7,30 @@ namespace giygas {
     class VulkanRenderer;
     class VulkanCommandPool;
 
-    class VulkanCommandBuffer final : public CommandBuffer {
+    class VulkanCommandBuffer final {
 
         VulkanRenderer *_renderer = nullptr;
         VulkanCommandPool *_pool = nullptr;
-        unique_ptr<VkCommandBuffer[]> _handles;
+        VkCommandBuffer _handle = VK_NULL_HANDLE;
 
-        VkCommandBuffer make_buffer(VkCommandPool pool) const;
+        VkCommandBuffer make_buffer(VkCommandPool pool);
         void free_buffers();
-        void record_draw(const DrawInfo &info, VkCommandBuffer handle) const;
+        void record_pass(const PassSubmissionInfo &info, uint32_t swapchain_image_index);
+        void record_draw(const DrawInfo &info, VkCommandBuffer handle);
 
     public:
-        VulkanCommandBuffer(VulkanRenderer *renderer);
-        ~VulkanCommandBuffer() override;
-
-        //
-        // CommandBufferImpl implementation
-        //
-
-        RendererType renderer_type() const override;
-        void record_pass(const SingleBufferPassInfo &info) override;
-        void create(CommandPool *pool) override;
-        bool is_valid() const override;
+        VulkanCommandBuffer() = default;
+        ~VulkanCommandBuffer();
 
         //
         // VulkanCommandBuffer implementation
         //
-        VkCommandBuffer get_handle(uint32_t index) const;
+        //RendererType renderer_type() const override;
+        void create(VulkanRenderer *renderer, VulkanCommandPool *pool);
+        void record(const PassSubmissionInfo *passes, uint32_t pass_count, uint32_t swapchain_image_index);
+        void destroy();
+        bool is_valid() const;
+        VkCommandBuffer handle() const;
     };
 
 

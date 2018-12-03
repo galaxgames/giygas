@@ -7,11 +7,10 @@
 #include "SamplerParameters.hpp"
 #include "Pipeline.hpp"
 #include "Framebuffer.hpp"
-#include "CommandPool.hpp"
 #include "UniformBuffer.hpp"
 #include "Sampler.hpp"
 #include "RenderPass.hpp"
-#include "CommandBuffer.hpp"
+#include "submission.hpp"
 
 namespace giygas {
 
@@ -33,19 +32,12 @@ namespace giygas {
         virtual RenderPass *make_render_pass() = 0;
         virtual Framebuffer *make_framebuffer() = 0;
         virtual Pipeline *make_pipeline() = 0;
-        virtual CommandPool *make_command_pool() = 0;
-        virtual CommandBuffer *make_command_buffer() = 0;
 
-        //virtual const RenderTarget *get_swapchain_rendertarget(uint32_t index) const = 0;
-        //virtual uint32_t swapchain_framebuffer_count() const = 0;
-        //virtual uint32_t next_swapchain_framebuffer_index() const = 0;
         virtual const RenderTarget *swapchain() const = 0;
-//        virtual uint32_t swapchain_width() const = 0;
-//        virtual uint32_t swapchain_height() const = 0;
 
-        virtual uint32_t get_api_texture_format(TextureFormat format) const = 0;
+        //virtual uint32_t get_api_texture_format(TextureFormat format) const = 0;
 
-        virtual void submit(const CommandBuffer **buffers, size_t buffer_count) = 0;
+        virtual void submit(const PassSubmissionInfo *passes, uint32_t pass_count) = 0;
     };
 }
 

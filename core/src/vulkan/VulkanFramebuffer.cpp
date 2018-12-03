@@ -9,16 +9,36 @@ using namespace giygas;
 using namespace giygas::validation;
 
 
+class FramebufferSafeDeletable final : public SwapchainSafeDeleteable {
+
+    uint32_t _handle_count = 0;
+    unique_ptr<VkFramebuffer[]> _handles;
+
+public:
+
+    FramebufferSafeDeletable(uint32_t handle_count, unique_ptr<VkFramebuffer[]> handles) {
+        _handle_count = handle_count;
+        _handles = move(handles);
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        VkDevice device = renderer.device();
+
+        for (uint32_t i = 0; i < _handle_count; ++i) {
+            vkDestroyFramebuffer(device, _handles[i], nullptr);
+        }
+    }
+
+};
+
+
 VulkanFramebuffer::VulkanFramebuffer(VulkanRenderer *renderer) {
     _renderer = renderer;
 }
 
 VulkanFramebuffer::~VulkanFramebuffer() {
-    VkDevice device = _renderer->device();
-
-    for (uint32_t i = 0; i < _handle_count; ++i) {
-        vkDestroyFramebuffer(device, _handles[i], nullptr);
-    }
+    auto * deletable = new FramebufferSafeDeletable(_handle_count, move(_handles));
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(deletable));
 }
 
 RendererType VulkanFramebuffer::renderer_type() const {

@@ -7,57 +7,40 @@
 
 using namespace giygas;
 
-VulkanCommandPool::VulkanCommandPool(VulkanRenderer *renderer) {
-    _renderer = renderer;
-}
-
 VulkanCommandPool::~VulkanCommandPool() {
     destroy();
 }
 
-RendererType VulkanCommandPool::renderer_type() const {
-    return RendererType::Vulkan;
-}
+//RendererType VulkanCommandPool::renderer_type() const {
+//    return RendererType::Vulkan;
+//}
 
-void VulkanCommandPool::create() {
-    uint32_t image_count = _renderer->swapchain_image_count();
-    assert(image_count > 0);
-
-    VkCommandPool *pools = new VkCommandPool[image_count];
-
-    for (uint32_t i = 0; i < image_count; ++i) {
-        pools[i] = make_pool();
-    }
-
-    _handles = unique_ptr<VkCommandPool[]>(pools);
+void VulkanCommandPool::create(VulkanRenderer* renderer) {
+    _renderer = renderer;
+    _handle = make_pool();
 }
 
 void VulkanCommandPool::destroy() {
-    if (_renderer == nullptr || _handles == nullptr) {
+    if (_handle == VK_NULL_HANDLE) {
         return;
     }
 
-    VkDevice device = _renderer->device();
-
-    for (uint32_t i = 0, ilen = _renderer->swapchain_image_count(); i < ilen; ++i) {
-        vkDestroyCommandPool(device, _handles[i], nullptr);
-    }
-
-    _handles = nullptr;
+    assert(_renderer != nullptr);
+    vkDestroyCommandPool(_renderer->device(), _handle, nullptr);
+    _handle = VK_NULL_HANDLE;
 }
 
 void VulkanCommandPool::reset_buffers() {
-    vkResetCommandPool(_renderer->device(), _handles[_renderer->next_swapchain_image_index()], 0);
+    assert(_renderer != nullptr);
+    vkResetCommandPool(_renderer->device(), _handle, 0);
 }
 
 bool VulkanCommandPool::is_valid() const {
-    return _handles != nullptr;
+    return _handle != VK_NULL_HANDLE;
 }
 
-VkCommandPool VulkanCommandPool::get_handle(uint32_t index) const {
-    assert(_handles != nullptr);
-    assert(index < _renderer->swapchain_image_count());
-    return _handles[index];
+VkCommandPool VulkanCommandPool::handle() const {
+    return _handle;
 }
 
 VkCommandPool VulkanCommandPool::make_pool() const {

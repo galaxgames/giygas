@@ -11,14 +11,14 @@ namespace giygas {
     class VulkanRenderer;
 
     class VulkanShader final : public Shader {
-        const VulkanRenderer *_renderer;
+        VulkanRenderer *_renderer;
         VkShaderModule _module;
         ShaderType _type;
 
         void move_common(VulkanShader &&other) noexcept;
 
     public:
-        explicit VulkanShader(const VulkanRenderer *renderer);
+        explicit VulkanShader(VulkanRenderer *renderer);
         VulkanShader(const VulkanShader &) = delete;
         VulkanShader &operator=(const VulkanShader &) = delete;
         VulkanShader(VulkanShader &&) noexcept;
@@ -32,7 +32,7 @@ namespace giygas {
         RendererType renderer_type() const override;
 
         void set_code(
-            const uint8_t* vertex, size_t length, ShaderType type
+            const uint8_t* vertex, uint32_t length, ShaderType type
         ) override;
 
         ShaderType shader_type() const override;

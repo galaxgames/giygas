@@ -13,8 +13,8 @@ namespace giygas {
         VkImage _image;
         VkImageView _image_view;
         VkDeviceMemory _image_memory;
-        unique_ptr<uint8_t[]> _data;
-        size_t _size;
+        std::unique_ptr<uint8_t[]> _data;
+        uint32_t _size;
         uint32_t _width;
         uint32_t _height;
         TextureFormat _format;
@@ -72,8 +72,8 @@ namespace giygas {
         RendererType renderer_type() const override;
 
         void create(
-            unique_ptr<uint8_t[]> &&data,
-            size_t size,
+            std::unique_ptr<uint8_t[]> &&data,
+            uint32_t size,
             uint32_t width,
             uint32_t height,
             TextureFormat input_format,

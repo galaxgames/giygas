@@ -21,7 +21,6 @@
 #include <giygas/EventHandler.hpp>
 
 namespace giygas {
-    using namespace std;
 
     class GIYGAS_EXPORT GLFWContext final
         : public Context

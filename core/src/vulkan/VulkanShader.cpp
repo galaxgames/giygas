@@ -4,7 +4,25 @@
 
 using namespace giygas;
 
-VulkanShader::VulkanShader(const VulkanRenderer *renderer) {
+
+class ShaderSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkShaderModule _handle;
+
+public:
+
+    ShaderSafeDeletable(VkShaderModule handle) {
+        _handle = handle;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        vkDestroyShaderModule(renderer.device(), _handle, nullptr);
+    }
+
+};
+
+
+VulkanShader::VulkanShader(VulkanRenderer *renderer) {
     _renderer = renderer;
     _module = VK_NULL_HANDLE;
 }
@@ -25,12 +43,12 @@ void VulkanShader::move_common(VulkanShader &&other) noexcept {
 }
 
 VulkanShader::~VulkanShader() {
-    vkDestroyShaderModule(_renderer->device(), _module, nullptr);
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(new ShaderSafeDeletable(_module)));
 }
 
 void VulkanShader::set_code(
     const uint8_t *code,
-    size_t length,
+    uint32_t length,
     ShaderType type
 ) {
     if (_module != VK_NULL_HANDLE) {

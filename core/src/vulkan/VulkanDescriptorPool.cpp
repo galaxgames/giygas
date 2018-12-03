@@ -4,13 +4,30 @@
 
 using namespace giygas;
 
+class DescriptorPoolSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkDescriptorPool _handle;
+
+public:
+
+    DescriptorPoolSafeDeletable(VkDescriptorPool handle) {
+        _handle = handle;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        vkDestroyDescriptorPool(renderer.device(), _handle, nullptr);
+    }
+
+};
+
 VulkanDescriptorPool::VulkanDescriptorPool(VulkanRenderer *renderer) {
     _renderer = renderer;
     _handle = VK_NULL_HANDLE;
 }
 
 VulkanDescriptorPool::~VulkanDescriptorPool() {
-    vkDestroyDescriptorPool(_renderer->device(), _handle, nullptr);
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(new DescriptorPoolSafeDeletable(_handle)));
+    _handle = VK_NULL_HANDLE;
 }
 
 RendererType VulkanDescriptorPool::renderer_type() const {

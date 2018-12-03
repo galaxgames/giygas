@@ -6,6 +6,8 @@
 
 using namespace giygas_examples_common;
 using namespace giygasutil;
+using namespace giygas;
+using namespace std;
 
 ShaderLoader::ShaderLoader(const char *contentDir, RendererType renderer_type) {
     _content_dir = string(contentDir);
@@ -111,7 +113,7 @@ uint8_t * giygas_examples_common::load_targa(
     input.read(reinterpret_cast<char *>(image_data), image_size);
 
     // bgr -> rgb
-    for (int i = 0; i < image_size; i += bytes_per_pixel) {
+    for (size_t i = 0; i < image_size; i += bytes_per_pixel) {
         uint8_t r = image_data[i + 2];
         uint8_t b = image_data[i];
         image_data[i] = r;

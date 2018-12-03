@@ -1,8 +1,8 @@
 #pragma once
-
 #include "Vector3.hpp"
 
 namespace giygas {
+
     class Quaternion {
     public:
         float x, y, z, w;
@@ -21,4 +21,5 @@ namespace giygas {
          */
         static Quaternion angle_axis(float angle, Vector3 axis);
     };
+
 }

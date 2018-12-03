@@ -13,7 +13,7 @@ namespace giygas {
 
         VulkanRenderer *_renderer;
         VkRenderPass _handle;
-        size_t _attachment_count;
+        uint32_t _attachment_count;
         unique_ptr<AttachmentPurpose[]> _purposes;
 
         static void set_description_from_attachmnent_params(
@@ -32,7 +32,7 @@ namespace giygas {
         RendererType renderer_type() const override;
         void create(const RenderPassCreateParameters &params) override;
         bool is_valid() const override;
-        size_t attachment_count() const override;
+        uint32_t attachment_count() const override;
         const AttachmentPurpose *attachment_purposes() const override;
 
         //

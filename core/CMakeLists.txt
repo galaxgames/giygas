@@ -128,11 +128,13 @@ install(
     NAMESPACE "giygas::"
     DESTINATION "${CONFIG_INSTALL_DIR}"
 )
+
+# Copy include files to (prefix)/include/giygas/giygas
 install(
     DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/giygas"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/include/giygas"
 )
 install (
-    DIRECTORY "${PROJECT_BINARY_DIR}/include"
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DIRECTORY "${PROJECT_BINARY_DIR}/include/giygas"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/include/giygas"
 )

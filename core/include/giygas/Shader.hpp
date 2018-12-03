@@ -5,7 +5,6 @@
 #include <string>
 
 namespace giygas {
-    using namespace std;
 
     class GIYGAS_EXPORT Shader {
     public:
@@ -14,7 +13,7 @@ namespace giygas {
         virtual RendererType renderer_type() const = 0;
 
         virtual void set_code(
-            const uint8_t* code, size_t length, ShaderType type
+            const uint8_t* code, uint32_t length, ShaderType type
         ) = 0;
 
         virtual ShaderType shader_type() const = 0;

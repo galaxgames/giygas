@@ -10,6 +10,29 @@ using namespace giygas;
 using namespace giygas::validation;
 using namespace std;
 
+
+class PipelineSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkPipeline _pipeline;
+    VkPipelineLayout _layout;
+
+public:
+
+    PipelineSafeDeletable(VkPipeline pipeline, VkPipelineLayout layout) {
+        _pipeline = pipeline;
+        _layout = layout;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        VkDevice device = renderer.device();
+        vkDestroyPipeline(device, _pipeline, nullptr);
+        vkDestroyPipelineLayout(device, _layout, nullptr);
+    }
+
+};
+
+
+
 VulkanPipeline::VulkanPipeline(VulkanRenderer *renderer) {
     _renderer = renderer;
     _layout = VK_NULL_HANDLE;
@@ -18,9 +41,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer *renderer) {
 }
 
 VulkanPipeline::~VulkanPipeline() {
-    VkDevice device = _renderer->device();
-    vkDestroyPipeline(device, _handle, nullptr);
-    vkDestroyPipelineLayout(device, _layout, nullptr);
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(new PipelineSafeDeletable(_handle, _layout)));
 }
 
 void VulkanPipeline::create(const PipelineCreateParameters &params) {

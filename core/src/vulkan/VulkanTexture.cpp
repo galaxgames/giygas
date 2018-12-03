@@ -6,6 +6,31 @@
 
 using namespace giygas;
 
+
+class TextureSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkImage _image;
+    VkImageView _view;
+    VkDeviceMemory _memory;
+
+public:
+
+    TextureSafeDeletable(VkImage image, VkImageView view, VkDeviceMemory memory) {
+        _image = image;
+        _view = view;
+        _memory = memory;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        VkDevice device = renderer.device();
+        vkDestroyImageView(device, _view, nullptr);
+        vkDestroyImage(device, _image, nullptr);
+        vkFreeMemory(device, _memory, nullptr);
+    }
+
+};
+
+
 VulkanTexture::VulkanTexture(VulkanRenderer *renderer) {
     _renderer = renderer;
     _image = VK_NULL_HANDLE;
@@ -14,10 +39,9 @@ VulkanTexture::VulkanTexture(VulkanRenderer *renderer) {
 }
 
 VulkanTexture::~VulkanTexture() {
-    VkDevice device = _renderer->device();
-    vkDestroyImageView(device, _image_view, nullptr);
-    vkDestroyImage(device, _image, nullptr);
-    vkFreeMemory(device, _image_memory, nullptr);
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(
+        new TextureSafeDeletable(_image, _image_view, _image_memory)
+    ));
 }
 
 RendererType VulkanTexture::renderer_type() const {
@@ -36,7 +60,7 @@ RendererType VulkanTexture::renderer_type() const {
 
 void VulkanTexture::create(
     unique_ptr<uint8_t[]> &&data,
-    size_t size,
+    uint32_t size,
     uint32_t width,
     uint32_t height,
     TextureFormat input_format,

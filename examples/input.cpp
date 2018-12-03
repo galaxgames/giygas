@@ -33,8 +33,6 @@ class TriangleExampleApp : public GameLoopDelegate {
     unique_ptr<Shader> _fs;
     unique_ptr<RenderPass> _pass;
     unique_ptr<Pipeline> _pipeline;
-    unique_ptr<CommandPool> _command_pool;
-    unique_ptr<CommandBuffer> _commands;
     unique_ptr<Framebuffer> _swapchain_framebuffer;
 
     EventHandler<unsigned int, float> _input_changed_handler;
@@ -150,14 +148,6 @@ public:
         pipeline_params.vertex_push_constants.size = sizeof(PushConstantData);
         _pipeline = unique_ptr<Pipeline>(_renderer->make_pipeline());
         _pipeline->create(pipeline_params);
-
-        //
-        // Make command buffers
-        //
-        _command_pool = unique_ptr<CommandPool>(_renderer->make_command_pool());
-        _command_pool->create();
-        _commands = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
-        _commands->create(_command_pool.get());
     }
 
     void update_logic(float elapsed_seconds) override {
@@ -192,10 +182,8 @@ public:
         push_data.tf = projection * Matrix4x4::translate(Vector4(_position.x, _position.y, 0, 1));
 
         //
-        // Reset and record command buffers
+        // Setup submission info
         //
-        _command_pool->reset_buffers();
-
         const VertexBuffer *vertex_buffer = _vertex_buffer.get();
 
         ClearValue clear_value;
@@ -213,21 +201,15 @@ public:
         draw_info.vertex_push_constants.range.size = sizeof(PushConstantData);
         draw_info.vertex_push_constants.data = reinterpret_cast<const uint8_t *>(&push_data);
 
-        SingleBufferPassInfo onscreen_record_info = {};
-        onscreen_record_info.draw_count = 1;
-        onscreen_record_info.draws = &draw_info;
-        onscreen_record_info.pass_info.pass = _pass.get();
-        onscreen_record_info.pass_info.framebuffer = _swapchain_framebuffer.get();
-        onscreen_record_info.pass_info.clear_value_count = 1;
-        onscreen_record_info.pass_info.clear_values = &clear_value;
+        PassSubmissionInfo submit_info = {};
+        submit_info.draw_count = 1;
+        submit_info.draws = &draw_info;
+        submit_info.pass_info.pass = _pass.get();
+        submit_info.pass_info.framebuffer = _swapchain_framebuffer.get();
+        submit_info.pass_info.clear_value_count = 1;
+        submit_info.pass_info.clear_values = &clear_value;
 
-        _commands->record_pass(onscreen_record_info);
-
-        //
-        // Submit buffers
-        //
-        const CommandBuffer *commands = _commands.get();
-        _renderer->submit(&commands, 1);
+        _renderer->submit(&submit_info, 1);
     }
 
     void handle_input_changed(unsigned int id, float value) {

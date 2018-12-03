@@ -9,7 +9,6 @@
 #include "RenderTarget.hpp"
 
 namespace giygas {
-    using namespace std;
 
     // TODO: Make this an enum class
     enum TextureUsageFlags {
@@ -25,8 +24,8 @@ namespace giygas {
         virtual ~Texture() = default;
 
         virtual void create(
-            unique_ptr<uint8_t[]> &&data,
-            size_t size,
+            std::unique_ptr<uint8_t[]> &&data,
+            uint32_t size,
             uint32_t width,
             uint32_t height,
             TextureFormat input_format,

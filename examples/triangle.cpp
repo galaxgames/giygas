@@ -29,8 +29,6 @@ class TriangleExampleApp : public GameLoopDelegate {
     unique_ptr<VertexBuffer> _vertex_buffer;
     unique_ptr<IndexBuffer8> _index_buffer;
     unique_ptr<RenderPass> _pass;
-    unique_ptr<CommandPool> _command_pool;
-    unique_ptr<CommandBuffer> _command_buffer;
     unique_ptr<Framebuffer> _swapchain_framebuffer;
 
 public:
@@ -128,17 +126,12 @@ public:
         pipeline_params.pass = _pass.get();
         _pipeline = unique_ptr<Pipeline>(_renderer->make_pipeline());
         _pipeline->create(pipeline_params);
+    }
 
+    void update_logic(float /*elapsed_seconds*/) override {
+    }
 
-        //
-        // Setup command buffer
-        //
-        _command_pool = unique_ptr<CommandPool>(_renderer->make_command_pool());
-        _command_pool->create();
-
-        _command_buffer = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
-        _command_buffer->create(_command_pool.get());
-
+    void update_graphics() override {
         ClearValue clear_value = {};
         clear_value.purpose = AttachmentPurpose::Color;
         clear_value.color_value = Vector4(0.5f, 0.5f, 1.0f, 1.0f);
@@ -152,23 +145,15 @@ public:
         draw_info.index_range.offset = 0;
         draw_info.index_range.count = 3;
 
-        SingleBufferPassInfo record_info = {};
-        record_info.draw_count = 1;
-        record_info.draws = &draw_info;
-        record_info.pass_info.pass = _pass.get();
-        record_info.pass_info.framebuffer = _swapchain_framebuffer.get();
-        record_info.pass_info.clear_value_count = 1;
-        record_info.pass_info.clear_values = &clear_value;
+        PassSubmissionInfo submit_info = {};
+        submit_info.draw_count = 1;
+        submit_info.draws = &draw_info;
+        submit_info.pass_info.pass = _pass.get();
+        submit_info.pass_info.framebuffer = _swapchain_framebuffer.get();
+        submit_info.pass_info.clear_value_count = 1;
+        submit_info.pass_info.clear_values = &clear_value;
 
-        _command_buffer->record_pass(record_info);
-    }
-
-    void update_logic(float /*elapsed_seconds*/) override {
-    }
-
-    void update_graphics() override {
-        const CommandBuffer *command_buffer = _command_buffer.get();
-        _renderer->submit(&command_buffer, 1);
+        _renderer->submit(&submit_info, 1);
     }
 
     bool should_close() const override {
@@ -177,7 +162,7 @@ public:
 
 };
 
-int main (int argc, char **argv) {
+int main (int /*argc*/, char **argv) {
     GLFWContext context;
     TriangleExampleApp app(context, argv[0]);
     GameLoopRunner runner(&context, &app);

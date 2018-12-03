@@ -11,6 +11,8 @@ namespace giygas {
     // store both vertex and index data in the same buffer. This is recomended by gpu driver
     // developers for performance.
     //
+    // Note: Above TODO might not be applicable for Vulkan. Lots of unknowns here.
+    //
 
     class GenericIndexBuffer {
     public:

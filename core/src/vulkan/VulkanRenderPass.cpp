@@ -5,13 +5,31 @@
 using namespace giygas;
 using namespace giygas::validation;
 
+
+class RenderPassSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkRenderPass _handle;
+
+public:
+
+    RenderPassSafeDeletable(VkRenderPass handle) {
+        _handle = handle;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        vkDestroyRenderPass(renderer.device(), _handle, nullptr);
+    }
+
+};
+
+
 VulkanRenderPass::VulkanRenderPass(VulkanRenderer *renderer) {
     _renderer = renderer;
     _handle = VK_NULL_HANDLE;
 }
 
 VulkanRenderPass::~VulkanRenderPass() {
-    vkDestroyRenderPass(_renderer->device(), _handle, nullptr);
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(new RenderPassSafeDeletable(_handle)));
 }
 
 RendererType VulkanRenderPass::renderer_type() const {
@@ -105,7 +123,7 @@ VkRenderPass VulkanRenderPass::handle() const {
     return _handle;
 }
 
-size_t VulkanRenderPass::attachment_count() const {
+uint32_t VulkanRenderPass::attachment_count() const {
     return _attachment_count;
 }
 
@@ -124,5 +142,9 @@ void VulkanRenderPass::set_description_from_attachmnent_params(
     description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    if (target->is_swapchain()) {
+        description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    } else {
+        description.finalLayout = target->layout();
+    }
 }

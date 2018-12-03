@@ -6,7 +6,6 @@
 #include "IndexRange.hpp"
 #include "UniformBuffer.hpp"
 #include "DescriptorSet.hpp"
-#include "CommandPool.hpp"
 
 namespace giygas {
 
@@ -29,7 +28,7 @@ namespace giygas {
     public:
         const RenderPass *pass;
         const Framebuffer *framebuffer;
-        size_t clear_value_count;
+        uint32_t clear_value_count;
         const ClearValue *clear_values;
     };
 
@@ -42,7 +41,7 @@ namespace giygas {
     class DrawInfo {
     public:
         const Pipeline *pipeline;
-        size_t vertex_buffer_count;
+        uint32_t vertex_buffer_count;
         const VertexBuffer * const *vertex_buffers;
         const GenericIndexBuffer *index_buffer;
         const DescriptorSet *descriptor_set;
@@ -51,20 +50,11 @@ namespace giygas {
         PushConstants fragment_push_constants;
     };
 
-    class SingleBufferPassInfo {
+    class PassSubmissionInfo {
     public:
         PassExecutionInfo pass_info;
-        size_t draw_count;
+        uint32_t draw_count;
         const DrawInfo *draws;
-    };
-
-    class CommandBuffer {
-    public:
-        virtual ~CommandBuffer() = default;
-        virtual RendererType renderer_type() const = 0;
-        virtual void create(CommandPool *pool) = 0;
-        virtual void record_pass(const SingleBufferPassInfo &info) = 0;
-        virtual bool is_valid() const = 0;
     };
 
 }

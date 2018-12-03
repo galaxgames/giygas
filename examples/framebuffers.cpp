@@ -48,9 +48,6 @@ class FramebufferExampleApp : public GameLoopDelegate  {
     unique_ptr<Framebuffer> _offscreen_framebuffer;
     unique_ptr<Pipeline> _colored_pipeline;
     unique_ptr<Pipeline> _textured_pipeline;
-    unique_ptr<CommandPool> _command_pool;
-    unique_ptr<CommandBuffer> _offscreen_command_buffer;
-    unique_ptr<CommandBuffer> _onscreen_command_buffer;
     unique_ptr<Framebuffer> _swapchain_framebuffer;
 
     float current_rotation;
@@ -309,16 +306,6 @@ public:
         textured_pipeline_params.descriptor_set = _onscreen_descriptors.get();
         _textured_pipeline = unique_ptr<Pipeline>(_renderer->make_pipeline());
         _textured_pipeline->create(textured_pipeline_params);
-
-        //
-        // Make command buffers
-        //
-        _command_pool = unique_ptr<CommandPool>(_renderer->make_command_pool());
-        _command_pool->create();
-        _offscreen_command_buffer = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
-        _onscreen_command_buffer = unique_ptr<CommandBuffer>(_renderer->make_command_buffer());
-        _offscreen_command_buffer->create(_command_pool.get());
-        _onscreen_command_buffer->create(_command_pool.get());
     }
 
     void update_logic(float elapsed_seconds) override {
@@ -355,10 +342,10 @@ public:
             Matrix4x4::perspective(aspect, 0.1f, 10.0f, 60.0f * (3.14159f / 180.0f));
         _onscreen_uniforms->set_data(0, reinterpret_cast<const uint8_t *>(&onscreen_uniforms), sizeof(onscreen_uniforms));
 
-        //
-        // Reset and record command buffers
-        //
-        _command_pool->reset_buffers();
+
+        array<PassSubmissionInfo, 2> passes;
+        PassSubmissionInfo &offscreen_pass_info = passes[0];
+        PassSubmissionInfo &onscreen_pass_info = passes[1];
 
         const VertexBuffer *vertex_buffer = _vertex_buffer.get();
 
@@ -378,15 +365,12 @@ public:
         offscreen_draw_info.index_range.count = 12 * 3;
         offscreen_draw_info.descriptor_set = _offscreen_descriptors.get();
 
-        SingleBufferPassInfo offscreen_record_info = {};
-        offscreen_record_info.draw_count = 1;
-        offscreen_record_info.draws = &offscreen_draw_info;
-        offscreen_record_info.pass_info.pass = _offscreen_pass.get();
-        offscreen_record_info.pass_info.framebuffer = _offscreen_framebuffer.get();
-        offscreen_record_info.pass_info.clear_value_count = 2;
-        offscreen_record_info.pass_info.clear_values = offscreen_clear_values.data();
-
-        _offscreen_command_buffer->record_pass(offscreen_record_info);
+        offscreen_pass_info.draw_count = 1;
+        offscreen_pass_info.draws = &offscreen_draw_info;
+        offscreen_pass_info.pass_info.pass = _offscreen_pass.get();
+        offscreen_pass_info.pass_info.framebuffer = _offscreen_framebuffer.get();
+        offscreen_pass_info.pass_info.clear_value_count = 2;
+        offscreen_pass_info.pass_info.clear_values = offscreen_clear_values.data();
 
 
         array<ClearValue, 2> onscreen_clear_values = {};
@@ -405,24 +389,14 @@ public:
         onscreen_cube_info.index_range.count = 12 * 3;
         onscreen_cube_info.descriptor_set = _onscreen_descriptors.get();
 
-        SingleBufferPassInfo onscreen_record_info = {};
-        onscreen_record_info.draw_count = 1;
-        onscreen_record_info.draws = &onscreen_cube_info;
-        onscreen_record_info.pass_info.pass = _onscreen_pass.get();
-        onscreen_record_info.pass_info.framebuffer = _swapchain_framebuffer.get();
-        onscreen_record_info.pass_info.clear_value_count = 2;
-        onscreen_record_info.pass_info.clear_values = onscreen_clear_values.data();
+        onscreen_pass_info.draw_count = 1;
+        onscreen_pass_info.draws = &onscreen_cube_info;
+        onscreen_pass_info.pass_info.pass = _onscreen_pass.get();
+        onscreen_pass_info.pass_info.framebuffer = _swapchain_framebuffer.get();
+        onscreen_pass_info.pass_info.clear_value_count = 2;
+        onscreen_pass_info.pass_info.clear_values = onscreen_clear_values.data();
 
-        _onscreen_command_buffer->record_pass(onscreen_record_info);
-
-        //
-        // Submit buffers
-        //
-
-        array<const CommandBuffer *, 2> buffers_to_submit = {
-            _offscreen_command_buffer.get(), _onscreen_command_buffer.get()
-        };
-        _renderer->submit(buffers_to_submit.data(), buffers_to_submit.size());
+        _renderer->submit(passes.data(), passes.size());
     }
 
     bool should_close() const override {

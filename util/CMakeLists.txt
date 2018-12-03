@@ -51,9 +51,9 @@ install(
 )
 install(
     DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/giygasutil"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/include/giygasutil"
 )
 install (
-    DIRECTORY "${PROJECT_BINARY_DIR}/include"
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DIRECTORY "${PROJECT_BINARY_DIR}/include/giygasutil"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/include/giygasutil"
 )

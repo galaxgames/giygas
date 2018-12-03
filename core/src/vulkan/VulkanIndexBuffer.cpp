@@ -4,6 +4,28 @@
 
 using namespace giygas;
 
+
+class IndexBufferSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkBuffer _buffer;
+    VkDeviceMemory _device_memory;
+
+public:
+
+    IndexBufferSafeDeletable(VkBuffer buffer, VkDeviceMemory device_memory) {
+        _buffer = buffer;
+        _device_memory = device_memory;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        VkDevice device = renderer.device();
+        vkDestroyBuffer(device, _buffer, nullptr);
+        vkFreeMemory(device, _device_memory, nullptr);
+    }
+
+};
+
+
 template <typename T, typename DeviceT>
 VulkanIndexBuffer<T, DeviceT>::VulkanIndexBuffer(VulkanRenderer *renderer) {
     _renderer = renderer;
@@ -13,9 +35,7 @@ VulkanIndexBuffer<T, DeviceT>::VulkanIndexBuffer(VulkanRenderer *renderer) {
 
 template <typename T, typename DeviceT>
 VulkanIndexBuffer<T, DeviceT>::~VulkanIndexBuffer() {
-    VkDevice device = _renderer->device();
-    vkDestroyBuffer(device, _buffer, nullptr);
-    vkFreeMemory(device, _device_memory, nullptr);
+    safe_delete_resources();
 }
 
 template <typename T, typename DeviceT>
@@ -44,8 +64,7 @@ void VulkanIndexBuffer<T, DeviceT>::set(size_t offset, const T *indices, size_t 
     // set_data ensures that the buffer if valid and ready for usage, so let's make an interal
     // buffer is created for zero-sized buffers.
     if (needs_new_buffer || _buffer == VK_NULL_HANDLE) {
-        vkFreeMemory(device, _device_memory, nullptr);
-        vkDestroyBuffer(device, _buffer, nullptr);
+        safe_delete_resources();
 
         VkDeviceSize buffer_size = static_cast<VkDeviceSize>(required_device_size);
         if (buffer_size == 0) {
@@ -103,6 +122,13 @@ size_t VulkanIndexBuffer<T, DeviceT>::count() const {
 template <typename T, typename DeviceT>
 VkBuffer VulkanIndexBuffer<T, DeviceT>::handle() const {
     return _buffer;
+}
+
+template <typename T, typename DeviceT>
+void VulkanIndexBuffer<T, DeviceT>::safe_delete_resources() {
+    _renderer->delete_when_safe(
+        unique_ptr<SwapchainSafeDeleteable>(new IndexBufferSafeDeletable(_buffer, _device_memory))
+    );
 }
 
 template <>

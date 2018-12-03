@@ -3,6 +3,7 @@
 #include "Quaternion.hpp"
 
 namespace giygas {
+
     class GIYGAS_EXPORT Matrix4x4 {
     public:
         float c0r0, c0r1, c0r2, c0r3;
@@ -23,4 +24,5 @@ namespace giygas {
         static Matrix4x4 rotation(Quaternion q);
         static Matrix4x4 rotation_y(float angle);
     };
+
 }

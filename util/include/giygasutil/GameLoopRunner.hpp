@@ -4,6 +4,7 @@
 #include "GameLoopDelegate.hpp"
 
 namespace giygas {
+
     class GIYGASUTIL_EXPORT GameLoopRunner {
         Context *_context;
         GameLoopDelegate *_updatable;
@@ -16,4 +17,5 @@ namespace giygas {
         void set_updatable(GameLoopDelegate *updatable);
         void run();
     };
+
 }

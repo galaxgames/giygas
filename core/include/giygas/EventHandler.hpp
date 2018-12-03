@@ -5,7 +5,6 @@
 #include <functional>
 
 namespace giygas {
-    using namespace std;
 
     enum class EventHandlerOpType {
         Add,
@@ -19,8 +18,8 @@ namespace giygas {
     class Event {
         typedef EventHandler<P...> handler_t;
 
-        unordered_set<handler_t *> _handlers;
-        vector<pair<EventHandlerOpType, handler_t *>> _ops;
+        std::unordered_set<handler_t *> _handlers;
+        std::vector<std::pair<EventHandlerOpType, handler_t *>> _ops;
 
         void move_common(Event &&other) noexcept {
             for (handler_t *handler : _handlers) {
@@ -44,13 +43,13 @@ namespace giygas {
             : _handlers(move(other._handlers))
             , _ops(move(other._ops))
         {
-            move_common(move(other));
+            move_common(std::move(other));
         }
 
         Event &operator=(Event &&other) {
             _handlers = move(other._handlers);
             _ops = move(other._ops);
-            move_common(move(other));
+            move_common(std::move(other));
             return *this;
         }
 
@@ -79,7 +78,7 @@ namespace giygas {
             _ops.clear();
 
             for (auto *handler : _handlers) {
-                handler->delegate(forward<P>(args)...);
+                handler->delegate(std::forward<P>(args)...);
             }
         }
     };
@@ -106,7 +105,7 @@ namespace giygas {
         // TODO: Is there a better way to do this that doesn't require friendship?
         Event<P...> *_event;
     public:
-        function<void(P...)> delegate;
+        std::function<void(P...)> delegate;
 
         EventHandler() {
             _event = nullptr;
@@ -122,12 +121,12 @@ namespace giygas {
         EventHandler(EventHandler &&other)
             : delegate(move(other.delegate))
         {
-            move_common(move(other));
+            move_common(std::move(other));
         }
 
         EventHandler &operator=(EventHandler &&other) {
             delegate = move(other.delegate);
-            move_common(move(other));
+            move_common(std::move(other));
             return *this;
         }
 

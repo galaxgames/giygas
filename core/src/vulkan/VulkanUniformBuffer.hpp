@@ -25,7 +25,7 @@ namespace giygas {
         //
 
         RendererType renderer_type() const override;
-        void set_data(size_t offset, const uint8_t *data, size_t size) override;
+        void set_data(uint32_t offset, const uint8_t *data, uint32_t size) override;
 
 
         //

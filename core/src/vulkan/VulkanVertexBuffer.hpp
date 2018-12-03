@@ -15,6 +15,8 @@ namespace giygas {
         VkDeviceMemory _device_memory;
         vector<uint8_t> _data;
 
+        void safe_delete_resources();
+
     public:
         explicit VulkanVertexBuffer(VulkanRenderer *renderer);
         VulkanVertexBuffer(const VulkanVertexBuffer &) = delete;

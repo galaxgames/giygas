@@ -1,5 +1,4 @@
 #pragma once
-#include <giygas/CommandPool.hpp>
 #include <vulkan/vulkan.h>
 #include <memory>
 
@@ -8,31 +7,26 @@ namespace giygas {
     class VulkanRenderer;
     class VulkanCommandBuffer;
 
-    class VulkanCommandPool final : public CommandPool {
+    class VulkanCommandPool final {
 
-        VulkanRenderer *_renderer;
-        std::unique_ptr<VkCommandPool[]> _handles;
+        VulkanRenderer *_renderer = nullptr;
+        VkCommandPool _handle = VK_NULL_HANDLE;
 
         VkCommandPool make_pool() const;
 
     public:
-        explicit VulkanCommandPool(VulkanRenderer *renderer);
-        ~VulkanCommandPool() override;
-
-        //
-        // CommandPool implementation
-        //
-        RendererType renderer_type() const override;
-        void create() override;
-        void reset_buffers() override;
-        bool is_valid() const override;
+        VulkanCommandPool() = default;
+        ~VulkanCommandPool();
 
         //
         // VulkanCommandPool implementation
         //
-
+        //RendererType renderer_type() const override;
+        void create(VulkanRenderer *renderer);
+        void reset_buffers();
+        bool is_valid() const;
         void destroy();
-        VkCommandPool get_handle(uint32_t index) const;
+        VkCommandPool handle() const;
     };
 
 }

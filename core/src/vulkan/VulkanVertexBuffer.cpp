@@ -4,6 +4,27 @@
 
 using namespace giygas;
 
+class VertexBufferSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkBuffer _handle;
+    VkDeviceMemory _device_memory;
+
+public:
+
+    VertexBufferSafeDeletable(VkBuffer handle, VkDeviceMemory device_memory) {
+        _handle = handle;
+        _device_memory = device_memory;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) {
+        VkDevice device = renderer.device();
+        vkDestroyBuffer(device, _handle, nullptr);
+        vkFreeMemory(device, _device_memory, nullptr);
+    }
+
+};
+
+
 VulkanVertexBuffer::VulkanVertexBuffer(VulkanRenderer *renderer) {
     _renderer = renderer;
     _handle = VK_NULL_HANDLE;
@@ -11,9 +32,7 @@ VulkanVertexBuffer::VulkanVertexBuffer(VulkanRenderer *renderer) {
 }
 
 VulkanVertexBuffer::~VulkanVertexBuffer() {
-    VkDevice device = _renderer->device();
-    vkDestroyBuffer(device, _handle, nullptr);
-    vkFreeMemory(device, _device_memory, nullptr);
+    safe_delete_resources();
 }
 
 RendererType VulkanVertexBuffer::renderer_type() const {
@@ -33,8 +52,7 @@ void VulkanVertexBuffer::set_data(size_t offset, const uint8_t *data, size_t siz
     // set_data ensures that the buffer if valid and ready for usage, so let's make an interal
     // buffer is created for zero-sized buffers.
     if (previous_size < required_size || _handle == VK_NULL_HANDLE) {
-        vkFreeMemory(device, _device_memory, nullptr);
-        vkDestroyBuffer(device, _handle, nullptr);
+        safe_delete_resources();
 
         VkDeviceSize buffer_size = static_cast<VkDeviceSize>(required_size);
         if (buffer_size == 0) {
@@ -74,4 +92,10 @@ bool VulkanVertexBuffer::is_valid() const {
 
 VkBuffer VulkanVertexBuffer::handle() const {
     return _handle;
+}
+
+void VulkanVertexBuffer::safe_delete_resources() {
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(
+        new VertexBufferSafeDeletable(_handle, _device_memory)
+    ));
 }

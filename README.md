@@ -1,49 +1,65 @@
 # giygas [![Build Status](https://travis-ci.org/galaxgames/giygas.svg?branch=master)](https://travis-ci.org/galaxgames/giygas)
-Because I'm an almighty idiot (and I ran out of names for my projects)
+The game graphics framework for almighty idiots.
 
 ## What
-Giygas is a framework for games and other graphic applications. It provides a modern c++ interface to graphics apis and provides a few extra useful utilities as well.
+Giygas is a minimal and low-level graphics framework for games and other graphic applications. It provides a common, 
+modern c++ interface for hardware accelerated graphics and provides a few extra useful utilities as well.
 
 ## What else?
 * Utilizes cool C++11 features like move semantics
-* Right now there's only an OpenGL renderer implementation, but hopefully later it'll support Vulkan, DirectX and Metal!
+* Right now there's only an ~~OpenGL~~ Vulkan renderer implementation, but hopefully later it'll support ~~Vulkan~~, 
+  DirectX and Metal!
+* Comes with game loop and windowing support out of the box! Or you can write your own. It's modular! 
 * Um....
 
 ## How do I build it?
 Wow, sold already? Here's how building giygas will go down:
 
-### Use 'dew' to download dependencies
-I built a cute little tool called dew to download, compile, and install dependencies to an isolated prefix directory.
+### Build Dependencies
+You will need the following tools:
+* CMake >3.2 (Higher recommended)
+* Python 3.6 *
+* Vulkan SDK (See below)
 
-**Note:** If you don't know what generator name to use, run `cmake -G` to see a list of available generators.
+\* (Not required, but dependencies will not be able to be retrieved automatically without Python 3.6. See below for what
+  those dependencies are.)
 
-```shell
-# Run these commands in the source directory
-# Python3 must be installed
-pip3 install dew-pacman
-python3 -m dew --cmake-generator "Generator Name"
-```
+### Vulkan SDK Setup
+#### Linux
+* Should be available from your package manager. On Ubuntu the Vulkan SDK can be installed with the 'libvulkan-dev' package.
 
-Awesome, hopefully that worked. If it did, you should now have the directory `.dew/install` in your source directory and the `install` directory should have all of the precious dependencies in it. That directory is the prefix path that you can point CMake to when building
+#### Windows
+* Download and install the Vulkan SDK from LunarG: https://www.lunarg.com/vulkan-sdk/
 
-**Note:** You can skip using my tool if you install the dependencies with your package manager. Just make sure you omit passing the prefix variables to cmake in the next steps.
+#### macOS
+* MoltenVK is supported. This is also available in LunarG's Vulkan SDK. On macOS, You may build and install the Vulkan 
+Headers, Vulkan Loaders, Vulkan Validation Layers, and Molten VK manually if you wish.
+
+### Automatically Installed Dependencies
+There are more dependencies which are managed by the CMake project. These will be downloaded, built, and installed into
+your build directory automatically. If you do not have Python3.6, you will have to install these dependencies 
+manually. This is not recommended or supported. See 'dewfile.json' for a listing of these dependencies.
 
 ### Build with CMake
 
 ```shell
 # Run these commands in a out-of-source build directory.
-# Usually this is a new directory inside of the source directory. e.g.: mkdir build
+# Usually this is a new directory inside of the source directory.
 # Also, ${SOURCE_DIR} refers to giygas's source directory, 
 # which is probably .. if you followed the steps above
-cmake -G "Generator Name" ${SOURCE_DIR} -DCMAKE_PREFIX_PATH="${SOURCE_DIR}/.dew/install" -DCMAKE_INSTALL_PREFIX="${SOURCE_DIR}/.dew/install"
-cmake --build . --target install
+cmake -G "Generator Name" "${SOURCE_DIR}"
+cmake --build .
 ```
 
-## Great, I built it, but how do I use it?
-The steps above should have installed a built giygas library into the `.dew/install` directory. You can use that directory as a prefix in your buildsystem. You could also use my dew tool and use giygas as a dependency. See the example projects (comming soon) for a demonstration of how to achieve this.
+### Installing
+You can easilly install giygas into your global prefix (usually `/usr/local`) by running 
+`cmake --build . --target install` in the build directory. However, it is recommended you use a different prefix to be
+used by your dependency projects. The prefix can be changed by passing `-DCMAKE_INSTALL_PREFIX=/your/prefix/path` into 
+the first cmake invocation listed in the build section.
+
 
 ## This thing is broken. Can you fix it?
-Sure can, or, I can at least try. Don't be shy about creating github issues. Even if they're just questions.
+Sure! Don't be shy about creating github issues. Even if they're feature requests, suggestions, or just questions!
 
 ## Can I fix it?
-Sure can, or, you can at least try. Don't be shy about creating pull requests. Even if they're dumb.
+I don't know, can you? Please feel free to submit pull requests!

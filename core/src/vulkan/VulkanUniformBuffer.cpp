@@ -4,6 +4,26 @@
 
 using namespace giygas;
 
+class UniformBufferSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkBuffer _handle;
+    VkDeviceMemory _device_memory;
+
+public:
+
+    UniformBufferSafeDeletable(VkBuffer handle, VkDeviceMemory device_memory) {
+        _handle = handle;
+        _device_memory = device_memory;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        VkDevice device = renderer.device();
+        vkFreeMemory(device, _device_memory, nullptr);
+        vkDestroyBuffer(device, _handle, nullptr);
+    }
+
+};
+
 VulkanUniformBuffer::VulkanUniformBuffer(VulkanRenderer *renderer) {
     _renderer = renderer;
     _handle = VK_NULL_HANDLE;
@@ -12,19 +32,20 @@ VulkanUniformBuffer::VulkanUniformBuffer(VulkanRenderer *renderer) {
 }
 
 VulkanUniformBuffer::~VulkanUniformBuffer() {
-    VkDevice device = _renderer->device();
     if (_device_memory != VK_NULL_HANDLE) {
-        vkUnmapMemory(device, _device_memory);
+        vkUnmapMemory(_renderer->device(), _device_memory);
     }
-    vkFreeMemory(device, _device_memory, nullptr);
-    vkDestroyBuffer(device, _handle, nullptr);
+
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(
+        new UniformBufferSafeDeletable(_handle, _device_memory)
+    ));
 }
 
 RendererType VulkanUniformBuffer::renderer_type() const {
     return RendererType::Vulkan;
 }
 
-void VulkanUniformBuffer::set_data(size_t offset, const uint8_t *data, size_t size) {
+void VulkanUniformBuffer::set_data(uint32_t offset, const uint8_t *data, uint32_t size) {
     VkDevice device = _renderer->device();
     size_t required_size = offset + size;
     bool needs_new_buffer = _data.size() < required_size;

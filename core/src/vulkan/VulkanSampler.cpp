@@ -3,13 +3,31 @@
 
 using namespace giygas;
 
+
+class SamplerSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkSampler _handle;
+
+public:
+
+    SamplerSafeDeletable(VkSampler handle) {
+        _handle = handle;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        vkDestroySampler(renderer.device(), _handle, nullptr);
+    }
+
+};
+
+
 VulkanSampler::VulkanSampler(VulkanRenderer *renderer) {
     _renderer = renderer;
     _handle = VK_NULL_HANDLE;
 }
 
 VulkanSampler::~VulkanSampler() {
-    vkDestroySampler(_renderer->device(), _handle, nullptr);
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(new SamplerSafeDeletable(_handle)));
 }
 
 RendererType VulkanSampler::renderer_type() const {

@@ -13,11 +13,11 @@ namespace giygas {
         VulkanRenderer *_renderer = nullptr;
         bool _is_for_swapchain = false;
         uint32_t _handle_count = 0;
-        unique_ptr<VkFramebuffer[]> _handles;
+        std::unique_ptr<VkFramebuffer[]> _handles;
         uint32_t _width = 0;
         uint32_t _height = 0;
         size_t _attachment_count = 0;
-        unique_ptr<AttachmentPurpose[]> _purposes;
+        std::unique_ptr<AttachmentPurpose[]> _purposes;
 
     public:
         explicit VulkanFramebuffer(VulkanRenderer *renderer);

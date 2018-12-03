@@ -6,6 +6,28 @@
 
 using namespace giygas;
 
+
+class DescriptorSetSafeDeletable final : public SwapchainSafeDeleteable {
+
+    VkDescriptorSetLayout _layout;
+
+public:
+
+    DescriptorSetSafeDeletable(VkDescriptorSetLayout layout) {
+        _layout = layout;
+    }
+
+    void delete_resources(VulkanRenderer &renderer) override {
+        // Don't need to and shouldn't free descriptor set since we haven't told the pool we want to
+        // be able to do that. Instead the pool will take care of freeing the descriptor sets.
+        //vkFreeDescriptorSets(device, _pool, 1, &_handle);
+
+        vkDestroyDescriptorSetLayout(renderer.device(), _layout, nullptr);
+    }
+
+};
+
+
 VulkanDescriptorSet::VulkanDescriptorSet(VulkanRenderer *renderer) {
     _renderer = renderer;
     _layout = VK_NULL_HANDLE;
@@ -17,13 +39,8 @@ VulkanDescriptorSet::VulkanDescriptorSet(VulkanRenderer *renderer) {
 }
 
 VulkanDescriptorSet::~VulkanDescriptorSet() {
-    VkDevice device = _renderer->device();
-
-    // Don't need to and shouldn't free descriptor set since we haven't told the pool we want to
-    // be able to do that. Instead the pool will take care of freeing the descriptor sets.
-    //vkFreeDescriptorSets(device, _pool, 1, &_handle);
-
-    vkDestroyDescriptorSetLayout(device, _layout, nullptr);
+    _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(new DescriptorSetSafeDeletable(_layout)));
+    _layout = VK_NULL_HANDLE;
 }
 
 RendererType VulkanDescriptorSet::renderer_type() const {

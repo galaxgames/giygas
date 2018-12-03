@@ -7,42 +7,51 @@
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanDescriptorSet.hpp"
 #include "VulkanRenderPass.hpp"
-#include <giygas/validation/command_buffer_validation.hpp>
+#include <giygas/validation/submission_validation.hpp>
 #include <algorithm>
 
 using namespace giygas;
 using namespace giygas::validation;
 
-VulkanCommandBuffer::VulkanCommandBuffer(VulkanRenderer *renderer) {
-    _renderer = renderer;
-}
 
-VulkanCommandBuffer::~VulkanCommandBuffer() {
-    free_buffers();
-}
+class CommandBufferSafeDeletable final : public SwapchainSafeDeleteable {
 
-RendererType VulkanCommandBuffer::renderer_type() const {
-    return RendererType::Vulkan;
-}
+    unique_ptr<VkCommandPool[]> _pools;
+    unique_ptr<VkCommandBuffer[]> _buffers;
 
-void VulkanCommandBuffer::create(CommandPool *pool) {
-    assert(validate_command_buffer_create(this, pool));
-    _pool = reinterpret_cast<VulkanCommandPool *>(pool);
+public:
 
-
-    uint32_t image_count = _renderer->swapchain_image_count();
-    assert(image_count > 0);
-
-    VkCommandBuffer *buffers = new VkCommandBuffer[image_count];
-
-    for (uint32_t i = 0; i < image_count; ++i) {
-        buffers[i] = make_buffer(_pool->get_handle(i));
+    CommandBufferSafeDeletable(unique_ptr<VkCommandPool[]> pools, unique_ptr<VkCommandBuffer[]> buffers) {
+        _pools = move(pools);
+        _buffers = move(buffers);
     }
 
-    _handles = unique_ptr<VkCommandBuffer[]>(buffers);
+    void delete_resources(VulkanRenderer &renderer) override {
+        VkDevice device = renderer.device();
+
+        for (uint32_t i = 0, ilen = renderer.swapchain_image_count(); i < ilen; ++i) {
+            vkFreeCommandBuffers(device, _pools[i], 1, &_buffers[i]);
+        }
+    }
+
+};
+
+VulkanCommandBuffer::~VulkanCommandBuffer() {
+    destroy();
 }
 
-VkCommandBuffer VulkanCommandBuffer::make_buffer(VkCommandPool pool) const {
+//RendererType VulkanCommandBuffer::renderer_type() const {
+//    return RendererType::Vulkan;
+//}
+
+void VulkanCommandBuffer::create(VulkanRenderer *renderer, VulkanCommandPool *pool) {
+    //assert(validate_command_buffer_create(this, pool));
+    _renderer = renderer;
+    _pool = pool;
+    _handle = make_buffer(pool->handle());
+}
+
+VkCommandBuffer VulkanCommandBuffer::make_buffer(VkCommandPool pool) {
     VkCommandBuffer handle;
     VkCommandBufferAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -54,41 +63,44 @@ VkCommandBuffer VulkanCommandBuffer::make_buffer(VkCommandPool pool) const {
     return handle;
 }
 
-void VulkanCommandBuffer::free_buffers() {
-    if (_handles == nullptr) {
+void VulkanCommandBuffer::destroy() {
+    if (_handle == VK_NULL_HANDLE) {
         return;
     }
 
-    VkDevice device = _renderer->device();
+    assert(_renderer != nullptr);
+    assert(_pool->handle() != VK_NULL_HANDLE);
 
-    for (uint32_t i = 0, ilen = _renderer->swapchain_image_count(); i < ilen; ++i) {
-        vkFreeCommandBuffers(device, _pool->get_handle(i), 1, _handles.get() + i);
-    }
-
-    _handles = nullptr;
+    vkFreeCommandBuffers(_renderer->device(), _pool->handle(), 1, &_handle);
+    _handle = VK_NULL_HANDLE;
 }
 
-void VulkanCommandBuffer::record_pass(const SingleBufferPassInfo &info) {
-    assert(validate_command_buffer_record_pass(this, info));
-
-    const auto *pass_impl = reinterpret_cast<const VulkanRenderPass *>(info.pass_info.pass);
-    const auto *framebuffer_impl = reinterpret_cast<const VulkanFramebuffer *>(info.pass_info.framebuffer);
-
-    uint32_t framebuffer_handle_index = 0;
-    uint32_t next_swapchain_image_index = _renderer->next_swapchain_image_index();
-
-    if (framebuffer_impl->is_for_swapchain()) {
-        framebuffer_handle_index = next_swapchain_image_index;
-    }
-
+void VulkanCommandBuffer::record(const PassSubmissionInfo *passes, uint32_t pass_count, uint32_t swapchain_image_index) {
     VkCommandBufferBeginInfo begin_info = {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags = 0; //VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;  // TODO
     begin_info.pInheritanceInfo = nullptr;
 
-    VkCommandBuffer handle = _handles[next_swapchain_image_index];
+    vkBeginCommandBuffer(_handle, &begin_info);
 
-    vkBeginCommandBuffer(handle, &begin_info);
+    for (uint32_t i = 0; i < pass_count; ++i) {
+        record_pass(passes[i], swapchain_image_index);
+    }
+
+
+    vkEndCommandBuffer(_handle);
+}
+
+void VulkanCommandBuffer::record_pass(const PassSubmissionInfo &info, uint32_t swapchain_image_index) {
+    //assert(validate_command_buffer_record_pass(this, info));
+
+    const auto *pass_impl = reinterpret_cast<const VulkanRenderPass *>(info.pass_info.pass);
+    const auto *framebuffer_impl = reinterpret_cast<const VulkanFramebuffer *>(info.pass_info.framebuffer);
+
+    uint32_t framebuffer_handle_index = 0;
+    if (framebuffer_impl->is_for_swapchain()) {
+        framebuffer_handle_index = swapchain_image_index;
+    }
 
     // TODO: Assert framebuffer and renderpass are compatible!
 
@@ -123,19 +135,16 @@ void VulkanCommandBuffer::record_pass(const SingleBufferPassInfo &info) {
     pass_begin_info.clearValueCount = static_cast<uint32_t>(attachment_count);
     pass_begin_info.pClearValues = clear_values.get();
 
-    vkCmdBeginRenderPass(handle, &pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(_handle, &pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     for (size_t i = 0; i < info.draw_count; ++i) {
-        record_draw(info.draws[i], handle);
+        record_draw(info.draws[i], _handle);
     }
 
-    vkCmdEndRenderPass(handle);
-
-    vkEndCommandBuffer(handle);
-
+    vkCmdEndRenderPass(_handle);
 }
 
-void VulkanCommandBuffer::record_draw(const DrawInfo &info, VkCommandBuffer handle) const {
+void VulkanCommandBuffer::record_draw(const DrawInfo &info, VkCommandBuffer handle) {
     const auto *pipeline = reinterpret_cast<const VulkanPipeline *>(info.pipeline);
     const auto *index_buffer
         = reinterpret_cast<const VulkanGenericIndexBuffer *>(info.index_buffer->cast_to_specific());
@@ -214,8 +223,6 @@ bool VulkanCommandBuffer::is_valid() const {
     return _pool != nullptr;
 }
 
-VkCommandBuffer VulkanCommandBuffer::get_handle(uint32_t index) const {    
-    assert(_handles != nullptr);
-    assert(index < _renderer->swapchain_image_count());
-    return _handles[index];
+VkCommandBuffer VulkanCommandBuffer::handle() const {
+    return _handle;
 }

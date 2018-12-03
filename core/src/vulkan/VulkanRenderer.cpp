@@ -7,34 +7,34 @@
 #include "VulkanShader.hpp"
 #include "VulkanTexture.hpp"
 #include "VulkanFramebuffer.hpp"
-#include "VulkanRenderBuffer.hpp"
 #include "VulkanCommandBuffer.hpp"
 #include "VulkanUniformBuffer.hpp"
 #include "VulkanSampler.hpp"
 #include "VulkanDescriptorPool.hpp"
 #include "VulkanDescriptorSet.hpp"
 #include "VulkanRenderPass.hpp"
+#include <giygas/validation/submission_validation.hpp>
 
 using namespace giygas;
 using namespace std;
 
-VulkanRenderer::VulkanRenderer(VulkanContext *context)
-    : _copy_command_pool(this)
-{
+VulkanRenderer::VulkanRenderer(VulkanContext *context) {
     _context = context;
 }
 
 VulkanRenderer::~VulkanRenderer() {
-    _copy_command_pool.destroy();
+    // call the destroy method here, as it will add safe deletables to the queue, which we process below.
+    finish_enqueued_command_buffers();
 
-    while (!_command_buffers_executed_fences.empty()) {
-        vkDestroyFence(_device, _command_buffers_executed_fences.front(), nullptr);
-    }
-
-    for (uint32_t i = 0; i < _swapchain.image_count(); ++i) {
+    for (uint32_t i = 0, ilen = _swapchain.image_count(); i < ilen; ++i) {
+        vkDestroyFence(_device, _fences_by_submission[i], nullptr);
         vkDestroySemaphore(_device, _swapchain_image_available_semaphores[i], nullptr);
+        delete_resources_for_image_index(i);
+        _command_buffers_by_submission[i].destroy();
+        _command_pools_by_submission[i].destroy();
     }
 
+    _copy_command_pool.destroy();
     _swapchain.destroy();
 
     vkDestroyDevice(_device, nullptr);
@@ -92,15 +92,26 @@ void VulkanRenderer::initialize() {
     vkGetDeviceQueue(_device, _queue_family_indices.graphics_family, 0, &_graphics_queue);
     vkGetDeviceQueue(_device, _queue_family_indices.present_family, 0, &_present_queue);
 
+    uint32_t image_count = _swapchain.image_count();
+    _swapchain_image_available_semaphores = unique_ptr<VkSemaphore[]>(new VkSemaphore[image_count]);
+    _fences_by_submission = unique_ptr<VkFence[]>(new VkFence[image_count]);
+    _command_pools_by_submission = unique_ptr<VulkanCommandPool[]>(new VulkanCommandPool[image_count]);
+    _command_buffers_by_submission = unique_ptr<VulkanCommandBuffer[]>(new VulkanCommandBuffer[image_count]);
+    _command_buffer_handles_by_submission = unique_ptr<VkCommandBuffer[]>(new VkCommandBuffer[image_count]);
+    _image_indices_by_submission = unique_ptr<uint32_t[]>(new uint32_t[image_count]);
+
+    //
+    // Create semaphores and other per submission resources
+    //
     VkSemaphoreCreateInfo semaphore_info = {};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    _swapchain_image_available_semaphores = unique_ptr<VkSemaphore[]>(new VkSemaphore[_swapchain.image_count()]);
-
-    for (uint32_t i = 0, ilen = _swapchain.image_count(); i < ilen; ++i) {
+    for (uint32_t i = 0; i < image_count; ++i) {
         vkCreateSemaphore(_device, &semaphore_info, nullptr, &_swapchain_image_available_semaphores[i]);
-
-
+        _command_pools_by_submission[i].create(this);
+        _command_buffers_by_submission[i].create(this, &_command_pools_by_submission[i]);
+        _command_buffer_handles_by_submission[i] = _command_buffers_by_submission[i].handle();
+        _image_indices_by_submission[i] = numeric_limits<uint32_t>::max();
     }
 
     //
@@ -113,26 +124,26 @@ void VulkanRenderer::initialize() {
 
     // submit the first fences as signalled, as we don't actually have any command buffers to wait on, given that we
     // just started the engine.
-    for (uint32_t i = 1, ilen = _swapchain.image_count() - 1; i < ilen; ++i) {
+    for (uint32_t i = 1; i < image_count; ++i) {
         vkCreateFence(_device, &fence_info, nullptr, &fence);
-        _command_buffers_executed_fences.push(fence);
+        _fences_by_submission[i] = fence;
     }
 
     // Submit the last fence as unsigned, as this is the first fence that will be given to vkQueueSubmit.
     fence_info.flags = 0;
     vkCreateFence(_device, &fence_info, nullptr, &fence);
-    _command_buffers_executed_fences.push(fence);
+    _fences_by_submission[0] = fence;
 
+    // Fill up the submission indices
+    for (uint32_t i = image_count; i > 0; i--) {
+        _submissions.push(i - 1);
+    }
 
-    _copy_command_pool.create();
+    _copy_command_pool.create(this);
 
-    vkAcquireNextImageKHR(
-        _device,
-        _swapchain.handle(),
-        numeric_limits<uint64_t>::max(),
-        _swapchain_image_available_semaphores[_current_image_acquisition_semaphore_index],
-        nullptr,  // fence to signal
-        &_next_swapchain_image_index
+    // Create swapchain safe deletable lists for each submission
+    _safe_deletables_by_image_index = unique_ptr<vector<unique_ptr<SwapchainSafeDeleteable>>[]>(
+        new vector<unique_ptr<SwapchainSafeDeleteable>> [_swapchain.image_count()]
     );
 
 }
@@ -194,96 +205,75 @@ Pipeline *VulkanRenderer::make_pipeline() {
     return new VulkanPipeline(this);
 }
 
-CommandPool *VulkanRenderer::make_command_pool() {
-    return new VulkanCommandPool(this);
-}
-
-CommandBuffer* VulkanRenderer::make_command_buffer() {
-    return new VulkanCommandBuffer(this);
-}
-
-uint32_t VulkanRenderer::next_swapchain_image_index() const {
-    return _next_swapchain_image_index;
-}
-
 const RenderTarget *VulkanRenderer::swapchain() const {
     return _swapchain.rendertarget();
+}
+
+uint32_t VulkanRenderer::next_submission_index() const {
+    return _submissions.back();
 }
 
 uint32_t VulkanRenderer::swapchain_image_count() const {
     return _swapchain.image_count();
 }
 
-uint32_t VulkanRenderer::get_api_texture_format(TextureFormat format) const {
-    return static_cast<uint32_t>(translate_texture_format(format));
-}
+void VulkanRenderer::submit(const PassSubmissionInfo *passes, uint32_t pass_count) {
+    assert(validation::validate_submission_passes(passes, pass_count, RendererType::Vulkan));
 
-void VulkanRenderer::submit(const CommandBuffer **buffers, size_t buffer_count) {
+    uint32_t submission = _submissions.back();
 
-    //
-    // Present the previous frame
-    //
-    if (_previous_swapchain_image_index != numeric_limits<uint32_t>::max()) {
-        VkPresentInfoKHR present_info = {};
-        VkSwapchainKHR swapchain_handle = _swapchain.handle();
-        //VkResult present_result = VK_RESULT_MAX_ENUM;
-        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        present_info.swapchainCount = 1;
-        present_info.pSwapchains = &swapchain_handle;
-        present_info.pImageIndices = &_previous_swapchain_image_index;
-        // TODO: This was commented out for some reason, but I can't remember why. Need to look into this again.
-        //present_info.pResults = &present_result;
-        vkQueuePresentKHR(_present_queue, &present_info);
-    }
+    uint32_t next_image;
+    vkAcquireNextImageKHR(_device, _swapchain.handle(), 0, _swapchain_image_available_semaphores[submission], nullptr, &next_image);
+    _image_indices_by_submission[submission] = next_image;
 
-    // TODO: Reallocating this buffer every frame sucks.
-    // TODO: Investigate how expensive this is to do every frame and look into a better interface
-    // for submitting command buffers.
-    unique_ptr<VkCommandBuffer[]> buffer_handles(new VkCommandBuffer[buffer_count]);
-    for (size_t i = 0; i < buffer_count; ++i) {
-        const CommandBuffer *buffer = buffers[i];
-        assert(buffer != nullptr);
-        assert(buffer->renderer_type() == RendererType::Vulkan);
-        const auto *vulkan_buffer = reinterpret_cast<const VulkanCommandBuffer *>(buffer);
-
-        buffer_handles[i] = vulkan_buffer->get_handle(_next_swapchain_image_index);
-    }
+    record_command_buffers(passes, pass_count, submission, next_image);
 
     VkSubmitInfo submit_info = {};
-    VkSemaphore wait_semaphore = _swapchain_image_available_semaphores[_current_image_acquisition_semaphore_index];
+    VkSemaphore wait_semaphore = _swapchain_image_available_semaphores[submission];
     VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &wait_semaphore;
     submit_info.pWaitDstStageMask = &wait_stage;
-    submit_info.commandBufferCount = static_cast<uint32_t>(buffer_count);
-    submit_info.pCommandBuffers = buffer_handles.get();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &_command_buffer_handles_by_submission[submission];
 
-    vkQueueSubmit(_graphics_queue, 1, &submit_info, _command_buffers_executed_fences.back());
-
-
-    _current_image_acquisition_semaphore_index =
-                (_current_image_acquisition_semaphore_index + 1) % _swapchain.image_count();
-
-    _previous_swapchain_image_index = _next_swapchain_image_index;
-
-    vkAcquireNextImageKHR(
-        _device,
-        _swapchain.handle(),
-        numeric_limits<uint64_t>::max(),
-        _swapchain_image_available_semaphores[_current_image_acquisition_semaphore_index],
-        nullptr,  // fence to signal
-        &_next_swapchain_image_index
-    );
+    VkFence fence = _fences_by_submission[submission];
+    vkQueueSubmit(_graphics_queue, 1, &submit_info, fence);
 
     // Wait for the oldest command buffers to finsh execution.
-    VkFence command_buffers_executed_fence = _command_buffers_executed_fences.front();
-    _command_buffers_executed_fences.pop();
+    uint32_t oldest_submission = _submissions.front();
+    _submissions.pop();
+    _submissions.push(oldest_submission);
 
-    vkWaitForFences(_device, 1, &command_buffers_executed_fence, VK_TRUE, numeric_limits<uint64_t>::max());
-    vkResetFences(_device, 1, &command_buffers_executed_fence);
+    VkFence oldest_submission_fence = _fences_by_submission[oldest_submission];
+    vkWaitForFences(_device, 1, &oldest_submission_fence, VK_TRUE, numeric_limits<uint64_t>::max());
+    vkResetFences(_device, 1, &oldest_submission_fence);
 
-    _command_buffers_executed_fences.push(command_buffers_executed_fence);
+    //
+    // Present the previous frame
+    //
+    VkPresentInfoKHR present_info = {};
+    VkSwapchainKHR swapchain_handle = _swapchain.handle();
+    //VkResult present_result = VK_RESULT_MAX_ENUM;
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = &swapchain_handle;
+    present_info.pImageIndices = &next_image;
+    // TODO: This was commented out for some reason, but I can't remember why. Need to look into this again.
+    //present_info.pResults = &present_result;
+    vkQueuePresentKHR(_present_queue, &present_info);
+
+    // We can now delete the resources associated with this submission
+    delete_resources_for_image_index(oldest_submission);
+}
+
+void VulkanRenderer::record_command_buffers(const PassSubmissionInfo *passes, uint32_t pass_count, uint32_t submission, uint32_t image_index) {
+    VulkanCommandPool &pool = _command_pools_by_submission[submission];
+    VulkanCommandBuffer &buffer = _command_buffers_by_submission[submission];
+
+    pool.reset_buffers();
+    buffer.record(passes, pass_count, image_index);
 }
 
 VkPhysicalDevice VulkanRenderer::physical_device() const {
@@ -299,7 +289,7 @@ const QueueFamilyIndices& VulkanRenderer::queue_family_indices() const {
 }
 
 VkCommandPool VulkanRenderer::copy_command_pool() const {
-    return _copy_command_pool.get_handle(0);
+    return _copy_command_pool.handle();
 }
 
 VkQueue VulkanRenderer::graphics_queue() const {
@@ -347,12 +337,12 @@ VkResult VulkanRenderer::create_instance(
     create_info.enabledExtensionCount = needed_extensions_count;
     create_info.ppEnabledExtensionNames = needed_extensions;
 
+    // TODO: Need mechanism for turning validation layers on or off.
+    //array<const char *, 0> validation_layers = {};
+
     array<const char *, 1> validation_layers = {
-        //"VK_LAYER_LUNARG_vktrace",
         "VK_LAYER_LUNARG_standard_validation"
     };
-
-    //array<const char *, 0> validation_layers = {};
 
     // Validation layers
     create_info.enabledLayerCount = validation_layers.size();
@@ -655,7 +645,7 @@ VkResult VulkanRenderer::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize s
     VkCommandBufferAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc_info.commandPool = _copy_command_pool.get_handle(0);
+    alloc_info.commandPool = _copy_command_pool.handle();
     alloc_info.commandBufferCount = 1;
 
     VkCommandBuffer command_buffer;
@@ -699,9 +689,39 @@ VkResult VulkanRenderer::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize s
     }
 
     vkDestroyFence(_device, fence, nullptr);
-    vkFreeCommandBuffers(_device, _copy_command_pool.get_handle(0), 1, &command_buffer);
+    vkFreeCommandBuffers(_device, _copy_command_pool.handle(), 1, &command_buffer);
 
     return result;
+}
+
+void VulkanRenderer::delete_when_safe(unique_ptr<SwapchainSafeDeleteable> deleteable) {
+    vector<unique_ptr<SwapchainSafeDeleteable>> &list_for_next_swapchain_image =
+            _safe_deletables_by_image_index[next_submission_index()];
+
+    list_for_next_swapchain_image.emplace_back(move(deleteable));
+}
+
+void VulkanRenderer::delete_resources_for_image_index(uint32_t image_index) {
+    vector<unique_ptr<SwapchainSafeDeleteable>> &list_for_next_swapchain_image =
+        _safe_deletables_by_image_index[image_index];
+
+    for (unique_ptr<SwapchainSafeDeleteable> &deletable : list_for_next_swapchain_image) {
+        deletable->delete_resources(*this);
+    }
+
+    list_for_next_swapchain_image.clear();
+}
+
+
+void VulkanRenderer::finish_enqueued_command_buffers() {
+    // Wait on all fences which represent command buffer executions in progress. Don't wait on the last fence in the
+    // queue, since it represents the next queue submission which hasn't happened yet.
+    while (_submissions.size() > 1) {
+        uint32_t submission = _submissions.front();
+        _submissions.pop();
+        VkFence fence = _fences_by_submission[submission];
+        vkWaitForFences(_device, 1, &fence, /* wait all? */ VK_TRUE, /* timeout */ numeric_limits<uint64_t>::max());
+    }
 }
 
 VkFormat VulkanRenderer::translate_texture_format(TextureFormat format) {

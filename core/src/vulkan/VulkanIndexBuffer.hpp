@@ -24,6 +24,8 @@ namespace giygas {
         VkBuffer _buffer;
         VkDeviceMemory _device_memory;
 
+        void safe_delete_resources();
+
     public:
         explicit VulkanIndexBuffer(VulkanRenderer *renderer);
         VulkanIndexBuffer(const VulkanIndexBuffer &) = delete;
