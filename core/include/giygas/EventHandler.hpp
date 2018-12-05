@@ -34,19 +34,39 @@ namespace giygas {
             }
         }
 
+        void process_ops() {
+            for (const auto &pair : _ops) {
+                if (pair.first == giygas::EventHandlerOpType::Add) {
+                    _handlers.emplace(pair.second);
+                } else {
+                    auto it = _handlers.find(pair.second);
+                    if (it != _handlers.end()) {
+                        _handlers.erase(it);
+                    }
+                }
+            }
+            _ops.clear();
+        }
+
     public:
         Event() = default;
         Event(const Event &other) = delete;
         const Event &operator=(const Event &other) = delete;
 
-        Event(Event &&other)
+        Event(Event &&other) noexcept
             : _handlers(move(other._handlers))
             , _ops(move(other._ops))
         {
             move_common(std::move(other));
         }
 
-        Event &operator=(Event &&other) {
+        ~Event() {
+            for (const auto &handler_it : _handlers) {
+                handler_it->_event = nullptr;
+            }
+        }
+
+        Event &operator=(Event &&other) noexcept {
             _handlers = move(other._handlers);
             _ops = move(other._ops);
             move_common(std::move(other));
@@ -61,21 +81,16 @@ namespace giygas {
             _ops.emplace_back(EventHandlerOpType::Remove, handler);
         }
 
+        bool has_handlers() {
+            process_ops();
+            return !_handlers.empty();
+        }
+
         handler_t make_handler();
 
         template <typename ... ForwardP>
         void invoke(ForwardP&& ... args) {
-            for (const auto &pair : _ops) {
-                if (pair.first == giygas::EventHandlerOpType::Add) {
-                    _handlers.emplace(pair.second);
-                } else {
-                    auto it = _handlers.find(pair.second);
-                    if (it != _handlers.end()) {
-                        _handlers.erase(it);
-                    }
-                }
-            }
-            _ops.clear();
+            process_ops();
 
             for (auto *handler : _handlers) {
                 handler->delegate(std::forward<P>(args)...);
@@ -88,43 +103,42 @@ namespace giygas {
         friend class Event<P...>;
 
         void move_common(EventHandler<P...> &&other) noexcept {
+
             if (_event != nullptr) {
                 _event->remove(this);
+                _event->add(&other);
             }
-            _event = other._event;
+
             if (other._event != nullptr) {
                 other._event->remove(&other);
-                other._event = nullptr;
+                other._event->add(this);
             }
-            if (_event != nullptr) {
-                _event->add(this);
-            }
+
+            std::swap(_event, other._event);
         }
 
     protected:
         // TODO: Is there a better way to do this that doesn't require friendship?
-        Event<P...> *_event;
+        Event<P...> *_event = nullptr;
     public:
         std::function<void(P...)> delegate;
 
-        EventHandler() {
-            _event = nullptr;
-        }
+        EventHandler() = default;
 
-        EventHandler(Event<P...> *event) {
+        explicit EventHandler(Event<P...> *event) {
             _event = event;
         }
 
         EventHandler(const EventHandler &other) = delete;
         const EventHandler &operator=(const EventHandler &other) = delete;
 
-        EventHandler(EventHandler &&other)
+        EventHandler(EventHandler &&other) noexcept
             : delegate(move(other.delegate))
         {
             move_common(std::move(other));
         }
 
-        EventHandler &operator=(EventHandler &&other) {
+        EventHandler &operator=(EventHandler &&other) noexcept {
             delegate = move(other.delegate);
             move_common(std::move(other));
             return *this;

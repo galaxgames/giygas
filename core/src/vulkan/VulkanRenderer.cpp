@@ -13,6 +13,8 @@
 #include "VulkanDescriptorPool.hpp"
 #include "VulkanDescriptorSet.hpp"
 #include "VulkanRenderPass.hpp"
+#include "VulkanWritableVertexBuffer.cpp"
+#include "VulkanReadOnlyVertexBuffer.hpp"
 #include <giygas/validation/submission_validation.hpp>
 
 using namespace giygas;
@@ -152,8 +154,12 @@ RendererType VulkanRenderer::renderer_type() const {
     return RendererType::Vulkan;
 }
 
-VertexBuffer* VulkanRenderer::make_vertex_buffer() {
-    return new VulkanVertexBuffer(this);
+VertexBuffer* VulkanRenderer::make_vertex_buffer(VertexBufferCreateFlags flags) {
+    if (flags & VertexBufferCreateFlag_Writable) {
+        return new VulkanWritableVertexBuffer(this);
+    } else {
+        return new VulkanReadOnlyVertexBuffer(this);
+    }
 }
 
 

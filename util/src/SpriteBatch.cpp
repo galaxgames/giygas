@@ -5,7 +5,7 @@ using namespace giygas;
 using namespace std;
 
 SpriteBatch::SpriteBatch(Renderer &renderer) :
-    _vbo(renderer.make_vertex_buffer()),
+    _vbo(renderer.make_vertex_buffer(VertexBufferCreateFlag_None)),
     _ebo(renderer.make_index_buffer_32())
 {
     _count = 0;

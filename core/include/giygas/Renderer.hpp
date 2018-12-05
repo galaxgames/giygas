@@ -19,7 +19,7 @@ namespace giygas {
         virtual ~Renderer() = default;
         virtual void initialize() = 0;
         virtual RendererType renderer_type() const = 0;
-        virtual VertexBuffer *make_vertex_buffer() = 0;
+        virtual VertexBuffer *make_vertex_buffer(VertexBufferCreateFlags flags) = 0;
         virtual IndexBuffer<uint32_t> *make_index_buffer_32() = 0;
         virtual IndexBuffer<uint16_t > *make_index_buffer_16() = 0;
         virtual IndexBuffer<uint8_t> *make_index_buffer_8() = 0;

@@ -76,7 +76,7 @@ public:
 
         array<uint8_t, 6> indices = {0, 2, 1, 1, 2, 3};
 
-        _vertex_buffer = unique_ptr<VertexBuffer>(_renderer->make_vertex_buffer());
+        _vertex_buffer = unique_ptr<VertexBuffer>(_renderer->make_vertex_buffer(VertexBufferCreateFlag_None));
         VertexBuffer::set_data(*_vertex_buffer, 0, vertices.data(),vertices.size());
 
         _index_buffer = unique_ptr<IndexBuffer8>(_renderer->make_index_buffer_8());

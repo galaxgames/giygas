@@ -51,7 +51,7 @@ public:
         };
         array<uint8_t, 3> indices = {0, 1, 2};
 
-        _vertex_buffer = unique_ptr<VertexBuffer>(_renderer->make_vertex_buffer(VertexBufferCreateFlag_None));
+        _vertex_buffer = unique_ptr<VertexBuffer>(_renderer->make_vertex_buffer(VertexBufferCreateFlag_Writable));
         VertexBuffer::set_data(*_vertex_buffer, 0, verts.data(), verts.size());
 
         _index_buffer = unique_ptr<IndexBuffer8>(_renderer->make_index_buffer_8());
@@ -109,7 +109,7 @@ public:
         );
 
         //
-        // Setup pipeline 
+        // Setup pipeline
         //
         array<const Shader *, 2> shaders = {_vertex_shader.get(), _fragment_shader.get()};
         PipelineCreateParameters pipeline_params = {};
@@ -128,7 +128,17 @@ public:
         _pipeline->create(pipeline_params);
     }
 
-    void update_logic(float /*elapsed_seconds*/) override {
+    float _t = 0.0f;
+
+    void update_logic(float elapsed_seconds) override {
+        array<VertexData, 3> verts = {
+            VertexData{ Vector4(-1, 1, 0, 1), Vector4(1, 0, 0, 1) },
+            VertexData{ Vector4(0, abs(sin(_t * M_PI)), 0, 1), Vector4(0, 1, 0, 1) },
+            VertexData{ Vector4(1,  1, 0, 1), Vector4(0, 0, 1, 1) },
+        };
+
+        _t += elapsed_seconds;
+        VertexBuffer::set_data(*_vertex_buffer, 0, verts.data(), verts.size());
     }
 
     void update_graphics() override {
