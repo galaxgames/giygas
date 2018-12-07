@@ -1,16 +1,19 @@
 #include <algorithm>
-#include "VulkanWritableVertexBuffer.hpp"
+#include "WritableBuffer.hpp"
 #include "VulkanRenderer.hpp"
 
 #define GIYGAS_EVENT_INCLUDE_HELPERS
 #include <giygas/EventHandler.hpp>
 
-
+using namespace std;
 using namespace giygas;
+
+#define TEMPLATE template <VkBufferUsageFlags USAGE_FLAGS>
+#define CLASS WritableBuffer<USAGE_FLAGS>
 
 namespace giygas {
 
-    class InUseVertexBufferSafeDeletable final : public SwapchainSafeDeleteable {
+    class InUseBufferSafeDeletable final : public SwapchainSafeDeleteable {
 
         SafeDeletableEvent _event;
         VkBuffer _buffer = VK_NULL_HANDLE;
@@ -18,10 +21,10 @@ namespace giygas {
 
     public:
 
-        InUseVertexBufferSafeDeletable(InUseVertexBufferSafeDeletable &&) = default;
-        InUseVertexBufferSafeDeletable &operator=(InUseVertexBufferSafeDeletable &&) = default;
+        InUseBufferSafeDeletable(InUseBufferSafeDeletable &&) = default;
+        InUseBufferSafeDeletable &operator=(InUseBufferSafeDeletable &&) = default;
 
-        InUseVertexBufferSafeDeletable(VkBuffer buffer, VkDeviceMemory memory) {
+        InUseBufferSafeDeletable(VkBuffer buffer, VkDeviceMemory memory) {
             _buffer = buffer;
             _memory = memory;
         }
@@ -31,8 +34,8 @@ namespace giygas {
                 _event.invoke(this, _buffer, _memory);
             } else {
                 VkDevice device = renderer.device();
-                vkDestroyBuffer(device, _buffer, nullptr);
                 vkFreeMemory(device, _memory, nullptr);
+                vkDestroyBuffer(device, _buffer, nullptr);
             }
         }
 
@@ -45,25 +48,26 @@ namespace giygas {
 }
 
 
-VulkanWritableVertexBuffer::VulkanWritableVertexBuffer(VulkanRenderer *renderer) {
+TEMPLATE CLASS::WritableBuffer(VulkanRenderer *renderer) {
     _renderer = renderer;
 }
 
-VulkanWritableVertexBuffer::~VulkanWritableVertexBuffer() {
+TEMPLATE CLASS::~WritableBuffer() {
     _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(
-        new InUseVertexBufferSafeDeletable(_handle, _device_memory)
+        new InUseBufferSafeDeletable(_handle, _device_memory)
     ));
+    { lock_guard<mutex> _(_available_buffers_mutex);
+        for (tuple<VkBuffer, VkDeviceMemory> buffer_and_memory : _available_buffers) {
+            _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(
+                new InUseBufferSafeDeletable(get<0>(buffer_and_memory), get<1>(buffer_and_memory))
+            ));
+        }
+        _event_handlers.clear();
+    }
 }
 
-RendererType VulkanWritableVertexBuffer::renderer_type() const {
-    return RendererType::Vulkan;
-}
-
-void *VulkanWritableVertexBuffer::cast_to_renderer_specific() {
-    return static_cast<VulkanVertexBuffer *>(this);
-}
-
-void VulkanWritableVertexBuffer::set_data(uint32_t offset, const uint8_t *data, uint32_t size) {
+TEMPLATE
+void CLASS::set_data(uint32_t offset, const uint8_t *data, uint32_t size) {
     uint32_t previous_size = _data.size();
     uint32_t required_size = size + offset;
     if (previous_size < required_size) {
@@ -85,13 +89,13 @@ void VulkanWritableVertexBuffer::set_data(uint32_t offset, const uint8_t *data, 
 
         if (buffer != VK_NULL_HANDLE) {
             // Return current buffer that might be in use
-            auto *in_use_deletable = new InUseVertexBufferSafeDeletable(buffer, memory);
+            auto *in_use_deletable = new InUseBufferSafeDeletable(buffer, memory);
             auto no_longer_in_use_handler = in_use_deletable->resources_no_longer_in_use();
-            no_longer_in_use_handler.delegate = BIND_MEMBER3(&VulkanWritableVertexBuffer::handle_buffer_no_longer_in_use);
+            no_longer_in_use_handler.delegate = BIND_MEMBER3(&WritableBuffer::handle_buffer_no_longer_in_use);
             _event_handlers.emplace(
-                    piecewise_construct
-                    , forward_as_tuple(in_use_deletable)
-                    , forward_as_tuple(move(no_longer_in_use_handler))
+                piecewise_construct
+                , forward_as_tuple(in_use_deletable)
+                , forward_as_tuple(move(no_longer_in_use_handler))
             );
             _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(in_use_deletable));
             buffer = VK_NULL_HANDLE;
@@ -112,7 +116,7 @@ void VulkanWritableVertexBuffer::set_data(uint32_t offset, const uint8_t *data, 
         // TODO: Less copy + paste
         _renderer->create_buffer(
             buffer_size
-            , VK_BUFFER_USAGE_VERTEX_BUFFER_BIT  /* usage */
+            , USAGE_FLAGS  /* usage */
             , VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT  /* memory_properties */
             , buffer
             , memory
@@ -136,21 +140,20 @@ void VulkanWritableVertexBuffer::set_data(uint32_t offset, const uint8_t *data, 
 
 }
 
-bool VulkanWritableVertexBuffer::is_valid() const {
+TEMPLATE
+bool CLASS::is_valid() const {
     return _handle != VK_NULL_HANDLE;
 }
 
-bool VulkanWritableVertexBuffer::is_writable() const {
-    return true;
-}
-
-VkBuffer VulkanWritableVertexBuffer::handle() const {
+TEMPLATE
+VkBuffer CLASS::handle() const {
     lock_guard<mutex> _(_handle_mutex);
     return _handle;
 }
 
-void VulkanWritableVertexBuffer::handle_buffer_no_longer_in_use(
-    InUseVertexBufferSafeDeletable *deletable
+TEMPLATE
+void CLASS::handle_buffer_no_longer_in_use(
+    InUseBufferSafeDeletable *deletable
     , VkBuffer buffer
     , VkDeviceMemory memory
 ) {
@@ -162,4 +165,9 @@ void VulkanWritableVertexBuffer::handle_buffer_no_longer_in_use(
 
         _available_buffers.emplace_back(make_tuple(buffer, memory));
     }
+}
+
+namespace giygas {
+    template class WritableBuffer<VK_BUFFER_USAGE_VERTEX_BUFFER_BIT>;
+    template class WritableBuffer<VK_BUFFER_USAGE_INDEX_BUFFER_BIT> ;
 }

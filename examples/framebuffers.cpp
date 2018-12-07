@@ -90,7 +90,7 @@ public:
         _vertex_buffer = unique_ptr<VertexBuffer>(_renderer->make_vertex_buffer(VertexBufferCreateFlag_None));
         VertexBuffer::set_data(*_vertex_buffer, 0, vertices.data(),vertices.size());
 
-        _index_buffer = unique_ptr<IndexBuffer8>(_renderer->make_index_buffer_8());
+        _index_buffer = unique_ptr<IndexBuffer8>(_renderer->make_index_buffer_8(IndexBufferCreateFlag_None));
         _index_buffer->set(0, indices.data(), indices.size());
 
         //

@@ -6,7 +6,7 @@ using namespace std;
 
 SpriteBatch::SpriteBatch(Renderer &renderer) :
     _vbo(renderer.make_vertex_buffer(VertexBufferCreateFlag_None)),
-    _ebo(renderer.make_index_buffer_32())
+    _ebo(renderer.make_index_buffer_32(IndexBufferCreateFlag_None))
 {
     _count = 0;
 

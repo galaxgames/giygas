@@ -2,6 +2,8 @@
 #include <giygas/IndexBuffer.hpp>
 #include <vector>
 #include <vulkan/vulkan.h>
+#include "ReadOnlyBuffer.hpp"
+#include "WritableBuffer.hpp"
 
 namespace giygas {
     using namespace std;
@@ -16,15 +18,11 @@ namespace giygas {
     };
 
 
-    template <typename T, typename DeviceT>
+    template <typename T, typename DeviceT, typename BufferT>
     class VulkanIndexBuffer final : public IndexBuffer<T>, VulkanGenericIndexBuffer {
 
-        VulkanRenderer *_renderer;
-        vector<T> _data;
-        VkBuffer _buffer;
-        VkDeviceMemory _device_memory;
-
-        void safe_delete_resources();
+        BufferT _buffer;
+        uint32_t _count = 0;
 
     public:
         explicit VulkanIndexBuffer(VulkanRenderer *renderer);
@@ -32,7 +30,7 @@ namespace giygas {
         VulkanIndexBuffer &operator=(const VulkanIndexBuffer &) = delete;
         VulkanIndexBuffer(VulkanIndexBuffer &&) noexcept = delete;
         VulkanIndexBuffer &operator=(VulkanIndexBuffer &&) noexcept = delete;
-        ~VulkanIndexBuffer() override;
+        ~VulkanIndexBuffer() override = default;
 
         //
         // GenericIndexBuffer implementation
@@ -45,7 +43,7 @@ namespace giygas {
         // IndexBuffer implementation
         //
 
-        void set(size_t index, const T *indices, size_t count) override;
+        void set(uint32_t index, const T *indices, uint32_t count) override;
         size_t count() const override;
 
 

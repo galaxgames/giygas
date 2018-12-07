@@ -1,22 +1,26 @@
 #include <algorithm>
-#include "VulkanReadOnlyVertexBuffer.hpp"
+#include "ReadOnlyBuffer.hpp"
 #include "VulkanRenderer.hpp"
 
 using namespace giygas;
 
-class VertexBufferSafeDeletable final : public SwapchainSafeDeleteable {
+#define TEMPLATE template <VkBufferUsageFlags USAGE_FLAGS>
+#define CLASS ReadOnlyBuffer<USAGE_FLAGS>
+
+
+class BufferSafeDeletable final : public SwapchainSafeDeleteable {
 
     VkBuffer _handle;
     VkDeviceMemory _device_memory;
 
 public:
 
-    VertexBufferSafeDeletable(VkBuffer handle, VkDeviceMemory device_memory) {
+    BufferSafeDeletable(VkBuffer handle, VkDeviceMemory device_memory) {
         _handle = handle;
         _device_memory = device_memory;
     }
 
-    void delete_resources(VulkanRenderer &renderer) {
+    void delete_resources(VulkanRenderer &renderer) override {
         VkDevice device = renderer.device();
         vkDestroyBuffer(device, _handle, nullptr);
         vkFreeMemory(device, _device_memory, nullptr);
@@ -25,22 +29,19 @@ public:
 };
 
 
-VulkanReadOnlyVertexBuffer::VulkanReadOnlyVertexBuffer(VulkanRenderer *renderer) {
+TEMPLATE CLASS::ReadOnlyBuffer(VulkanRenderer *renderer) {
     _renderer = renderer;
 }
 
-VulkanReadOnlyVertexBuffer::~VulkanReadOnlyVertexBuffer() {
+TEMPLATE CLASS::~ReadOnlyBuffer() {
     _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(
-        new VertexBufferSafeDeletable(_handle, _device_memory)
+        new BufferSafeDeletable(_handle, _device_memory)
     ));
 }
 
-RendererType VulkanReadOnlyVertexBuffer::renderer_type() const {
-    return RendererType::Vulkan;
-}
-
-void VulkanReadOnlyVertexBuffer::set_data(uint32_t offset, const uint8_t *data, uint32_t size) {
-    assert(_handle == VK_NULL_HANDLE && "Cannot set data more than once for a read-only vertex buffer");
+TEMPLATE
+void CLASS::set_data(uint32_t offset, const uint8_t *data, uint32_t size) {
+    assert(_handle == VK_NULL_HANDLE && "Cannot set data more than once for a read-only buffer");
 
     VkDevice device = _renderer->device();
     uint32_t total_size = offset + size;
@@ -52,7 +53,7 @@ void VulkanReadOnlyVertexBuffer::set_data(uint32_t offset, const uint8_t *data, 
 
     _renderer->create_buffer(
         buffer_size
-        , VK_BUFFER_USAGE_VERTEX_BUFFER_BIT  /* usage */
+        , USAGE_FLAGS  /* usage */
         , VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT  /* memory_properties */
         , _handle
         , _device_memory
@@ -69,14 +70,17 @@ void VulkanReadOnlyVertexBuffer::set_data(uint32_t offset, const uint8_t *data, 
     }
 }
 
-bool VulkanReadOnlyVertexBuffer::is_valid() const {
+TEMPLATE
+bool CLASS::is_valid() const {
     return _handle != VK_NULL_HANDLE;
 }
 
-bool VulkanReadOnlyVertexBuffer::is_writable() const {
-    return false;
+TEMPLATE
+VkBuffer CLASS::handle() const {
+    return _handle;
 }
 
-VkBuffer VulkanReadOnlyVertexBuffer::handle() const {
-    return _handle;
+namespace giygas {
+    template class ReadOnlyBuffer<VK_BUFFER_USAGE_VERTEX_BUFFER_BIT>;
+    template class ReadOnlyBuffer<VK_BUFFER_USAGE_INDEX_BUFFER_BIT>;
 }

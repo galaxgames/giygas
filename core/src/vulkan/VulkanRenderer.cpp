@@ -13,8 +13,7 @@
 #include "VulkanDescriptorPool.hpp"
 #include "VulkanDescriptorSet.hpp"
 #include "VulkanRenderPass.hpp"
-#include "VulkanWritableVertexBuffer.cpp"
-#include "VulkanReadOnlyVertexBuffer.hpp"
+#include "VulkanVertexBufferImpl.cpp"
 #include <giygas/validation/submission_validation.hpp>
 
 using namespace giygas;
@@ -156,24 +155,36 @@ RendererType VulkanRenderer::renderer_type() const {
 
 VertexBuffer* VulkanRenderer::make_vertex_buffer(VertexBufferCreateFlags flags) {
     if (flags & VertexBufferCreateFlag_Writable) {
-        return new VulkanWritableVertexBuffer(this);
+        return new VulkanVertexBufferImpl<WritableVertexBuffer>(this);
     } else {
-        return new VulkanReadOnlyVertexBuffer(this);
+        return new VulkanVertexBufferImpl<ReadOnlyVertexBuffer>(this);
     }
 }
 
-
-IndexBuffer<uint32_t>* VulkanRenderer::make_index_buffer_32() {
-    return new VulkanIndexBuffer<uint32_t, uint32_t>(this);
+IndexBuffer<uint32_t>* VulkanRenderer::make_index_buffer_32(IndexBufferCreateFlags flags) {
+    if (flags & VertexBufferCreateFlag_Writable) {
+        return new VulkanIndexBuffer<uint32_t, uint32_t, WritableIndexBuffer>(this);
+    } else {
+        return new VulkanIndexBuffer<uint32_t, uint32_t, ReadOnlyIndexBuffer>(this);
+    }
 }
 
-IndexBuffer<uint16_t>* VulkanRenderer::make_index_buffer_16() {
-    return new VulkanIndexBuffer<uint16_t, uint16_t>(this);
+IndexBuffer<uint16_t>* VulkanRenderer::make_index_buffer_16(IndexBufferCreateFlags flags) {
+    if (flags & VertexBufferCreateFlag_Writable) {
+        return new VulkanIndexBuffer<uint16_t, uint16_t, WritableIndexBuffer>(this);
+    } else {
+        return new VulkanIndexBuffer<uint16_t, uint16_t, ReadOnlyIndexBuffer>(this);
+    }
 }
 
-IndexBuffer<uint8_t>* VulkanRenderer::make_index_buffer_8() {
-    return new VulkanIndexBuffer<uint8_t, uint16_t>(this);
+IndexBuffer<uint8_t>* VulkanRenderer::make_index_buffer_8(IndexBufferCreateFlags flags) {
+    if (flags & VertexBufferCreateFlag_Writable) {
+        return new VulkanIndexBuffer<uint8_t, uint16_t, WritableIndexBuffer>(this);
+    } else {
+        return new VulkanIndexBuffer<uint8_t, uint16_t, ReadOnlyIndexBuffer>(this);
+    }
 }
+
 
 UniformBuffer* VulkanRenderer::make_uniform_buffer() {
     return new VulkanUniformBuffer(this);

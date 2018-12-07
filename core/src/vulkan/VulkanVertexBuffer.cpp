@@ -3,5 +3,5 @@
 using namespace giygas;
 
 void *VulkanVertexBuffer::cast_to_renderer_specific() {
-    return static_cast<VulkanVertexBuffer *>(this);
+    return this;
 }

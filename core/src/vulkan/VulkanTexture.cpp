@@ -493,7 +493,7 @@ void VulkanTexture::convert_data(TextureFormat from_format, TextureFormat to_for
         }
     }
     else {
-        assert("Not Implemented");
+        assert(!"Not Implemented");
     }
 
     _data = move(new_data);

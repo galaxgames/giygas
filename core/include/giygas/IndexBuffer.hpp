@@ -14,6 +14,11 @@ namespace giygas {
     // Note: Above TODO might not be applicable for Vulkan. Lots of unknowns here.
     //
 
+    enum IndexBufferCreateFlags {
+        IndexBufferCreateFlag_None     = 0,
+        IndexBufferCreateFlag_Writable = 1 << 0
+    };
+
     class GenericIndexBuffer {
     public:
         virtual ~GenericIndexBuffer() = default;
@@ -24,8 +29,8 @@ namespace giygas {
     template <typename T>
     class GIYGAS_EXPORT IndexBuffer : public GenericIndexBuffer {
     public:
-        virtual ~IndexBuffer() = default;
-        virtual void set(size_t offset, const T *indices, size_t count) = 0;
+        ~IndexBuffer() override = default;
+        virtual void set(uint32_t offset, const T *indices, uint32_t count) = 0;
         virtual size_t count() const = 0;
     };
 

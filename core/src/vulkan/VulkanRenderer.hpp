@@ -105,9 +105,9 @@ namespace giygas {
         void initialize() override;
         RendererType renderer_type() const override;
         VertexBuffer *make_vertex_buffer(VertexBufferCreateFlags flags) override;
-        IndexBuffer<uint32_t> *make_index_buffer_32() override;
-        IndexBuffer<uint16_t> *make_index_buffer_16() override;
-        IndexBuffer<uint8_t> *make_index_buffer_8() override;
+        IndexBuffer<uint32_t> *make_index_buffer_32(IndexBufferCreateFlags flags) override;
+        IndexBuffer<uint16_t> *make_index_buffer_16(IndexBufferCreateFlags flags) override;
+        IndexBuffer<uint8_t> *make_index_buffer_8(IndexBufferCreateFlags flags) override;
         UniformBuffer *make_uniform_buffer() override;
         Shader *make_shader() override;
         Texture *make_texture() override;
