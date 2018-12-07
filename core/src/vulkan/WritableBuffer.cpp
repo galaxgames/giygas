@@ -18,20 +18,22 @@ namespace giygas {
         SafeDeletableEvent _event;
         VkBuffer _buffer = VK_NULL_HANDLE;
         VkDeviceMemory _memory = VK_NULL_HANDLE;
+        uint32_t _size = 0;
 
     public:
 
         InUseBufferSafeDeletable(InUseBufferSafeDeletable &&) = default;
         InUseBufferSafeDeletable &operator=(InUseBufferSafeDeletable &&) = default;
 
-        InUseBufferSafeDeletable(VkBuffer buffer, VkDeviceMemory memory) {
+        InUseBufferSafeDeletable(VkBuffer buffer, VkDeviceMemory memory, uint32_t size) {
             _buffer = buffer;
             _memory = memory;
+            _size = size;
         }
 
         void delete_resources(VulkanRenderer &renderer) override {
             if (_event.has_handlers()) {
-                _event.invoke(this, _buffer, _memory);
+                _event.invoke(this);
             } else {
                 VkDevice device = renderer.device();
                 vkFreeMemory(device, _memory, nullptr);
@@ -41,6 +43,18 @@ namespace giygas {
 
         SafeDeletableEventHandler resources_no_longer_in_use() {
             return _event.make_handler();
+        }
+
+        VkBuffer buffer() const {
+            return _buffer;
+        }
+
+        VkDeviceMemory memory() const {
+            return _memory;
+        }
+
+        uint32_t size() const {
+            return _size;
         }
 
     };
@@ -54,12 +68,15 @@ TEMPLATE CLASS::WritableBuffer(VulkanRenderer *renderer) {
 
 TEMPLATE CLASS::~WritableBuffer() {
     _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(
-        new InUseBufferSafeDeletable(_handle, _device_memory)
+        new InUseBufferSafeDeletable(_handle, _device_memory, 0)
     ));
     { lock_guard<mutex> _(_available_buffers_mutex);
-        for (tuple<VkBuffer, VkDeviceMemory> buffer_and_memory : _available_buffers) {
+        for (tuple<VkBuffer, VkDeviceMemory, uint32_t> buffer_memory_and_size : _available_buffers) {
             _renderer->delete_when_safe(unique_ptr<SwapchainSafeDeleteable>(
-                new InUseBufferSafeDeletable(get<0>(buffer_and_memory), get<1>(buffer_and_memory))
+                new InUseBufferSafeDeletable(
+                    get<0>(buffer_memory_and_size)
+                    , get<1>(buffer_memory_and_size)
+                    , 0)
             ));
         }
         _event_handlers.clear();
@@ -89,9 +106,9 @@ void CLASS::set_data(uint32_t offset, const uint8_t *data, uint32_t size) {
 
         if (buffer != VK_NULL_HANDLE) {
             // Return current buffer that might be in use
-            auto *in_use_deletable = new InUseBufferSafeDeletable(buffer, memory);
+            auto *in_use_deletable = new InUseBufferSafeDeletable(buffer, memory, _current_buffer_size);
             auto no_longer_in_use_handler = in_use_deletable->resources_no_longer_in_use();
-            no_longer_in_use_handler.delegate = BIND_MEMBER3(&WritableBuffer::handle_buffer_no_longer_in_use);
+            no_longer_in_use_handler.delegate = BIND_MEMBER1(&WritableBuffer::handle_buffer_no_longer_in_use);
             _event_handlers.emplace(
                 piecewise_construct
                 , forward_as_tuple(in_use_deletable)
@@ -102,12 +119,19 @@ void CLASS::set_data(uint32_t offset, const uint8_t *data, uint32_t size) {
             memory = VK_NULL_HANDLE;
         }
 
-        // Get a buffer ready to be written.
-        if (!_available_buffers.empty()) {
-            tuple<VkBuffer, VkDeviceMemory> buffer_and_memory =  _available_buffers.back();
-            buffer = get<0>(buffer_and_memory);
-            memory = get<1>(buffer_and_memory);
+        while (!_available_buffers.empty()) {
+            tuple<VkBuffer, VkDeviceMemory, uint32_t> buffer_memory_and_size =  _available_buffers.back();
             _available_buffers.pop_back();
+            if (get<2>(buffer_memory_and_size) < required_size) {
+                // This buffer isn't big enough. Delete it.
+                vkDestroyBuffer(device, get<0>(buffer_memory_and_size), nullptr);
+                vkFreeMemory(device, get<1>(buffer_memory_and_size), nullptr);
+                continue;
+            }
+            buffer = get<0>(buffer_memory_and_size);
+            memory = get<1>(buffer_memory_and_size);
+            _current_buffer_size = get<2>(buffer_memory_and_size);
+            break;
         }
     }
 
@@ -121,6 +145,7 @@ void CLASS::set_data(uint32_t offset, const uint8_t *data, uint32_t size) {
             , buffer
             , memory
         );
+        _current_buffer_size = required_size;
     }
 
     // Vulkan does not support memory mappings of 0 bytes.
@@ -152,22 +177,18 @@ VkBuffer CLASS::handle() const {
 }
 
 TEMPLATE
-void CLASS::handle_buffer_no_longer_in_use(
-    InUseBufferSafeDeletable *deletable
-    , VkBuffer buffer
-    , VkDeviceMemory memory
-) {
+void CLASS::handle_buffer_no_longer_in_use(InUseBufferSafeDeletable *deletable) {
     { lock_guard<mutex> _(_available_buffers_mutex);
         auto it = _event_handlers.find(deletable);
         if (it != _event_handlers.end()) {
             _event_handlers.erase(it);
         }
 
-        _available_buffers.emplace_back(make_tuple(buffer, memory));
+        _available_buffers.emplace_back(make_tuple(deletable->buffer(), deletable->memory(), deletable->size()));
     }
 }
 
 namespace giygas {
     template class WritableBuffer<VK_BUFFER_USAGE_VERTEX_BUFFER_BIT>;
-    template class WritableBuffer<VK_BUFFER_USAGE_INDEX_BUFFER_BIT> ;
+    template class WritableBuffer<VK_BUFFER_USAGE_INDEX_BUFFER_BIT>;
 }

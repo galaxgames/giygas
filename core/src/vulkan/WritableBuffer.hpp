@@ -12,8 +12,8 @@ namespace giygas {
     class VulkanRenderer;
 
     class InUseBufferSafeDeletable;
-    typedef Event<InUseBufferSafeDeletable *, VkBuffer, VkDeviceMemory> SafeDeletableEvent;
-    typedef EventHandler<InUseBufferSafeDeletable *, VkBuffer, VkDeviceMemory> SafeDeletableEventHandler;
+    typedef Event<InUseBufferSafeDeletable *> SafeDeletableEvent;
+    typedef EventHandler<InUseBufferSafeDeletable *> SafeDeletableEventHandler;
 
 
     template <VkBufferUsageFlags USAGE_FLAGS>
@@ -23,12 +23,13 @@ namespace giygas {
         VkBuffer _handle = VK_NULL_HANDLE;
         VkDeviceMemory _device_memory = VK_NULL_HANDLE;
         std::vector<uint8_t> _data;
+        uint32_t _current_buffer_size = 0;
         std::unordered_map<InUseBufferSafeDeletable *, SafeDeletableEventHandler> _event_handlers;
-        std::vector<std::tuple<VkBuffer, VkDeviceMemory>> _available_buffers;
+        std::vector<std::tuple<VkBuffer, VkDeviceMemory, uint32_t>> _available_buffers;
         std::mutex _available_buffers_mutex;
         mutable std::mutex _handle_mutex;
 
-        void handle_buffer_no_longer_in_use(InUseBufferSafeDeletable *deletable, VkBuffer buffer, VkDeviceMemory memory);
+        void handle_buffer_no_longer_in_use(InUseBufferSafeDeletable *deletable);
 
     public:
         explicit WritableBuffer(VulkanRenderer *renderer);

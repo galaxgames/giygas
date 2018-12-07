@@ -7,6 +7,7 @@
 #include <giygasutil/util.hpp>
 #include "example_common.hpp"
 #include <array>
+#include <cmath>
 
 using namespace giygas;
 using namespace giygasutil;
