@@ -239,8 +239,12 @@ void VulkanRenderer::submit(const PassSubmissionInfo *passes, uint32_t pass_coun
 
     uint32_t submission = _submissions.back();
 
-    uint32_t next_image;
-    vkAcquireNextImageKHR(_device, _swapchain.handle(), 0, _swapchain_image_available_semaphores[submission], nullptr, &next_image);
+    uint32_t next_image = _swapchain.image_count(); // smoking gun default value in case of Vulkan misuse or bugs.
+    VkResult acquire_result = vkAcquireNextImageKHR(_device, _swapchain.handle(), numeric_limits<uint64_t>::max(), _swapchain_image_available_semaphores[submission], nullptr, &next_image);
+    if (acquire_result != VK_SUCCESS && acquire_result != VK_TIMEOUT && acquire_result != VK_NOT_READY) {
+        assert(!"Not Implemented: Need to handle non successful image acquisition.");
+    }
+    assert(next_image != _swapchain.image_count());
     _image_indices_by_submission[submission] = next_image;
 
     record_command_buffers(passes, pass_count, submission, next_image);
