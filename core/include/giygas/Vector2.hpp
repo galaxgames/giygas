@@ -15,6 +15,8 @@ namespace giygas  {
         Vector2 operator-() const;
         Vector2 operator*(float scalar) const;
         Vector2 &operator*=(float scalar);
+
+        Vector2 scale(const Vector2 &other) const;
     };
 }
 
