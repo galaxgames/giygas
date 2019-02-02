@@ -10,20 +10,20 @@
         {
             "name": "gtest",
             "type": "git",
-            "url": "https://github.com/google/googletest.git",
-            "ref": "release-1.8.0"
+            "url":  "https://github.com/google/googletest.git",
+            "head": "master"
         },
         {
             "name": "glfw",
             "type": "git",
-            "url": "https://github.com/glfw/glfw.git",
-            "ref": "0a3c4f5d80b041ee1a12c8da3503653d98bd1a15"
+            "url":  "https://github.com/glfw/glfw.git",
+            "head": "master"
         },
         {
             "name": "glslang",
             "type": "git",
-            "url": "https://github.com/KhronosGroup/glslang.git",
-            "ref": "f44b17ee135d5e153ce000e88b806b5377812b11"
+            "url":  "https://github.com/KhronosGroup/glslang.git",
+            "head": "master" 
         }
     ]
 }

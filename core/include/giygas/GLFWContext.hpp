@@ -1,5 +1,9 @@
 #pragma once
 #include <giygas/config.hpp>
+#include "GLFWWindowInitOptions.hpp"
+#include "GLContext.hpp"
+#include "VulkanContext.hpp"
+#include "EventHandler.hpp"
 
 #ifdef GIYGAS_WITH_VULKAN
 // Explicitly include vulkan before glfw3 to enable glfw vulkan features.
@@ -11,14 +15,10 @@
 #include <glad/glad.h>
 #endif
 
-#include <GLFW/glfw3.h>
-
 #include <memory>
 #include <unordered_set>
-#include "GLFWWindowInitOptions.hpp"
-#include "GLContext.hpp"
-#include "VulkanContext.hpp"
-#include <giygas/EventHandler.hpp>
+
+class GLFWwindow;
 
 namespace giygas {
 

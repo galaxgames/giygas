@@ -1,11 +1,15 @@
-#ifdef GIYGAS_WITH_OPENGL
-#include <glad/glad.h>
-#endif
 #include <giygas/GLFWContext.hpp>
 #include "glfw_translate_key.hpp"
 
+#ifdef GIYGAS_WITH_OPENGL
+#include <glad/glad.h>
+#endif
+
+#include <GLFW/glfw3.h>
+
 using namespace giygas;
 using namespace std;
+
 
 GLFWContext::GLFWContext() {
     _window = nullptr;

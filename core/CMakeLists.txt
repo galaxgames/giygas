@@ -7,8 +7,7 @@ enable_testing()
 find_package(glad CONFIG)
 find_package(Vulkan)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(GTest)
-find_library(GMOCK_LIBRARY NAMES gmock)
+find_package(GTest CONFIG)
 
 set(giygas_with_opengl_default OFF)
 set(giygas_with_vulkan_default OFF)
@@ -84,8 +83,8 @@ generate_export_header(giygas
 target_include_directories(giygas
     PRIVATE
         # $<TARGET_PROPERTY:glad::glad,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:glfw,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:Vulkan::Vulkan,INTERFACE_INCLUDE_DIRECTORIES>
+        # $<TARGET_PROPERTY:glfw,INTERFACE_INCLUDE_DIRECTORIES>
+        # $<TARGET_PROPERTY:Vulkan::Vulkan,INTERFACE_INCLUDE_DIRECTORIES>
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
@@ -102,11 +101,11 @@ if (GIYGAS_WITH_OPENGL)
     list(APPEND giygas_link_libraries glad::glad)
 endif()
 
-target_link_libraries(giygas ${giygas_link_libraries})
+target_link_libraries(giygas PRIVATE ${giygas_link_libraries})
 
 if (GTest_FOUND)
     target_link_libraries(giygas_test
-        GTest::GTest GTest::Main ${GMOCK_LIBRARY} giygas
+        GTest::gtest GTest::gtest_main GTest::gmock giygas
     )
 
     add_test(GiygasTests giygas_test)
