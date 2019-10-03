@@ -1,29 +1,26 @@
 {
-    "options": 
-    [
-        { "name": "WITH_EXAMPLES", "default": true, "cmake_option": "GIYGAS_WITH_EXAMPLES" },
-        { "name": "WITH_OPENGL", "default": false, "cmake_option": "GIYGAS_WITH_OPENGL" },
-        { "name": "WITH_VULKAN", "default": false, "cmake_option": "GIYGAS_WITH_VULKAN" }
-    ],
     "dependencies": 
     [
         {
             "name": "gtest",
             "type": "git",
             "url":  "https://github.com/google/googletest.git",
-            "head": "master"
+            "head": "master",
+            "ref": "01148677a937eae1c0fd1e488ca81445531ea368"
         },
         {
             "name": "glfw",
             "type": "git",
             "url":  "https://github.com/glfw/glfw.git",
-            "head": "master"
+            "head": "master",
+            "ref": "0a3c4f5d80b041ee1a12c8da3503653d98bd1a15"
         },
         {
             "name": "glslang",
             "type": "git",
             "url":  "https://github.com/KhronosGroup/glslang.git",
-            "head": "master" 
+            "head": "master",
+            "ref": "f44b17ee135d5e153ce000e88b806b5377812b11"
         }
     ]
 }
